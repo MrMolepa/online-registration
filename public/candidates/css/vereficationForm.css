@@ -1,0 +1,889 @@
+/********** Progress bar **********/
+#progressbar_content {
+    width: 100%;
+    overflow: hidden;
+    color: lightgrey;
+    display: flex;
+}
+
+.headline {
+    margin: 1rem 0;
+    display: flex;
+    font-size: 18px;
+}
+.headline:before,
+.headline:after {
+    color: #000;
+    content: "";
+    flex: 1;
+    border-bottom: groove 2px;
+    margin: auto 0.25rem;
+    box-shadow: 0 -2px;
+}
+#progressbar_content .active {
+    color: #fff;
+    background: #3d556d;
+}
+
+#progressbar_content li {
+    list-style-type: none;
+    width: 25%;
+    padding: 0.5rem;
+    background: #598abf;
+}
+
+#progressbar_content li i {
+    display: block;
+    color: #ffffff;
+    padding: 0px;
+}
+
+#progressbar_content li strong {
+    font-size: 18px;
+}
+
+/********** Form/fieldset style **********/
+#msform {
+    width: 100%;
+    text-align: center;
+    background: #fff;
+}
+
+#msform input[type="radio"] {
+    display: none;
+}
+
+#msform fieldset .form-card {
+    background: white;
+    border: 0 none;
+    border-radius: 0px;
+    padding: 10px 40px 10px 40px;
+    box-sizing: border-box;
+    width: 100%;
+    position: relative;
+}
+
+#msform fieldset {
+    background: white;
+    border: 0 none;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding-bottom: 10px;
+    position: relative;
+}
+
+#msform fieldset:not(:first-of-type) {
+    display: none;
+}
+
+#msform fieldset .form-card {
+    text-align: left;
+}
+
+#msform .action-button {
+    width: 100px;
+    background: #3d556d;
+    font-weight: 600;
+    font-size: 17px;
+    color: white;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 10px 5px;
+    margin: 10px 5px;
+}
+
+#msform .action-button:hover,
+#msform .action-button:focus {
+    box-shadow: 5px 10px 20px #e0e0e0;
+}
+
+#msform .action-button-previous {
+    width: 100px;
+    background: #ffff;
+    font-weight: 600;
+    font-size: 17px;
+    color: #3d556d;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 10px 5px;
+    margin: 10px 5px;
+}
+
+#msform .action-button-previous:hover,
+#msform .action-button-previous:focus {
+    box-shadow: 5px 10px 20px #e0e0e0;
+    background: #f8f8ff;
+}
+
+#grad1 .card #msform .payment .nav {
+    margin-top: 1.4rem;
+    border-bottom: none !important;
+}
+
+#grad1 .card #msform .payment .tab-content {
+    margin-top: 2rem;
+}
+
+#grad1 .card #msform .payment .tab-content .form-group {
+    margin-bottom: 2rem;
+}
+
+#grad1 .card #msform .payment .tab-content .has-error {
+    margin-bottom: 2.35rem;
+}
+
+#grad1 .card #msform .payment .tab-content .expiration {
+    display: flex;
+}
+
+#grad1 .card #msform .payment .tab-content .form-group .expiration_year {
+    width: 35%;
+    margin-left: 0.5rem;
+}
+
+#grad1 .card #msform .payment .tab-content .expiration .help-block {
+    margin-top: 45px;
+}
+
+/********** Invoice wrapper style **********/
+.invoice-wrapper {
+    margin: 0 auto;
+    max-width: 780px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    text-align: left;
+}
+
+.invoice-top {
+    background-color: #fafafa;
+    padding: 0 60px;
+}
+
+/*---------- Invoice-top-left refers to the client name & address, service provided ----------*/
+.invoice-wrapper .invoice-top .invoice-top-left h2,
+.invoice-top-left h6 {
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+    margin-top: 0.625rem;
+    margin-bottom: 0.625rem;
+}
+
+.invoice-wrapper .invoice-top .invoice-top-left h4 {
+    font-family: "Roboto", sans-serif;
+    color: #4a4a4a;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: .875rem;
+    font-weight: bold;
+}
+
+.invoice-wrapper .invoice-top .invoice-top-left h5 {
+    line-height: 1.4;
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+}
+
+.client-company-name {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.client-address {
+    font-size: 14px;
+    margin-top: 5px;
+    color: rgba(0, 0, 0, 0.75);
+}
+
+/*---------- Invoice-top-right refers to the our name & address, logo and date ----------*/
+.invoice-top-right h2,
+.invoice-top-right h6 {
+    text-align: right;
+    line-height: 1.5;
+    font-family: "Montserrat", sans-serif;
+}
+
+.invoice-top-right h5 {
+    line-height: 1.4;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 400;
+    text-align: right;
+    margin-top: 0;
+}
+
+.our-company-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.our-address {
+    font-size: 13px;
+    margin-top: 0;
+    color: rgba(0, 0, 0, 0.75);
+}
+
+.logo-wrapper {
+    overflow: auto;
+}
+
+/*---------- Invoice-bottom refers to the bottom part of invoice ----------*/
+.invoice-bottom {
+    background-color: #ffffff;
+    padding: 10px 60px;
+    position: relative;
+}
+
+.title {
+    font-size: 30px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    margin-top: 10px !important;
+    margin-bottom: 30px;
+}
+
+/*---------- Invoice-bottom-left ----------*/
+.invoice-bottom-left h5,
+.invoice-bottom-left h4 {
+    font-family: "Montserrat", sans-serif;
+}
+
+.invoice-bottom-left h4 {
+    font-weight: 400;
+}
+
+.terms {
+    font-family: "Montserrat", sans-serif;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.divider {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+/********** Payment method *********/
+
+.payment-methods {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 0.9em;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -ms-flex-align: center;
+    -webkit-box-align: center;
+    align-items: center;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.payment-methods .payment-method input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.payment-methods .payment-method {
+    cursor: pointer;
+    width: 48.5%;
+}
+
+.payment-methods .payment-method .payment-method-content {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    padding: 5px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    border: px solid #e1e2e7;
+    border-radius: 4px;
+    -webkit-transition: -webkit-box-shadow 0.4s;
+    transition: -webkit-box-shadow 0.4s;
+    -o-transition: box-shadow 0.4s;
+    transition: box-shadow 0.4s;
+    transition: box-shadow 0.4s, -webkit-box-shadow 0.4s;
+    position: relative;
+}
+
+.payment-methods .payment-method .payment-method-content img {
+    margin-right: 30px;
+    height: 72px;
+}
+
+.payment-methods .payment-method .payment-method-details span {
+    margin-bottom: 10px;
+    display: block;
+    font-size: 20px;
+    line-height: 24px;
+    color: #252f42;
+}
+
+.container .title {
+    font-size: 20px;
+    font-weight: 500;
+    -ms-flex-preferred-size: 100%;
+    flex-basis: 100%;
+    color: #252f42;
+    margin-bottom: 20px;
+}
+
+.payment-methods .payment-method .payment-method-details p {
+    color: #646a79;
+    font-size: 14px;
+    line-height: 18px;
+}
+
+.payment-methods .payment-method .payment-method-content:hover {
+    -webkit-box-shadow: 0px 3px 5px 0px #e8e8e8;
+    box-shadow: 0px 3px 5px 0px #e8e8e8;
+}
+
+.payment-methods
+    .payment-method
+    input[type="radio"]:checked
+    + .payment-method-content:after {
+    content: "";
+    position: absolute;
+    height: 8px;
+    width: 8px;
+    background: #216fe0;
+    right: 20px;
+    top: 20px;
+    border-radius: 100%;
+    border: 3px solid #fff;
+    -webkit-box-shadow: 0px 0px 0px 2px #0066ff;
+    box-shadow: 0px 0px 0px 2px #0066ff;
+}
+
+.payment-methods
+    .payment-method
+    input[type="radio"]:checked
+    + .payment-method-content {
+    border: 2px solid #216ee0;
+    background: #eaf1fe;
+    -webkit-transition: ease-in 0.3s;
+    -o-transition: ease-in 0.3s;
+    transition: ease-in 0.3s;
+}
+
+@media screen and (max-width: 991px) {
+    .payment-methods {
+        margin: 0 20px;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+        align-items: flex-start;
+        padding: 40px;
+    }
+
+    .payment-methods .payment-method {
+        width: 100%;
+    }
+
+    .payment-method.complete-payment-method {
+        margin-top: 20px;
+    }
+
+    .payment-methods
+        .payment-method
+        .payment-method-content
+        .payment-method-details {
+        width: 70%;
+        display: inline-block;
+    }
+
+    .payment-methods
+        .payment-method
+        input[type="radio"]:checked
+        + .payment-method-content:after {
+        top: 45%;
+        -webkit-transform: translate(-50%);
+        -ms-transform: translate(-50%);
+        transform: translate(-50%);
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .payment-methods
+        .payment-method
+        .payment-method-content
+        .payment-method-details {
+        width: 60%;
+        display: inline-block;
+    }
+}
+
+@media screen and (max-width: 540px) {
+    .payment-methods .payment-method .payment-method-content img {
+        margin-bottom: 20px;
+        height: 56px;
+        -webkit-transition: height 0.4s;
+        -o-transition: height 0.4s;
+        transition: height 0.4s;
+    }
+
+    .payment-methods
+        .payment-method
+        input[type="radio"]:checked
+        + .payment-method-content:after {
+        top: 20px;
+        right: 10px;
+    }
+
+    .payment-methods
+        .payment-method
+        .payment-method-content
+        .payment-method-details {
+        width: 100%;
+    }
+
+    .payment-methods .payment-method .payment-method-content {
+        padding: 20px;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-box-align: baseline;
+        -ms-flex-align: baseline;
+        align-items: baseline;
+    }
+}
+
+.payment-tab-content {
+    background: #fff;
+    border-radius: 4px;
+    -webkit-box-shadow: 0px 8px 10px 0px #d8dfeb;
+    box-shadow: 0px 8px 10px 0px #d8dfeb;
+}
+
+.payment-tab-pane {
+    display: none;
+    text-align: left;
+    padding: 2em;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.payment-tab-pane.on {
+    display: block;
+}
+
+/********** Successful payment section *********/
+.payment_success {
+    text-align: center !important;
+}
+
+.modalbox.success,
+.modalbox.error {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+    background: #fff;
+    padding: 25px 25px 15px;
+    text-align: center;
+    margin-top: 8rem;
+}
+
+.modalbox.success.animate .icon,
+.modalbox.error.animate .icon {
+    -webkit-animation: fall-in 0.75s;
+    -moz-animation: fall-in 0.75s;
+    -o-animation: fall-in 0.75s;
+    animation: fall-in 0.75s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.modalbox.success h1,
+.modalbox.error h1 {
+    font-family: "Montserrat", sans-serif;
+}
+
+.modalbox.success p,
+.modalbox.error p {
+    font-family: "Open Sans", sans-serif;
+}
+
+.modalbox.success button,
+.modalbox.error button,
+.modalbox.success button:active,
+.modalbox.error button:active,
+.modalbox.success button:focus,
+.modalbox.error button:focus {
+    -webkit-transition: all 0.1s ease-in-out;
+    transition: all 0.1s ease-in-out;
+    -webkit-border-radius: 30px;
+    -moz-border-radius: 30px;
+    border-radius: 30px;
+    margin-top: 15px;
+    width: 80%;
+    background: transparent;
+    color: #4caf50;
+    border-color: #4caf50;
+    outline: none;
+}
+
+.modalbox.success button:hover,
+.modalbox.error button:hover,
+.modalbox.success button:active:hover,
+.modalbox.error button:active:hover,
+.modalbox.success button:focus:hover,
+.modalbox.error button:focus:hover {
+    color: #fff;
+    background: #4caf50;
+    border-color: transparent;
+}
+
+.modalbox.success .icon,
+.modalbox.error .icon {
+    position: relative;
+    margin: 0 auto;
+    margin-top: -75px;
+    background: #4caf50;
+    height: 100px;
+    width: 100px;
+    border-radius: 50%;
+}
+
+.modalbox.success .icon span,
+.modalbox.error .icon span {
+    postion: absolute;
+    font-size: 4em;
+    color: #fff;
+    text-align: center;
+    padding-top: 20px;
+}
+
+.modalbox.error .icon span {
+    padding-top: 25px;
+}
+
+.center {
+    float: none;
+    margin-left: auto;
+    margin-right: auto;
+    /* stupid browser compat. smh */
+}
+
+.center .change {
+    clearn: both;
+    display: block;
+    font-size: 10px;
+    color: #ccc;
+    margin-top: 10px;
+}
+
+@-webkit-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-moz-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-o-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-webkit-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 25%;
+    }
+}
+
+@-moz-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 25%;
+    }
+}
+
+@-o-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 25%;
+    }
+}
+
+@-moz-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-webkit-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-o-keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@keyframes fall-in {
+    0% {
+        -ms-transform: scale(3, 3);
+        -webkit-transform: scale(3, 3);
+        transform: scale(3, 3);
+        opacity: 0;
+    }
+
+    50% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+        opacity: 1;
+    }
+
+    60% {
+        -ms-transform: scale(1.1, 1.1);
+        -webkit-transform: scale(1.1, 1.1);
+        transform: scale(1.1, 1.1);
+    }
+
+    100% {
+        -ms-transform: scale(1, 1);
+        -webkit-transform: scale(1, 1);
+        transform: scale(1, 1);
+    }
+}
+
+@-moz-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 15%;
+    }
+}
+
+@-webkit-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 15%;
+    }
+}
+
+@-o-keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 15%;
+    }
+}
+
+@keyframes plunge {
+    0% {
+        margin-top: -100%;
+    }
+
+    100% {
+        margin-top: 15%;
+    }
+}
+
+/********** error section **********/
+.has-error .checkbox,
+.has-error .checkbox-inline,
+.has-error .control-label,
+.has-error .help-block,
+.has-error .radio,
+.has-error .radio-inline,
+.has-error.checkbox label,
+.has-error.checkbox-inline label,
+.has-error.radio label,
+.has-error.radio-inline label {
+    color: #ff0000;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+    /* padding-right: calc(1.5em + .75rem);
+    background-image: url(data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e);
+    background-repeat: no-repeat;
+    background-position: right calc(.375em + .1875rem) center;
+    background-size: calc(.75em + .375rem) calc(.75em + .375rem); */
+}
+
+.payement-error {
+    border-radius: 5px;
+    display: none;
+    padding: 8px;
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.badge-primary {
+    background: #598abf;
+}
+
+.badge-subjects {
+    background: #05ae4e;
+}

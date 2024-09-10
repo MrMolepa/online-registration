@@ -1,0 +1,1680 @@
+/*
+THIS IS A GUIDE ON WHERE TO FIND STYLING FOR EACH SECTION ON THE SCHOOL MODULE UI
+1. General/Common style (line 18-70)
+2. Page preloader style (line 73-147)
+3. Main section on Private registration (line 149-251)
+4. Error notification style (line 255-310)
+5. Progress line/bar style (line 313-429)
+6. Verificcation styles (line 431-483)
+6. Registration choice styles (line 486-582)
+7. Subjects selection styles (line 585-674)
+8. Payment styles (line 676-709)
+9. Timetable styles (line 711-723)
+10. Login styles (line 727-940)
+11. Forgot password styles (line 944-959)
+12. Error 404 page styles (line 963-1019)
+
+*/
+/********************************
+ ****** General/Common style ****
+ ********************************/
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #f3f5f8;
+    font-size: 13px !important;
+}
+
+h4,
+h5 {
+    font-size: 1rem !important;
+}
+
+p {
+    font-size: 15px;
+}
+
+main {
+    /* background-color: #fdfdfd; */
+    background-color: #ffffff;
+    width: 55%;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+    border-radius: 5px;
+    margin: 2rem auto;
+}
+
+select[readonly] {
+    pointer-events: none;
+}
+
+.form-group {
+    margin-bottom: 2px !important;
+}
+
+
+.not-allowed {
+    cursor: not-allowed;
+}
+
+.select2-container .select2-selection--single {
+    height: 2rem !important;
+}
+
+.select2-container {
+    display: block !important;
+}
+
+.header-area {
+    position: relative;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 9;
+    color: #fff;
+    background: rgb(61, 85, 109);
+    padding: 0.5rem;
+}
+
+.header-area .main-header-area .logo img {
+    display: block;
+    width: 3.5rem;
+    top: 1.8rem;
+}
+
+/*----------------------------
+  ------ ECoL logo style -----
+ ----------------------------*/
+#logo_container {
+    display: flex;
+    justify-content: space-evenly;
+    border-radius: 10px 10px 0px 0px;
+    padding: 1.5em;
+    color: #fff;
+    background: rgb(61, 85, 109);
+}
+
+#logo_container .container .logo_box {
+    /* border-right: 4px solid #007bff; */
+    margin-right: 2.7rem;
+}
+
+#logo_container img {
+    height: 8rem !important;
+    /* left: 2rem; */
+}
+
+#logo_container h2 {
+    margin-top: 0.2rem;
+}
+
+#logo_container p {
+    font-size: 1.5rem;
+}
+
+
+
+
+
+
+/*******************
+Preloader home page
+********************/
+.preloader {
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    position: fixed;
+    z-index: 99999;
+    background: #fff;
+    opacity: 0.9;
+}
+
+.lds-ripple {
+    display: inline-block;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    position: absolute;
+    top: calc(50% - 3.5px);
+    left: calc(50% - 3.5px);
+}
+
+.lds-ripple .lds-pos {
+    position: absolute;
+    border: 3px solid #2962ff;
+    opacity: 1;
+    border-radius: 50%;
+    -webkit-animation: lds-ripple 1s cubic-bezier(0, 0.1, 0.5, 1) infinite;
+    animation: lds-ripple 1s cubic-bezier(0, 0.1, 0.5, 1) infinite;
+}
+
+.lds-ripple .lds-pos:nth-child(2) {
+    -webkit-animation-delay: -0.5s;
+    animation-delay: -0.5s;
+}
+
+@-webkit-keyframes lds-ripple {
+    0% {
+        top: 28px;
+        left: 28px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    5% {
+        top: 28px;
+        left: 28px;
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    100% {
+        top: -1px;
+        left: -1px;
+        width: 58px;
+        height: 58px;
+        opacity: 0;
+    }
+}
+
+@keyframes lds-ripple {
+    0% {
+        top: 28px;
+        left: 28px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    5% {
+        top: 28px;
+        left: 28px;
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    100% {
+        top: -1px;
+        left: -1px;
+        width: 58px;
+        height: 58px;
+        opacity: 0;
+    }
+}
+
+/********************************
+ ****** Page preloader style ****
+ ********************************/
+
+.wrapper-pulse {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.hidden {
+    display: none;
+}
+
+.wrapper-pulse .progress-text {
+    color: #000;
+    margin-top: 20px;
+}
+
+.wrapper-pulse .progress-bar {
+    width: 200px;
+    height: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.wrapper-pulse .progress-bar .bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #007bff;
+}
+
+.circle {
+    padding: 10px;
+    text-align: center;
+    /* width: 140px;
+  height: 140px; */
+    border-radius: 45%;
+    box-shadow: 0px 0px 800px 800px #fff;
+}
+
+.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        transform: scale(0.5);
+        box-shadow: 0 0 0 0px rgba(0, 123, 255, 0.5);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 20px rgba(0, 0, 0, 0);
+    }
+}
+
+.btn_loader_hide {
+    display: none;
+}
+
+/************************************************
+ ****** Main section on Private registration ****
+ ************************************************/
+#msform {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+#msform fieldset .form-card>* {
+    padding: 0.5em 0.5em;
+}
+
+#msform fieldset .form-card {
+    background: white;
+    border: 0 none;
+    border-radius: 5px;
+
+    border: 1px solid lightgrey;
+    box-sizing: border-box;
+    width: 100%;
+    position: relative;
+}
+
+#msform fieldset {
+    background: white;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+    padding-bottom: 5px;
+    position: relative;
+}
+
+#msform fieldset:not(:first-of-type) {
+    display: none;
+}
+
+#msform fieldset .form-card {
+    text-align: left;
+}
+
+#addSubjects {
+    transform: scale(2);
+}
+
+/************************************************
+ ****** SUBJECTS SELECTION ****
+ ************************************************/
+
+.radio-btn {
+    margin: 0 20px !important;
+    width: 90%;
+}
+
+.subjects_selection ul {
+    list-style: none;
+}
+
+.subjects_selection .list-group-item {
+    padding: 0.35rem 0.25rem;
+}
+
+.subjects_selection .custom-control-label {
+    margin-left: 2em;
+}
+
+.subjects_selection .custom-control-label::before {
+    border-radius: 3px;
+}
+
+.subjects_selection .custom-control-input:checked~.custom-control-label::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+}
+
+.subjects_selection .custom-control-input:indeterminate~.custom-control-label::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4'%3e%3cpath stroke='%23fff' d='M0 2h4'/%3e%3c/svg%3e") !important;
+    border-radius: 3px;
+    color: #fff;
+    border-color: #007bff;
+    background-color: #007bff;
+}
+
+.subjects_selection fieldset .subject,
+.subject_radio_btn {
+    margin-left: -12.4vw !important;
+}
+
+.subjects_selection fieldset {
+    border: 1px solid #12429c;
+    border-radius: 5px;
+    display: block !important;
+}
+
+.subjects_selection legend {
+    width: 60%;
+    padding: 0.4em;
+    background: rgb(61, 85, 109);
+    border-radius: 5px;
+    font-size: 14px;
+    color: #fff;
+}
+
+.radio-btn input[type="checkbox"] {
+    visibility: hidden;
+    position: absolute;
+}
+
+.radio-btn input[type="checkbox"]+label:before {
+    height: 12px;
+    width: 12px;
+    margin-right: 0.5em;
+    content: " ";
+    display: inline-block;
+    vertical-align: baseline;
+    border: 1px solid rgb(61, 85, 109);
+}
+
+.radio-btn input[type="checkbox"]:checked+label:before {
+    background-color: #007bff;
+    box-shadow: 0 0 0 3px rgb(61, 85, 109);
+}
+
+.radio-btn input[type="checkbox"]+label:before {
+    border-radius: 50%;
+}
+
+.subject,
+.subject_radio_btn,
+#msform #msform textarea {
+    padding: 0px 5px 4px 5px;
+    border: none;
+    border-radius: 0px;
+    margin-bottom: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    color: #2c3e50;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.total-price {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.total-price table {
+    border-top: 3px solid #007bff;
+    width: 350px;
+    border-collapse: collapse;
+}
+
+.total-price table td {
+    padding: 5px 5px;
+}
+
+.total-price table td:last-child {
+    text-align: right;
+}
+
+/************************************
+ ****** Error notification style ****
+ ************************************/
+
+.has-error .checkbox,
+.has-error .checkbox-inline,
+.has-error .control-label,
+.has-error .help-block,
+.has-error .radio,
+.has-error .radio-inline,
+.has-error.checkbox label,
+.has-error.checkbox-inline label,
+.has-error.radio label,
+.has-error.radio-inline label {
+    color: #ff0000;
+}
+
+.payement-error ul li {
+    width: 100%;
+    margin: 3px auto;
+    padding: 8px;
+    border-radius: 5px;
+    list-style: none;
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.help-block {
+    display: block;
+    margin-top: 0px;
+    margin-bottom: 1px;
+    color: #ff0000 !important;
+}
+
+#number_of_subjects-error {
+    margin-top: 1.8rem;
+}
+
+.disclaimer_checkbox {
+    margin-left: 8px;
+}
+
+#confirm_candidate-error,
+#confirm_email_Address_otp-error {
+    display: block;
+    margin-top: 22px;
+    position: absolute;
+    color: #ff0000;
+    display: none;
+}
+
+.confirm_candidate_input_error {
+    border: 1px solid #ff0000 !important;
+}
+
+.confirm_candidate_label_error {
+    color: #ff0000 !important;
+}
+
+#centreNo-error {
+    display: block;
+    margin-top: 2px;
+    padding: 10px 0;
+    background: #fff;
+    z-index: 1;
+}
+
+.no-candidate {
+    margin-top: 12px;
+}
+
+input[name="next-registration"] {
+    display: none;
+}
+
+#msform .action-button {
+    width: 100px;
+    /* background: rgb(238, 238, 238); */
+    background: #3d556d;
+    font-weight: 600;
+    font-size: 17px;
+    color: #fff;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    margin-top: 10px;
+    float: right;
+}
+
+/* #msform .action-button:hover,
+#msform .action-button:focus {
+    box-shadow: 5px 10px 20px #e0e0e0;
+} */
+
+#msform .action-button-previous {
+    width: 100px;
+    background: #3d556d;
+    font-weight: 600;
+    font-size: 17px;
+    color: #fff;
+    border: 0.5px solid #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    margin: 10px 0px;
+    float: left;
+}
+
+#msform .action-button-previous:hover,
+#msform .action-button-previous:focus {
+    box-shadow: 5px 10px 20px #e0e0e0;
+    background: rgb(61, 85, 109);
+    /* color: rgb(61, 85, 109); */
+}
+
+select.list-dt {
+    border: none;
+    outline: 0;
+    border-bottom: 1px solid #ccc;
+    padding: 2px 5px 3px 5px;
+    margin: 2px;
+}
+
+select.list-dt:focus {
+    border-bottom: 2px solid #007bff;
+}
+
+.card {
+    z-index: 0;
+    border: none;
+    border-radius: 0.5rem;
+    position: relative;
+}
+
+.fs-title {
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 5px;
+    font-weight: 500;
+    text-align: left;
+    background: rgb(61, 85, 109);
+    position: relative;
+    padding: 10px;
+}
+
+.sec-title {
+    padding: 0 !important;
+    font-weight: 700;
+    border-width: 0 0 2px;
+    border-style: solid;
+    position: relative;
+    top: -0.12em;
+    left: -0.05em;
+    border-color: rgb(61, 85, 109);
+}
+
+.fs-title-h2 {
+    margin: 0;
+    font-weight: 700;
+    line-height: 40px;
+    padding: 0 7px 0 15px;
+    border-radius: 5px 0px 0px 0px;
+    width: auto;
+    height: 40px;
+    color: #fff;
+    display: inline-block;
+    position: relative;
+    bottom: -1px;
+    background: rgb(61, 85, 109);
+    font-size: 18px;
+
+    /* font-size: 16px;
+    color: #fff;
+    margin-bottom: 5px;
+    font-weight: 500;
+    width: 95%;
+    text-align: left;
+    background: rgb(61, 85, 109);
+    position: relative;
+    padding: 10px; */
+}
+
+.fs-title-h2::before {
+    border-left-color: rgb(61, 85, 109);
+    border-color: transparent transparent transparent rgb(61, 85, 109);
+    width: 0;
+    position: absolute;
+    right: -30px;
+    top: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 40px 0 0 30px;
+    content: "";
+}
+
+/************************************
+ ****** Progress line/bar style *****
+ ************************************/
+
+#progressbar_content {
+    width: 102%;
+    /* margin: -2.5rem 1px 15px -1.5rem; */
+    overflow: hidden;
+    color: lightgrey;
+    display: flex;
+    position: relative;
+    top: 2.2rem;
+    right: 1rem;
+    z-index: 1;
+}
+
+#progressbar_content .active {
+    color: #ffffff;
+}
+
+#progressbar_content li {
+    margin-left: 0.8em;
+    list-style-type: none;
+    font-size: 11px;
+    width: 6.2rem;
+    padding-left: 7px;
+    text-align: center;
+    position: relative;
+}
+
+#progressbar_content #registration_start:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f023";
+    font-weight: 900;
+}
+
+#progressbar_content #registration_choice:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f46d";
+    font-weight: 900;
+}
+
+#progressbar_content #exam_group:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f073";
+    font-weight: 900;
+}
+
+#progressbar_content #subjects_selection:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f0ae";
+    font-weight: 900;
+}
+
+#progressbar_content #personal:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f406";
+    font-weight: 900;
+}
+
+#progressbar_content #nextKin:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f500";
+    font-weight: 900;
+}
+
+#progressbar_content #invoice:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f543";
+    font-weight: 900;
+}
+
+#progressbar_content #payment:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f09d";
+    font-weight: 900;
+}
+
+#progressbar_content #confirm:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00c";
+    font-weight: 900;
+}
+
+#progressbar_content li:before {
+    width: 50px;
+    height: 50px;
+    line-height: 45px;
+    display: block;
+    font-size: 18px;
+    color: #ffffff;
+    background: lightgray;
+    border-radius: 50%;
+    margin: 0 auto 10px auto;
+    padding: 2px;
+}
+
+#progressbar_content li:after {
+    content: "";
+    width: 8rem;
+    height: 1px;
+    background: lightgray;
+    position: absolute;
+    left: 0;
+    top: 1.7rem;
+    z-index: -1;
+}
+
+#progressbar_content li.active:after {
+    position: absolute;
+    background: #007bff;
+    color: #d2b356;
+}
+
+#progressbar_content li.active:before {
+    border: 2.5px solid #007bff;
+    color: #007bff;
+    border-radius: 50%;
+    background: #fff;
+    width: 50px;
+}
+
+/************************************
+ ******email Verification styles *******
+ ************************************/
+.registration_alternatives {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    max-width: 970px;
+    /* padding: 85px 50px; */
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 20px;
+    -webkit-box-shadow: 0px 8px 10px 0px #d8dfeb;
+    box-shadow: 0px 8px 10px 0px #d8dfeb;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.registration_alternatives .alternative input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.registration_alternatives .alternative {
+    cursor: pointer;
+    width: 48.5%;
+}
+
+.registration_alternatives .alternative .alternative-content {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    padding: 5px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    border: 2px solid #e1e2e7;
+    border-radius: 10px;
+    -webkit-transition: -webkit-box-shadow 0.4s;
+    transition: -webkit-box-shadow 0.4s;
+    -o-transition: box-shadow 0.4s;
+    transition: box-shadow 0.4s;
+    transition: box-shadow 0.4s, -webkit-box-shadow 0.4s;
+    position: relative;
+}
+
+.registration_alternatives .alternative .alternative-content i {
+    margin-right: 30px;
+    margin-left: 10px;
+    line-height: 50px;
+    font-size: 2em;
+}
+
+.registration_alternatives .alternative .alternative-details span {
+    margin-bottom: 5px;
+    display: block;
+    font-size: 16px;
+    line-height: 20px;
+    color: #252f42;
+}
+
+.registration_alternatives .alternative .alternative-details p {
+    color: #646a79;
+    font-size: 14px;
+    line-height: 18px;
+}
+
+.registration_alternatives .alternative .alternative-content:hover {
+    -webkit-box-shadow: 0px 3px 5px 0px #e8e8e8;
+    box-shadow: 0px 3px 5px 0px #e8e8e8;
+}
+
+.registration_alternatives .alternative input[type="radio"]:checked .alternative-content:after {
+    content: "";
+    position: absolute;
+    height: 8px;
+    width: 8px;
+    background: #216fe0;
+    right: 20px;
+    top: 20px;
+    border-radius: 100%;
+    border: 3px solid #fff;
+    -webkit-box-shadow: 0px 0px 0px 2px #0066ff;
+    box-shadow: 0px 0px 0px 2px #0066ff;
+}
+
+.registration_alternatives .alternative input[type="radio"]:checked+.alternative-content {
+    border: 2px solid #216ee0;
+    background: #eaf1fe;
+    -webkit-transition: ease-in 0.3s;
+    -o-transition: ease-in 0.3s;
+    transition: ease-in 0.3s;
+}
+
+@media screen and (max-width: 991px) {
+    .registration_alternatives {
+        margin: 0 2px;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+        align-items: flex-start;
+        padding: 0px;
+    }
+
+    .registration_alternatives .alternative {
+        width: 100%;
+    }
+
+    .alternative.complete-plan {
+        margin-top: 20px;
+    }
+
+    .registration_alternatives .alternative .alternative-content .alternative-details {
+        width: 70%;
+        display: inline-block;
+    }
+
+    .registration_alternatives .alternative input[type="radio"]:checked+.alternative-content:after {
+        top: 45%;
+        -webkit-transform: translate(-50%);
+        -ms-transform: translate(-50%);
+        transform: translate(-50%);
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .registration_alternatives .alternative .alternative-content .alternative-details {
+        width: 60%;
+        display: inline-block;
+    }
+}
+
+@media screen and (max-width: 540px) {
+    .registration_alternatives .alternative input[type="radio"]:checked+.alternative-content:after {
+        top: 20px;
+        right: 10px;
+    }
+
+    .registration_alternatives .alternative .alternative-content .alternative-details {
+        width: 100%;
+    }
+
+    .registration_alternatives .alternative .alternative-content {
+        padding: 0px;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+        -webkit-box-align: baseline;
+        -ms-flex-align: baseline;
+        align-items: baseline;
+    }
+}
+
+.alternative-tab-pane {
+    display: none;
+}
+
+.alternative-tab-pane.on {
+    display: block;
+}
+
+.new-candidate {
+    display: none;
+}
+
+/* Tabs
+   ========================================================================== */
+
+#msform section {
+    background: white;
+    border: 0 none;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    position: relative;
+}
+
+#msform section:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#msform section:not(:first-of-type) {
+    display: none;
+}
+
+.progress {
+    height: 20px;
+    margin: 1em 0;
+}
+
+.progress-bar {
+    background-color: #673ab7;
+}
+
+.action-btn {
+    float: right;
+    width: 20%;
+    border-radius: 3px;
+    border: rgb(61, 85, 109) 0px solid;
+    box-sizing: border-box;
+    padding: 0.5em;
+    text-transform: capitalize;
+    color: #fff;
+    background-color: rgb(61, 85, 109);
+    border-color: rgb(61, 85, 109);
+    ;
+    font-weight: bold;
+    font-size: 12pt;
+    margin: 0.35rem;
+    transition: background 0.4s;
+    cursor: pointer;
+}
+
+
+.personlinfo {
+    display: none;
+}
+
+input[name="next-payment"] {
+    display: none;
+}
+
+.verify_input_style {
+    margin-top: 32px;
+}
+
+.control-label {
+    background-color: white;
+    margin-left: 5px;
+    padding: 4px;
+    position: absolute;
+    color: #007bff;
+    width: fit-content;
+    font-size: 14px;
+}
+
+.candidate_label {
+    margin-top: 9px;
+    border-radius: 4px;
+}
+
+.contact_verification_label {
+    margin-top: 11px;
+}
+
+.label_hidden {
+    visibility: hidden;
+}
+
+.form-control:focus {
+    color: #000000;
+    border: 3px solid #007bff;
+    box-shadow: none;
+}
+
+/*******************************************
+ ******** Registration choice styles *******
+ *******************************************/
+
+.registration_choice .top-text-wrapper {
+    margin: 20px 0 30px 0;
+}
+
+.registration_choice .top-text-wrapper h4 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.registration_choice .top-text-wrapper code {
+    font-size: 0.85em;
+    background: linear-gradient(90deg, #fce3ec, #ffe8cc);
+    color: #ff2200;
+    padding: 0.1rem 0.3rem 0.2rem;
+    border-radius: 0.2rem;
+}
+
+.registration_choice .tab-section-wrapper {
+    padding: 30px 0;
+}
+
+.registration_choice .grid-wrapper {
+    display: grid;
+}
+
+/* ******************* Main Styeles : Radio Card */
+.registration_choice label.radio-card {
+    cursor: pointer;
+}
+
+.registration_choice label.radio-card .card-content-wrapper {
+    background: #fff;
+    border-radius: 5px;
+    border: 1px solid #000;
+    padding: 5px;
+    display: grid;
+    box-shadow: 0 2px 4px 0 rgba(219, 215, 215, 0.04);
+    transition: 200ms linear;
+}
+
+.registration_choice label.radio-card .check-icon {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    border: solid 2px #e3e3e3;
+    border-radius: 50%;
+    transition: 200ms linear;
+    position: relative;
+}
+
+.registration_choice label.radio-card .check-icon:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='9' viewBox='0 0 12 9' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0.93552 4.58423C0.890286 4.53718 0.854262 4.48209 0.829309 4.42179C0.779553 4.28741 0.779553 4.13965 0.829309 4.00527C0.853759 3.94471 0.889842 3.88952 0.93552 3.84283L1.68941 3.12018C1.73378 3.06821 1.7893 3.02692 1.85185 2.99939C1.91206 2.97215 1.97736 2.95796 2.04345 2.95774C2.11507 2.95635 2.18613 2.97056 2.2517 2.99939C2.31652 3.02822 2.3752 3.06922 2.42456 3.12018L4.69872 5.39851L9.58026 0.516971C9.62828 0.466328 9.68554 0.42533 9.74895 0.396182C9.81468 0.367844 9.88563 0.353653 9.95721 0.354531C10.0244 0.354903 10.0907 0.369582 10.1517 0.397592C10.2128 0.425602 10.2672 0.466298 10.3112 0.516971L11.0651 1.25003C11.1108 1.29672 11.1469 1.35191 11.1713 1.41247C11.2211 1.54686 11.2211 1.69461 11.1713 1.82899C11.1464 1.88929 11.1104 1.94439 11.0651 1.99143L5.06525 7.96007C5.02054 8.0122 4.96514 8.0541 4.90281 8.08294C4.76944 8.13802 4.61967 8.13802 4.4863 8.08294C4.42397 8.0541 4.36857 8.0122 4.32386 7.96007L0.93552 4.58423Z' fill='white'/%3E%3C/svg%3E%0A");
+    background-repeat: no-repeat;
+    background-size: 12px;
+    background-position: center center;
+    transform: scale(1.6);
+    transition: 200ms linear;
+    opacity: 0;
+}
+
+.registration_choice label.radio-card input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.registration_choice label.radio-card input[type="radio"]:checked+.card-content-wrapper {
+    box-shadow: 0 2px 4px 0 rgba(219, 215, 215, 0.5), 0 0 0 2px #3057d5;
+}
+
+label.radio-card input[type="radio"]:checked+.card-content-wrapper .check-icon {
+    background: #3057d5;
+    border-color: #3057d5;
+    transform: scale(1.2);
+}
+
+.registration_choice label.radio-card input[type="radio"]:checked+.card-content-wrapper .check-icon:before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.registration_choice label.radio-card input[type="radio"]:focus+.card-content-wrapper .check-icon {
+    box-shadow: 0 0 0 4px rgba(48, 86, 213, 0.2);
+    border-color: #3056d5;
+}
+
+.registration_choice label.radio-card .card-content img {
+    margin-bottom: 10px;
+}
+
+.registration_choice label.radio-card .card-content h4 {
+    font-size: 16px;
+    letter-spacing: -0.24px;
+    text-align: center;
+    color: #1f2949;
+    margin-bottom: 10px;
+}
+
+.registration_choice label.radio-card .card-content h5 {
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    color: #686d73;
+}
+
+/* Subjects selection */
+
+/*******************************************
+ ******** Subjects selection styles *******
+ *******************************************/
+.radio-group {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.nav-item {
+    display: inline-block;
+    width: 25%;
+    padding: 5px;
+    height: 77px;
+    border-radius: 0;
+    background: beige;
+    box-shadow: 0 2px 2px 2px rgb(0 0 0 / 20%);
+    box-sizing: border-box;
+    cursor: pointer;
+    margin: 8px 8px;
+}
+
+.nav-item.active {
+    background: #007bff;
+}
+
+.nav-item input[type="radio"] {
+    display: none;
+}
+
+.nav-item img {
+    width: auto;
+    margin: 0 2px;
+}
+
+.bank-details {
+    margin-left: 1.5em;
+}
+
+.nav-item:hover {
+    box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.nav-item.selected {
+    box-shadow: 1px 1px 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+.fit-image {
+    width: 100%;
+    object-fit: cover;
+}
+
+/*****************************
+ ******* Payment styles ******
+ *****************************/
+#grad1 .card #msform .payment .nav {
+    border-bottom: none !important;
+    margin-left: -7px;
+}
+
+#grad1 .card #msform .payment .tab-content {
+    border: 3px solid #007bff;
+    margin-top: 0.25rem;
+    padding: 10px;
+    box-shadow: rgb(17 17 26 / 10%) 0px 0px 16px;
+}
+
+#grad1 .card #msform .payment .tab-content .form-group {
+    margin-bottom: 2rem;
+}
+
+#grad1 .card #msform .payment .tab-content .has-error {
+    margin-bottom: 2.35rem;
+}
+
+#grad1 .card #msform .payment .tab-content .expiration {
+    display: flex;
+}
+
+#grad1 .card #msform .payment .tab-content .form-group .expiration_year {
+    width: 35%;
+    margin-left: 0.5rem;
+}
+
+#grad1 .card #msform .payment .tab-content .expiration .help-block {
+    margin-top: 45px;
+}
+
+/*  */
+
+/*****************************
+ ***** Timetable styles ******
+ *****************************/
+
+#grad1 .card #msform .fieldset_container .form-card .private_reg_timetable_download_btn {
+    margin: 0 10px 0 13rem;
+}
+
+#grad1 .card #msform .fieldset_container .form-card .private_reg_timetable_download_btn {
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 0;
+}
+
+/*****************************
+ ******** Login styles *******
+ *****************************/
+
+#password-strength-status {
+    padding: 5px 10px;
+    color: #ffffff;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.medium-password {
+    background-color: #b7d60a;
+    border: #bbb418 1px solid;
+}
+
+.weak-password {
+    background-color: #ce1d14;
+    border: #aa4502 1px solid;
+}
+
+.strong-password {
+    background-color: #12cc1a;
+    border: #0fa015 1px solid;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body.my-login-page {
+    background-color: #f7f9fb;
+    font-size: 14px;
+}
+
+.my-login-page .brand {
+    width: 100px;
+    height: 100px;
+    overflow: hidden;
+    border-radius: 50%;
+    margin: 40px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    text-align: center;
+    z-index: 1;
+}
+
+.my-login-page .brand img {
+    width: 70%;
+}
+
+.my-login-page .card-wrapper {
+    width: 400px;
+}
+
+.my-login-page .card {
+    border-color: transparent;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.my-login-page .card.fat {
+    padding: 10px;
+}
+
+.my-login-page .card .card-title {
+    margin-bottom: 30px;
+}
+
+.my-login-page .form-control {
+    border-width: 2.3px;
+}
+
+.my-login-page .form-group label {
+    width: 100%;
+}
+
+.my-login-page .btn.btn-block {
+    padding: 12px 10px;
+}
+
+.my-login-page .footer {
+    margin: 40px 0;
+    color: #888;
+    text-align: center;
+}
+
+@media screen and (max-width: 425px) {
+    .my-login-page .card-wrapper {
+        width: 90%;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (max-width: 320px) {
+    .my-login-page .card.fat {
+        padding: 0;
+    }
+
+    .my-login-page .card.fat .card-body {
+        padding: 15px;
+    }
+}
+
+/*****************************
+ ******** Forgot password *******
+ *****************************/
+
+.forgPassword {
+    margin-top: 6rem;
+}
+
+.forgPassword .page {
+    padding-top: 5em;
+    width: 60%;
+    /* height: 60vh; */
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+}
+
+/*****************************
+ ****** Error 404 page *******
+ *****************************/
+.errror-page {
+    background-color: #313942;
+}
+
+.errror-page .error-404 {
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    height: 100vh;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.errror-page h1 {
+    color: #e7ebf2;
+    font-size: 12.5rem;
+    letter-spacing: 0.1em;
+    margin: 0.025em 0;
+    text-shadow: 0.05em 0.05em 0 rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+    .errror-page h1 {
+        font-size: 8.5rem;
+    }
+}
+
+.errror-page h1>span {
+    -webkit-animation: spooky 2s alternate infinite linear;
+    animation: spooky 2s alternate infinite linear;
+    color: #528cce;
+    display: inline-block;
+}
+
+.errror-page h2 {
+    color: #e7ebf2;
+    margin-bottom: 0.4em;
+}
+
+.errror-page p {
+    color: #ccc;
+    margin-top: 0;
+}
+
+.errror-page .btn-rounded {
+    border-radius: 60px;
+    padding: 7px 18px;
+    color: #fff;
+    background-color: #528cce;
+}
+
+
+/* 768px — 1024px: Small screens, laptops. */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+    /********************************
+ ****** General/Common style ****
+ ********************************/
+
+
+}
+
+/* 320px — 480px: Mobile devices */
+@media screen and (min-width: 320px) and (max-width: 480px) {
+
+    /********************************
+ ****** General/Common style ****
+ ********************************/
+    h1,
+    h2,
+    h3 {
+        font-size: 16px !important;
+        line-height: 15px;
+        padding-bottom: 0px;
+    }
+
+    h4,
+    h5,
+    h6 {
+        font-size: 14px !important;
+    }
+
+    p {
+        font-size: 12.5px !important;
+        margin-top: 1.1em;
+    }
+
+    main {
+        /* background-color: #fdfdfd; */
+        background-color: #ffffff;
+        width: 100%;
+        border: 0.5px solid lightgrey;
+        margin: 0;
+    }
+
+    /*----------------------------
+  ------ ECoL logo style -----
+ ----------------------------*/
+    #logo_container {
+        padding: 0.5em;
+    }
+
+    #logo_container .container .logo_box {
+        width: 2rem;
+        background: #000;
+        text-align: center;
+        margin: 0;
+        padding: 10px;
+    }
+
+    #logo_container img {
+        height: 6rem !important;
+        width: 4rem;
+    }
+
+
+
+    #logo_container h2 {
+        margin-top: 0.5em;
+        /* font-size: 1px!important; */
+    }
+
+    /************************************
+ ****** Progress line/bar style *****
+ ************************************/
+    .progressbar {
+        position: relative;
+
+    }
+
+    #progressbar_content {
+        margin-top: 0em;
+        top: 1.2rem;
+        right: 0;
+
+
+    }
+
+
+
+
+    #progressbar_content li {
+        padding-left: 0px;
+        width: 3.8em;
+    }
+
+    #progressbar_content li strong {
+        display: none;
+    }
+
+    #progressbar_content li:before {
+        width: 30px;
+        height: 30px;
+        line-height: 24px;
+        display: block;
+        font-size: 12px;
+        color: #ffffff;
+        background: lightgray;
+        border-radius: 50%;
+        margin: 0 auto 2px auto;
+        padding: 2px;
+    }
+
+    #progressbar_content #registration_start:before {
+        font-family: "Font Awesome 5 Free";
+        content: "\f023";
+        font-weight: 900;
+    }
+
+    #progressbar_content li.active:before {
+        background: #ffff;
+        color: #d2b356;
+        border: 1px solid #007bff;
+        border-radius: 50%;
+        width: 30px;
+        position: relative;
+    }
+
+    #progressbar_content li::after {
+        width: 130%;
+        top: 1.5em;
+        left: -2px;
+
+    }
+
+
+    /************************************************
+ ****** Main section on Private registration ****
+ ************************************************/
+    #msform {
+        text-align: center;
+        margin-top: 0rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.4rem;
+    }
+
+    #msform fieldset .form-card {
+        padding: 1.8em 1.2em;
+    }
+
+    .varify {
+        padding-top: 0.5rem;
+    }
+
+    #confirm_candidate-error,
+    #confirm_email_Address_otp-error {
+        margin-top: 12px;
+    }
+
+    .help-block {
+        display: block;
+        margin-top: -4px;
+        margin-bottom: 10px;
+        position: absolute;
+    }
+
+    .total-price table {
+        border-top: 3px solid #007bff;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .LGCSE_Subjects .form-row .disclaimer_checkbox {
+        margin-top: 16px;
+    }
+
+
+    #grad1 .card #msform .payment .nav {
+        margin-top: 0rem;
+        border-bottom: none !important;
+    }
+
+    #grad1 .card #msform .payment .nav img {
+        width: 100%;
+    }
+
+    #grad1 .card #msform .payment .tab-content {
+        margin-top: 2rem;
+        margin-top: 0rem;
+    }
+
+    .nav-item {
+        display: inline-block;
+        width: 33%;
+        height: 74px;
+    }
+
+    .timetable-btns {
+        display: flex;
+        justify-content: space-evenly;
+    }
+
+    /* file */
+
+    /*****************************
+ ******** Login styles *******
+ *****************************/
+    .login_registration {
+        margin-top: 0;
+    }
+
+    .login_registration .help p {
+        font-size: 12.5px !important;
+    }
+
+    .login_registration .page {
+        width: 100%;
+    }
+
+    #login_form .control-label {
+        margin-left: -7.5rem;
+    }
+}
+
+
+
+.about {
+    position: relative;
+    top: 5em;
+    margin: 80px auto 40px;
+    padding: 8px;
+    width: 300px;
+    font: 10px / 18px 'Lucida Grande', Arial, sans-serif;
+    color: #666;
+    text-align: center;
+    text-shadow: 0 1px rgba(255, 255, 255, 0.25);
+    background: #eee;
+    background: rgba(250, 250, 250, 0.8);
+    border-radius: 4px;
+    background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    background-image: -moz-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    -webkit-box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 6px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 6px rgba(0, 0, 0, 0.2);
+}
