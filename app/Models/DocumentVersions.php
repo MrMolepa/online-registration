@@ -14,11 +14,11 @@ use Illuminate\Database\Eloquent\Builder;
 class DocumentVersions extends Model
 {
     use HasFactory, SoftDeletes;
-    use Notifiable;
-    const CREATED_AT = 'createdDate';
-    const UPDATED_AT = 'modifiedDate';
-    protected  $table = 'documentVersions';
-    public $incrementing = false;
+
+    const CREATED_AT = 'created_date';
+    const UPDATED_AT = 'modified_date';
+    protected  $table = 'document_versions';
+
 
     protected $fillable = [
         'document_id', 'url', 'created_by',
@@ -40,12 +40,12 @@ class DocumentVersions extends Model
         parent::boot();
 
         static::creating(function (Model $model) {
-            $userId = Auth::user()->id;;
+            $userId =Auth::user()->document_user_profile->id;
             $model->createdBy = $userId;
             $model->modifiedBy = $userId;
         });
         static::updating(function (Model $model) {
-            $userId =Auth::user()->id;;
+            $userId =Auth::user()->document_user_profile->id;
             $model->modifiedBy = $userId;
         });
 

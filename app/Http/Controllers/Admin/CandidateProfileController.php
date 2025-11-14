@@ -109,17 +109,24 @@ class CandidateProfileController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'candidate_no' => 'required|max:9|min:9|unique:candidates,candidate_no',
+
+        $validationMassages = [];
+        $validation_rules = [
+            'candidate_no' => 'required|unique:candidates,candidate_no',
             'candidate_surname' => 'required',
             'candidate_other_name' => 'required',
             'national_id' => 'required',
             'date_of_birth' => 'required',
             'gender' => 'required|in:M,F',
-        ]);
+        ];
+
+        $validator = Validator::make($request->all(), $validation_rules, $validationMassages);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
+
+        $candidate_no = ($request->candidate_no == "*") ? getNextCandidateNumber() : $request->candidate_no;
+        $request->merge(['candidate_no' => $candidate_no]);
         Candidate::create([
             'candidate_no' => $request->candidate_no,
             'candidate_surname' => strtoupper($request->candidate_surname),
@@ -128,6 +135,7 @@ class CandidateProfileController extends Controller
             'date_of_birth' => date("Y-m-d", strtotime($request->date_of_birth)),
             'gender' => $request->gender
         ]);
+
         return response()->json(['success' => "successfully added the record"]);
     }
 
@@ -163,29 +171,35 @@ class CandidateProfileController extends Controller
 
     public function updateCandidateNumber(Request $request)
     {
+
+        $year = substr(date('Y'), 2, 4);
         $validator = Validator::make($request->all(), [
-            'candidate_no' => 'required|max:9|min:9|exists:candidates,candidate_no|regex:/^200/',
-            'national_id' =>[
+            'candidate_no' => 'required|max:9|min:9|exists:candidates,candidate_no',
+            'new_candidate_no' => "required|max:9|min:9|exists:candidates,candidate_no",
+            'national_id' => [
                 'required',
-                Rule::exists('candidates')->where(function ($query) use($request) {
-                    $query->where('candidate_no', $request->candidate_no);
+                Rule::exists('candidates')->where(function ($query) use ($request) {
+                    $query->orWhere('candidate_no', $request->candidate_no)
+                        ->orWhere('candidate_no', $request->new_candidate_no);
                 }),
             ]
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
-        $new_candidate = $request->candidate_no;
-        $old_candidate = getNextCandidateNumber();
-        DB::statement("UPDATE  candidates SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
+        $old_candidate = $request->candidate_no;
+        $new_candidate  = $request->new_candidate_no;
+        $national_id  = $request->national_id;
+
+        $financial_year = (date('m') <= 3) ?   (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
+        DB::statement("UPDATE  candidates SET  national_id =$national_id   WHERE candidate_no=$old_candidate");
         DB::statement("UPDATE  candidate_arrangement SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
-        DB::statement("UPDATE  center_candidate SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
+        DB::statement("UPDATE  center_candidate SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate AND financial_year='$financial_year'");
         DB::statement("UPDATE  candidate_arrangement SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
-        DB::statement("UPDATE candidate_subject SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
-        DB::statement("UPDATE invoices SET  client_id=$old_candidate  WHERE client_id=$new_candidate");
+        DB::statement("UPDATE candidate_subject SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate AND financial_year='$financial_year'");
         DB::statement("UPDATE guardians SET  candidate=$old_candidate  WHERE candidate= $new_candidate");
         DB::statement("UPDATE candidate_users SET  candidate_no=$old_candidate  WHERE candidate_no= $new_candidate");
-        return response()->json(['success' =>  $old_candidate,'new_candidate'=>  $old_candidate]);
+        return response()->json(['success' =>  $old_candidate, 'new_candidate' =>  $old_candidate]);
     }
     public function update(Request $request, $id)
     {
@@ -206,6 +220,16 @@ class CandidateProfileController extends Controller
         $candidate->date_of_birth = date("Y-m-d", strtotime($request->date_of_birth));
         $candidate->gender = $request->gender;
         $candidate->save();
+
+
+        DB::table('statement_achievements')
+            ->where('candidate_no', $id)
+            ->update([
+                'candidate_surname'    => $request->candidate_surname,
+                'candidate_other_name' => $request->candidate_other_name,
+                'gender'               => $request->gender,
+                'date_of_birth'    => date("Y-m-d", strtotime($request->date_of_birth)),
+            ]);
         return response()->json(['success' => $candidate]);
     }
 

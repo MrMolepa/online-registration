@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Center;
 use App\Models\CenterCandidate;
+use App\Models\FeeGroup;
 use App\Models\FeeStracture;
 use App\Models\Invoice;
 use App\Models\Session;
 use App\Models\Subject;
 use App\Models\SubjectCandidate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -23,6 +25,9 @@ class SessionController extends Controller
      */
     public function index(Request $request)
     {
+
+
+
 
         if ($request->ajax()) {
             $sessions = Session::query();
@@ -98,9 +103,7 @@ class SessionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-    }
+    public function create() {}
 
     /**
      * Store a newly created resource in storage.
@@ -112,7 +115,6 @@ class SessionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'exams_month' => 'required',
-            'level' => 'required',
             'financial_closing' => 'required'
         ]);
         if ($validator->fails()) {
@@ -120,10 +122,8 @@ class SessionController extends Controller
         }
         // Exams Month June or November
         $exams_month = $request->exams_month;
-
         $session_month = date('F', strtotime('01.' .  ((int)$exams_month + 1) . '.2025'));
         // Level
-        $level = $request->level;
         $financial_year =  date('Y') . '-' . (date('Y') + 1);
         $last_financial_year = (date('Y') - 1) . '-' . date('Y');
         $session = new Session();
@@ -135,37 +135,45 @@ class SessionController extends Controller
         $session->save();
         $newsession_id =  $session->id;
 
-        // sync subjects $subjects = Subject::with('sessions')->whereIn('subject_code',['0175','0178','0176','187'])->get();
-        $subjects = Subject::with('sessions')->whereHas('sessions', function ($query) use ($last_financial_year, $session_month) {
-            $query->where('financial_year', '=', $last_financial_year)
-                ->where('session', '=', $session_month);
-        })->get();
-        $sessionsArray = array();
-        foreach ($subjects as   $subject) {
-            $sessionsArray = $subject->sessions->pluck('id')->toArray();
-            $sessionsArray[] = $newsession_id;
-            $subject->sessions()->sync($sessionsArray);
+
+        // sync subjects
+        $previousSession = Session::with('subjects')->where('financial_year', '=', $last_financial_year)
+            ->where('session', '=', $session_month)->first();
+        $subjects = $previousSession->subjects->pluck('subject_code')->toArray();
+        $session->subjects()->sync($subjects);
+        // Fees
+        $feegroups = FeeGroup::with('session', 'level', 'feetypes')
+            ->whereHas('session', function ($query) use ($last_financial_year, $session_month) {
+                $query->where('financial_year', '=', $last_financial_year)
+                    ->where('session', '=', $session_month);
+            })->get();
+        foreach ($feegroups  as  $feegroup) {
+            $model = $feegroup;
+            $newModel = $model->replicate()->fill([
+                'session_id' => $newsession_id,
+            ]);
+
+            $newModel->push();
+            // Once the model has been saved with a new ID, we can get its children
+            foreach ($newModel->getRelations() as $relation => $items) {
+                if ($relation == 'feetypes') {
+                    foreach ($items as $item) {
+                        // Now we get the extra attributes from the pivot tables, but
+                        // we intentionally leave out the foreignKey, as we already
+                        // have it in the newModel
+
+                        $keys = [];
+                        array_push($keys, $item->pivot->getForeignKey());
+                        array_push($keys, $item->pivot->getKeyName());
+                        $extra_attributes = Arr::except($item->pivot->getAttributes(),   $keys);
+                        $newModel->{$relation}()->attach($item, $extra_attributes);
+                    }
+                }
+            }
+
+            $newModel->save();
         }
-        //Sessions
-        $previous_session = Session::where('session', '=', $session_month)
-            ->where('financial_year', '=', $last_financial_year)->first();
-
-        $candidate_type = strtoupper($level);
-        $fees =  FeeStracture::where('financial_year', '=', $last_financial_year)
-            ->where('session', '=', $previous_session->id)
-            ->where('candidate_type', 'LIKE', "$candidate_type%")
-            ->get();
-
-
-        foreach ($fees as  $fee) {
-            $fee->replicate()->save();
-            $newFee_id = $fee->id;
-            // New Fee
-            $newFee = FeeStracture::find($newFee_id);
-            $newFee->financial_year = $financial_year;
-            $newFee->save();
-        }
-        return response()->json(['success' => 'successfully created the session']);
+        return response()->json(['success' =>  'You have successfully created  the records']);
     }
 
     /**

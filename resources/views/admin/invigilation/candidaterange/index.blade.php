@@ -62,23 +62,17 @@
                     <form id="range-add-form" method="post"
                         action="{{ route('admin.invigilations.candidatesrange.store') }}">
                         @csrf
-                        <div class="form-group row">
-                            <div class="form-group row col-sm-12">
-                                <label for="range from" class="col-sm-6 col-form-label">Candidate Range from</label>
-                                <div class="col-sm-6">
+
+                            <div class="form-group">
+                                <label for="range from" class=" col-form-label">Candidate Range from</label>
+
                                     <input type="number" class="form-control" name="range_start" id="range_start"
                                         placeholder=" ">
-                                </div>
-                            </div>
-                            <h6></h6>
-
-                            <div class="form-group row col-sm-12">
-                                <label for="range to" class="col-sm-6 col-form-label">Candidate Range to</label>
-                                <div class="col-sm-6">
+                                          </div>
+                            <div class="form-group ">
+                                <label for="range to" class="">Candidate Range to</label>
                                     <input type="number" class="form-control" name="range_end" id="range_end"
                                         placeholder=" ">
-                                </div>
-                            </div>
                         </div>
 
                     </form>
@@ -105,27 +99,18 @@
                     <form id="range-edit-form" method="POST" action="">
                         @csrf
                         @method('PUT')
-                        <div class="form-group row">
-                            <div class="form-group row col-sm-12">
-                                <label for="candidate_from" class="col-sm-6 col-form-label">Candidate Range
+                            <div class="form-group">
+                                <label for="candidate_from" class="col-form-label">Candidate Range
                                     from</label>
-                                <div class="col-sm-6">
                                     <input type="number" class="form-control" name="range_start" id="range_start"
                                         placeholder=" ">
-                                </div>
                             </div>
-                            <h6></h6>
-
-                            <div class="form-group row col-sm-12">
-                                <label for="candidate_to" class="col-sm-6 col-form-label">Candidate Range
+                            <div class="form-group">
+                                <label for="candidate_to" class="col-form-label">Candidate Range
                                     to</label>
-                                <div class="col-sm-6">
                                     <input type="number" class="form-control" name="range_end" id="range_end"
                                         placeholder=" ">
-                                </div>
                             </div>
-                        </div>
-
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -202,7 +187,7 @@
                             if ($.isEmptyObject(data.errors)) {
                                 $('#add-range-modal').modal('hide');
                                 toastr.success(data.success);
-                                $('#responseMessage').DataTable().ajax.reload();
+                                $('#data-table-invigilation').DataTable().ajax.reload();
                             } else {
                                 printErrorMsg('#add-range-modal', data.errors);
                             }
@@ -212,7 +197,6 @@
 
                 //edit
                 $(document).on('click', '.edit-range', function() {
-
                     var url = $(this).data("url");
                     $.ajax({
                         type: "GET",
@@ -297,22 +281,28 @@
                     });
                 });
                 /****  Print errors*******/
-                function printErrorMsg(parent, msg) {
-                    $(`${parent} input, ${parent} select, textarea`).each(function(index) {
-                        $(`${parent} .invalid-feedback`).remove();
-                        $(`${parent} .is-invalid`).removeClass('is-invalid');
-                        // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
-                    });
-                    $.each(msg, function(key, errors) {
-                        for (const error in errors) {
-                            const value = errors[error];
-                            $(`[name='${key}']`).addClass('is-invalid');
-                            $(`<span class='invalid-feedback'>${value}</span>`).insertAfter(
-                                `${parent} [name='${key}']`)
 
-                        }
-                    });
+        function printErrorMsg(parent, msg) {
+            $(`${parent} input, ${parent} select, textarea`).each(function(index) {
+                $(`${parent} .help-block`).remove();
+                $(`${parent} .has-error`).removeClass('has-error');
+                // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
+            });
+            $.each(msg, function(key, errors) {
+                for (const error in errors) {
+                    const value = errors[error];
+
+                    $(`[name='${key}']`).parent().addClass('has-error');
+                    if (key == "gender") {
+                        $(`${parent} [name='${key}']`).next().append(`<span class='help-block'>${value}</span>`);
+                    } else {
+                        $(`<span class='help-block'>${value}</span>`).insertAfter(`${parent} [name='${key}']`)
+                    }
+
+
                 }
+            });
+        }
                 /****  Print errors End*******/
             });
         </script>

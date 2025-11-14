@@ -23188,3 +23188,113 @@ dl li {
 }
 
 /*# sourceMappingURL=maps/style.css.map */
+
+.disclaimer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.disclaimer-title {
+    border-bottom: 1px solid rgba(#adadad, 1);
+    border-top: 6px solid rgba(#adadad, 0.6);
+    color: #444;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 5px 0;
+}
+
+.disclaimer-message {
+    padding: 2em;
+    border: 1px solid #000;
+    border-radius: 5px;
+    height: 300px;
+    overflow-y: scroll;
+
+    scrollbar-width: thin;
+}
+
+.disclaimer-message ul > li > ul>li {
+    padding: 0.5em;
+}
+::-webkit-scrollbar {
+    width: 4px;
+    border: 1px solid #d5d5d5;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 0;
+    background: #eeeeee;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 0;
+    background: #b0b0b0;
+}
+
+.disclaimer-overlay .disclaimer {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    width: 90%;
+}
+
+.disclaimer-overlay .disclaimer-buttons {
+    margin-top: 10px;
+    text-align: center;
+}
+.disclaimer-overlay .disclaimer-buttons button {
+    padding: 5px 15px;
+    margin: 0 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.disclaimer-overlay .agree-btn {
+    background-color: #004aad;
+    color: white;
+}
+.disclaimer-overlay .agree-btn:hover {
+    background-color: #003580;
+}
+.disclaimer-overlay .decline-btn {
+    background-color: #ccc;
+    color: #333;
+}
+.disclaimer-overlay .decline-btn:hover {
+    background-color: #aaa;
+}
+.disclaimer-overlay .decline-message {
+    display: none;
+    color: red;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+button:disabled,
+button[disabled] {
+    border: 1px solid #999999;
+    border-color: #a0a0a0;
+    background-color: #a0a0a0!important;
+    color: #666666;
+    pointer-events: none;
+    cursor: not-allowed !important;
+}
+
+button:disabled:hover,
+button:disabled:focus,
+button.disabled:hover,
+button.disabled:focus {
+    color: #fff;
+    border-color: #a0a0a0;
+    background-color: #a0a0a0;
+}

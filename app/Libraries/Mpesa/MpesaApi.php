@@ -26,9 +26,9 @@ class MpesaApi
 
     //  that needs to be used in conjunction with all of the other API calls from the API documentation.
 
-    public function C2BMpesa($mobile_number, $amount)
-
+    public function C2BMpesa($mobile_number, $amount,$transactionReference='T1234C',$purchasedItemsDesc = 'Examinations Fees')
     {
+
         // This is to ensure browser does not timeout after 30 seconds
         ini_set('max_execution_time', 300);
         set_time_limit(300);
@@ -38,12 +38,14 @@ class MpesaApi
         $context = new APIContext();
         // Api key
         $context->set_api_key('VNxhg7YhR7sXRIEvMY28o1866cDMatY9');
+
         // Public key
         $context->set_public_key($public_key);
         // Use ssl/https
         $context->set_ssl(true);
         // Method type (can be GET/POST/PUT)
         $context->set_method_type(APIMethodType::GET);
+
         // API address
         $context->set_address('openapi.m-pesa.com');
         // API Port
@@ -52,6 +54,7 @@ class MpesaApi
         $context->set_path('/openapi/ipg/v2/vodacomLES/getSession/');
         // Add/update headers
         $context->add_header('Origin', '*');
+
         // Parameters can be added to the call as well that on POST will be in JSON format and on GET will be URL parameters
         // context->add_parameter('key', 'value');
         // Create a request object
@@ -63,9 +66,11 @@ class MpesaApi
         } catch (exception $e) {
             echo 'Call failed: ' . $e->getMessage() . '<br>';
         }
+
         if ($response->get_body() == null) {
             throw new Exception('SessionKey call failed to get result. Please check.');
         }
+
         $decoded = json_decode($response->get_body());
         $thirdPartyConversationID = "Mpesa" . time();
         $context = new APIContext();
@@ -83,8 +88,8 @@ class MpesaApi
         $context->add_parameter('input_CustomerMSISDN','266'.$mobile_number);
         $context->add_parameter('input_ServiceProviderCode', '201986');
         $context->add_parameter('input_ThirdPartyConversationID', $thirdPartyConversationID);
-        $context->add_parameter('input_TransactionReference', 'T1234C');
-        $context->add_parameter('input_PurchasedItemsDesc', 'Examinations Fees');
+        $context->add_parameter('input_TransactionReference',$transactionReference );
+        $context->add_parameter('input_PurchasedItemsDesc', $purchasedItemsDesc);
         $request = new APIRequest($context);
         // SessionID can take up to 30 seconds to become 'live' in the system and will be invalid until it is
         sleep(30);
@@ -103,8 +108,6 @@ class MpesaApi
             throw new Exception('API call failed to get result. Please check.');
 
         }
-
-
 
         return $response;
 

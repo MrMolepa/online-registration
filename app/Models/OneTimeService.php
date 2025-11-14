@@ -21,4 +21,9 @@ class OneTimeService extends Model
     {
         return $this->hasMany(OneTimeServicesItem::class);
     }
+
+    public function emails()
+    {
+        return $this->hasMany(ServiceEmail::class);
+    }
 }

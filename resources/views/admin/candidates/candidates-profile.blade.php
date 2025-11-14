@@ -18,7 +18,7 @@
                             <div class="panel-body">
                                 <div class="pull-left">
                                     <a href="" class="btn btn-info" data-toggle="modal"
-                                        data-target="#change-candidate-modal" >+ Changes candidate
+                                        data-target="#change-candidate-modal">+ Changes candidate
                                     </a>
 
                                 </div>
@@ -205,7 +205,7 @@
                                 @csrf
                             </div>
                             <div class="form-group  ">
-                                <label for="candidate_no">Candidate Number</label>
+                                <label for="candidate_no">Old Candidate Number</label>
                                 <input type="text" class="form-control" name="candidate_no" id="candidate_no"
                                     value="" />
 
@@ -215,10 +215,8 @@
                                 <input type="text" class="form-control" name="national_id" id="national_id"
                                     value="" />
                             </div>
-
-
                             <div class="form-group  ">
-                                <label for="national_id">New Candidate Number</label>
+                                <label for="new_candidate_no">New Candidate Number</label>
                                 <input type="text" class="form-control" name="new_candidate_no" id="new_candidate_no"
                                     value="" />
                             </div>
@@ -300,11 +298,16 @@
         });
 
 
-        $(document).on('click', '#change-candidate-number', function(ev) {
+        $(document).on('click', "#change-candidate-number", function(ev) {
             ev.preventDefault();
             if (!confirm('Are You sure you want to change the candidate number?')) {
                 return;
             } else {
+                var $btn = $(this);
+                // Disable the button
+                $btn.prop('disabled', true);
+                // Add loading text (optional)
+                $btn.html('<i class="fa fa-spinner fa-spin"></i> Processing...');
                 var url = $('#changeCandidateNumberForm').attr('action');
                 $.ajaxSetup({
                     headers: {
@@ -321,7 +324,8 @@
                         $('#changeCandidateNumberForm .has-error').removeClass('has-error');
                         if ($.isEmptyObject(data.errors)) {
                             $('#new_candidate_no').val(data.new_candidate);
-                            // $('#change-candidate-number').modal('hide');
+                            $('#changeCandidateNumberForm').trigger('reset');
+                            $('#change-candidate-modal').modal('hide');
                             toastr.success(data.success);
                             $('#candidates').DataTable().ajax.reload();
                         } else {
@@ -329,6 +333,14 @@
                         }
 
 
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    },
+                    complete: function(data) {
+                        // Re-enable button and restore original text when request is complete
+                        $btn.prop('disabled', false);
+                        $btn.text('Save');
                     }
                 });
 

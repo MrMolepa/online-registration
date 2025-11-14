@@ -21,28 +21,41 @@ class ReportController extends Controller
     //
     public function index()
     {
-        $center = auth()->user()->center_no;
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $levels = DB::table('center_candidate')->select(
+        $center_no = auth()->user()->center_no;
+        $center = Center::where('center_no', '=', $center_no)->first();
+        $centerSessions = json_decode($center->sessions, true);
+
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
+
+
+      $levels = DB::table('center_candidate')->select(
             [
                 'center_candidate.level'
             ],
         )
-            ->where('center_no', '=', $center)
-            ->where('financial_year', '=',  $financial_year)
+            ->where('center_no', '=',    $center_no)
+            ->where('financial_year', '=',  $session->financial_year)
+            ->where('session', '=',  $session->session)
             ->distinct()
             ->orderBy('level')
             ->get()->pluck('level');
+
+
+
         return view('school.reports', compact('levels'));
     }
 
     public function printTimatable(Request $request)
     {
         ob_start();
-        $center = Center::with('subjects')->where('center_no', '=',auth()->user()->center_no)->first();
+        $center_no = auth()->user()->center_no;
+        $center = Center::where('center_no', '=', $center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $session = Session::whereIn('session', $centerSessions)->where('financial_year', '=', $financial_year)->first();
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
         $level  =   $center->level;
 
         // $password = $center;
@@ -194,17 +207,18 @@ class ReportController extends Controller
     {
         ob_start();
         $center_no = auth()->user()->center_no;
-        $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
+        $center = Center::where('center_no', '=', $center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $session = Session::whereIn('session', $centerSessions)->where('financial_year', '=', $financial_year)->first();
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
         $level  = $request->level;
         $center_sponser = DB::table('center_candidate')->select(
             [
                 'center_candidate.sponser'
             ],
         )->where('center_no', '=', $center_no)
-            ->where('financial_year', '=', $financial_year)
+            ->where('financial_year', '=', $session->financial_year)
             ->whereIn('session', $centerSessions)
             ->distinct()
             ->orderBy('sponser')
@@ -215,52 +229,7 @@ class ReportController extends Controller
         )
             ->whereIn('sponsor', $center_sponser)
             ->get();
-
-
-        $fee_level = strtolower($level);
-        $schoolFees = DB::table('fees_stracture')->select(
-            [
-                'fees_stracture.candidate_type',
-                'fees_stracture.subject_fee',
-                'fees_stracture.registration_fee',
-                'fees_stracture.local_fee',
-                'fees_stracture.practical_subject_fee',
-                'fees_stracture.delf_fee',
-                'fees_stracture.bank_charge',
-                'fees_stracture.financial_year',
-            ]
-        )->join('sessions', function ($join) {
-            $join->on('fees_stracture.session', '=', 'sessions.id');
-            $join->on('fees_stracture.financial_year', '=', 'sessions.financial_year');
-        })
-            ->where('fees_stracture.candidate_type', '=', "$fee_level-school")
-            ->where('sessions.session', '=',  $session->session)
-            ->where('fees_stracture.financial_year', '=', $financial_year)
-            ->first();
-        $schoolPrivate = DB::table('fees_stracture')->select(
-            [
-                'fees_stracture.candidate_type',
-                'fees_stracture.subject_fee',
-                'fees_stracture.registration_fee',
-                'fees_stracture.local_fee',
-                'fees_stracture.practical_subject_fee',
-                'fees_stracture.delf_fee',
-                'fees_stracture.bank_charge',
-                'fees_stracture.financial_year'
-            ]
-        )->join('sessions', function ($join) {
-            $join->on('fees_stracture.session', '=', 'sessions.id');
-            $join->on('fees_stracture.financial_year', '=', 'sessions.financial_year');
-        })->where('fees_stracture.candidate_type', '=', "$fee_level-private")
-            ->where('sessions.session', '=',  $session->session)
-            ->where('fees_stracture.financial_year', '=', $financial_year)
-            ->first();
-        $practicalSubjects = ['0179', '0189', '0191', '0192', '0194', '0417', '0190'];
-        $delf = Subject::whereHas('selectedDiscipline', function ($q) {
-            $q->where('name', '=', 'LGCSE7');
-        })->get()->pluck('subject_code')->toArray();
         $exam_session = "November " . date("Y");
-
         $pdf = new exFPDF();
         $pdf->SetMargins(8, 36, 8);
         $pdf->AliasNbPages();
@@ -280,34 +249,83 @@ class ReportController extends Controller
         foreach ($sponsers as $key => $sponsor) {
 
             $sponsor_total = 0;
-            $candidates = DB::table('candidate_subject')
-                ->select(
+
+            $candidates=DB::table('candidate_subject')
+            ->select(
+                [
+                    'center_candidate.id',
+                    'center_candidate.center_no',
+                    'centers.center_name',
                     'center_candidate.candidate_no',
+                    'center_candidate.national_id',
+                    'center_candidate.session',
+                    'center_candidate.financial_year',
+                    'center_candidate.level',
                     'center_candidate.type',
                     'center_candidate.subject_number',
-                    'center_candidate.national_id',
                     'candidates.candidate_surname',
                     'candidates.candidate_other_name',
                     'candidates.date_of_birth',
+                    'candidates.gender',
                     'center_candidate.sponser',
-                    DB::raw("group_concat(DISTINCT concat(candidate_subject.subject_code,' ',candidate_subject.subject_option)
-                    order by candidate_subject.subject_code separator ',') as subjects")
-                )
-                ->join('candidates', 'candidates.candidate_no', '=', 'candidate_subject.candidate_no')
-                ->join('center_candidate', function ($join) {
-                    $join->on('candidate_subject.candidate_no', '=', 'center_candidate.candidate_no');
-                    $join->on('candidate_subject.level', '=', 'center_candidate.level');
-                    $join->on('candidate_subject.session', '=', 'center_candidate.session');
-                    $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
-                })
-                ->groupBy('center_candidate.candidate_no')
-                ->where('center_candidate.center_no', '=', $center_no)
+                    'subjects.subject_code',
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.amount) FROM fee_candidate_histories  WHERE
+                        fee_candidate_histories.candidate_id = center_candidate.id
+                        ),0) AS  amount_paid"),
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.fine) FROM fee_candidate_histories  WHERE
+                        fee_candidate_histories.candidate_id = center_candidate.id
+                        ),0) AS  fine"),
+                    DB::raw("COALESCE((Select sum(fee_group_details.amount) from fee_groups
+                        inner join fee_group_details on  fee_group_details.fee_group_id=fee_groups.id
+                        inner join fee_types on  fee_types.id=fee_group_details.fee_type_id
+                        inner join sessions on  sessions.id=fee_groups.session_id
+                        inner join levels on  levels.id=fee_groups.level_id
+                        where fee_groups.candidate_type=CASE center_candidate.type
+                                                    WHEN 1 THEN 1
+                                                    WHEN 2 THEN 3
+                                                    ELSE 3
+                                                    END
+                        and sessions.session=center_candidate.session and
+                         levels.level=center_candidate.level and
+                         sessions.financial_year=center_candidate.financial_year
+                        and  fee_group_details.subject_code in (
+                        (SELECT  candidate_subject.subject_code  FROM `candidate_subject`
+                        WHERE `candidate_subject`.`candidate_no`=`center_candidate`.`candidate_no` AND
+                            `candidate_subject`.`level`=`center_candidate`.`level` AND
+                            `candidate_subject`.`session`=`center_candidate`.`session` AND
+                            `candidate_subject`.`financial_year`=`center_candidate`.`financial_year`
+                            union SELECT '-' as subject_code)
+                        )),0) as exam_fee"),
+                    DB::raw("(Select fee_groups.id from fee_groups
+                                    inner join fee_group_details on
+                                    fee_group_details.fee_group_id=fee_groups.id
+                                    inner join fee_types on fee_types.id=fee_group_details.fee_type_id
+                                    inner join sessions on sessions.id=fee_groups.session_id
+                                    inner join levels on levels.id=fee_groups.level_id
+                                    where fee_groups.candidate_type=CASE center_candidate.type WHEN 1 THEN 1 WHEN 2 THEN 3 ELSE 3 END and
+                                sessions.session=center_candidate.session and
+                                levels.level=center_candidate.level and
+                                sessions.financial_year=center_candidate.financial_year LIMIT 1) as fee_group_id"),
+                    'subjects.subject_name',
+                    'candidate_subject.subject_option'
+                ],
+            )->join('candidates', 'candidates.candidate_no', '=', 'candidate_subject.candidate_no')
+            ->join('subjects', 'subjects.subject_code', '=', 'candidate_subject.subject_code')
+            ->join('center_candidate', function ($join) {
+                $join->on('candidate_subject.candidate_no', '=', 'center_candidate.candidate_no');
+                $join->on('candidate_subject.level', '=', 'center_candidate.level');
+                $join->on('candidate_subject.session', '=', 'center_candidate.session');
+                $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
+            })
+            ->join('centers', 'centers.center_no', '=', 'center_candidate.center_no')
+            ->groupBy('center_candidate.candidate_no')
+            ->where('center_candidate.center_no', '=', $center_no)
                 ->where('center_candidate.level', '=', $level)
-                ->where('center_candidate.financial_year', '=', $financial_year)
+                ->where('center_candidate.financial_year', '=',  $session->financial_year)
                 ->where('center_candidate.sponser', '=', $sponsor->sponsor)
                 ->where('center_candidate.session', '=',   $session->session)
                 ->orderBy('candidates.candidate_surname', "ASC")
-                ->cursor();
+                 ->cursor();
 
             //====================================================================
             $pdf->AddPage();
@@ -343,35 +361,7 @@ class ReportController extends Controller
                 $table->easyCell(str_pad($candidate->candidate_no, 9, "0", STR_PAD_LEFT));
                 $table->easyCell(str_pad($candidate->national_id, 12, "0", STR_PAD_LEFT));
                 $table->easyCell($candidate->candidate_other_name . ' ' . $candidate->candidate_surname);
-                $candidate_total =  0;
-
-                $subjects = explode(",", $candidate->subjects);
-
-                if (in_array($candidate->type, [2, 3])) {
-                    $candidate_total +=  $schoolPrivate->local_fee + $schoolPrivate->registration_fee;
-                    foreach ($subjects as $subject) {
-                        $subject_code = explode(" ", $subject);
-                        if (in_array($subject_code[0], $practicalSubjects)) {
-                            $candidate_total += ($schoolPrivate->subject_fee) + $schoolPrivate->practical_subject_fee;
-                        } else if (in_array($subject_code[0], $delf)) {
-                            $candidate_total += ($schoolFees->delf_fee);
-                        } else {
-                            $candidate_total += ($schoolPrivate->subject_fee);
-                        }
-                    }
-                } else {
-                    $candidate_total +=  $schoolFees->local_fee + $schoolFees->registration_fee;
-                    foreach ($subjects as $subject) {
-                        $subject_code = explode(" ", $subject);
-                        if (in_array($subject_code[0], $practicalSubjects)) {
-                            $candidate_total += ($schoolFees->subject_fee) + $schoolFees->practical_subject_fee;
-                        } else if (in_array($subject_code[0], $delf)) {
-                            $candidate_total += ($schoolFees->delf_fee);
-                        } else {
-                            $candidate_total += ($schoolFees->subject_fee);
-                        }
-                    }
-                }
+                $candidate_total =  $candidate->exam_fee;
                 $table->easyCell('LSL ' . number_format($candidate_total, 2, '.', ''));
                 $table->printRow();
                 $sponsor_total += $candidate_total;
@@ -405,17 +395,18 @@ class ReportController extends Controller
     {
         ob_start();
         $center_no = auth()->user()->center_no;
-        $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
+        $center = Center::where('center_no', '=', $center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $session = Session::whereIn('session', $centerSessions)->where('financial_year', '=', $financial_year)->first();
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
         $level  = $request->level;
         $center_sponser = DB::table('center_candidate')->select(
             [
                 'center_candidate.sponser'
             ],
         )->where('center_no', '=', $center_no)
-            ->where('financial_year', '=', $financial_year)
+            ->where('financial_year', '=', $session->financial_year)
             ->whereIn('session', $centerSessions)
             ->distinct()
             ->orderBy('sponser')
@@ -448,11 +439,11 @@ class ReportController extends Controller
             })
             ->groupBy('center_candidate.candidate_no')
             ->where('center_candidate.center_no', '=',   $center_no)
-            ->where('center_candidate.financial_year', '=', $financial_year)
+            ->where('center_candidate.financial_year', '=', $session->financial_year)
             ->where('center_candidate.level', '=', $request->level)
             ->where('center_candidate.session', '=', $session->session)
             ->whereIn('center_candidate.sponser', $center_sponser)
-            ->orderBy('candidates.candidate_surname', "ASC")
+            ->orderBy('candidates.candidate_no', "ASC")
             ->get();
         $table = new easyTable($pdf, '{50,80,20,40,20,30,69,20}', 'align:L{LLLLLL};border:0; border-color:#a1a1a1; ');
         $table->rowStyle('align:{LLLLLL};valign:M;bgcolor:#000000; font-color:#ffffff; font-family:times;');

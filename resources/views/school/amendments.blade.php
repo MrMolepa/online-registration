@@ -2,7 +2,6 @@
 
 @section('content')
     <div id="page-wrapper">
-
         <div class="header">
             <h1 class="page-header">
                 Amend Candidates
@@ -37,17 +36,20 @@
 
                             </div>
                             <div>
-                                @permission('amendments-create')
-                                    <button type="button" data-toggle="modal" data-target="#add-candidate"
-                                        class="btn  btn-primary">+
-                                        Candidate</button>
-                                    <button type="button" data-toggle="modal" data-target=".import-csv-registration-modal"
-                                        class=" btn btn-primary mx-4">+
-                                        Candidates by CSV</button>
-                                @endpermission
-                                @permission('amendments-delete')
-                                    <button class="btn btn-danger pull-right btn-delete-Selected">Delete bulk</button>
-                                @endpermission
+
+                                @if (is_activate($center->level))
+                                    @permission('amendments-create')
+                                        <button type="button" data-toggle="modal" data-target="#add-candidate"
+                                            class="btn  btn-primary">+
+                                            Candidate</button>
+                                        <button type="button" data-toggle="modal" data-target=".import-csv-registration-modal"
+                                            class=" btn btn-primary mx-4">+
+                                            Candidates by CSV</button>
+                                    @endpermission
+                                    @permission('amendments-delete')
+                                        <button class="btn btn-danger pull-right btn-delete-Selected">Delete bulk</button>
+                                    @endpermission
+                                @endif
                                 <div class="clearfix"></div>
                             </div>
                             <br />
@@ -738,8 +740,10 @@
                                 <label for="sponsor" class="control-label">Sponsor</label>
                                 <select name="sponser" class="form-control" id="sponsor">
                                     <option value=" ">Please Select sponsor</option>
-                                    <option value="O">O</option>
-                                    <option value="M">M</option>
+                                    @foreach ($sponsors as $sponsor)
+                                    <option value="{{ $sponsor->sponsor }}">
+                                        {{ $sponsor->sponsor }}</option>
+                                       @endforeach
                                 </select>
                             </div>
                             <div class="form-group col-md-12  center-subjects">
@@ -900,7 +904,10 @@
 
                             @switch($center->level)
                                 @case('G7ELT')
-                                    <input type="hidden" name="guardian_national_id" value="{{ time() }}">
+                                    @php
+                                        $national_id = time();
+                                    @endphp
+                                    <input type="hidden" name="guardian_national_id" value="{{ $national_id }}">
                                     <div class="form-group col-md-6">
                                         <label for="guardian_surname" class="control-label">Guardian surname</label>
                                         <input type="text" class="form-control " placeholder="Enter guardian surname"
@@ -942,8 +949,10 @@
                                 <label for="sponsor" class="control-label">Sponsor</label>
                                 <select name="sponsor" class="form-control" id="sponsor">
                                     <option value=" ">Please Select sponsor</option>
-                                    <option value="O">O</option>
-                                    <option value="M">M</option>
+                                    @foreach ($sponsors as $sponsor)
+                                        <option value="{{ $sponsor->sponsor }}">
+                                            {{ $sponsor->sponsor }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="form-group col-md-12  center-subjects">
@@ -1073,9 +1082,6 @@
                                                                     <div>
                                                                         @csrf
                                                                     </div>
-                                                                    @php
-
-                                                                    @endphp
 
                                                                     <div class="upload-area__header">
                                                                         <h1 class="upload-area__title">Upload file</h1>

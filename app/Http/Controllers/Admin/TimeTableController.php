@@ -54,13 +54,27 @@ class TimeTableController extends Controller
                             <th>Action</th>
                         </tr>
                     </thead>";
-
             $results =  DB::table('timetable')
                 ->where('level', '=', $level)
                 ->where('session', '=',  $session)
                 ->get();
             foreach ($results as $result) {
                 $newDate = date('Y-m-d\TH:i:s', strtotime($result->date_time));
+
+
+                DB::table('over_print_subjects')
+                ->where(['subject_code' => $result->subject_code, 'component_no' => $result->paper_no ])  // find your user by their email
+                ->update([
+                    'exam_date' => date('Y-m-d', strtotime($result->date_time))
+                ]);
+
+
+                DB::table('components')
+                ->where(['subject_code' => $result->subject_code, 'component_code' => $result->paper_no ])  // find your user by their email
+                ->update([
+                    'component_name' => $result->pape_desc,
+                ]);
+
                 $value .= '<tr id="' . $result->id . '">
                             <td>' . $result->level . '</td>
                             <td>' . $result->session . '</td>

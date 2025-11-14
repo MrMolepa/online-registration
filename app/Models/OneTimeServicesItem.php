@@ -21,6 +21,7 @@ class OneTimeServicesItem extends Model
 
     public function oneTimeService()
     {
-        return $this->belongsTo(OneTimeService::class,'one_time_services_id','id');
+        return $this->belongsTo(OneTimeService::class);
     }
+
 }

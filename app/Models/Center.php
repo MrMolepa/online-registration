@@ -23,7 +23,8 @@ class Center extends Model
         'address',
         'level',
         'sessions',
-        'district_address'
+        'district_address',
+        'category_id'
     ];
 
 
@@ -35,7 +36,7 @@ class Center extends Model
     }
     public function subjects()
     {
-        return $this->belongsToMany(Subject::class, 'valid_center_subject','center_no','subject_code');
+        return $this->belongsToMany(Subject::class, 'valid_center_subject', 'center_no', 'subject_code');
     }
 
 
@@ -58,5 +59,11 @@ class Center extends Model
     public function levels()
     {
         return $this->belongsToMany(Level::class, 'center_level', 'center_id', 'level_id',);
+    }
+
+
+    public function principal()
+    {
+        return $this->hasOne(InvitationRecipient::class,  'center_no')->where('type', 'principal');
     }
 }

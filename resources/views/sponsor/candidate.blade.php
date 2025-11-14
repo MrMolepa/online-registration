@@ -50,6 +50,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" href="#declined-candidates" data-toggle="tab">Declined Candidates </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#pending-candidates" data-toggle="tab">Pending Candidates </a>
+                                </li>
                             </ul>
                             <div class="tab-content p-2">
                                 <!-- Morris chart - Sales -->
@@ -362,13 +365,11 @@
 
                                 </div>
                                 <div class="tab-pane" id="declined-candidates" style="position: relative;">
-
-
                                     <table class="table" name="tablename" id="declined-candidate-datatable">
                                         <thead>
                                             <tr>
                                                 <th>Centre No</th>
-                                                <th>Nationa Id</th>
+                                                <th>Centre Name</th>
                                                 <th>Candidate No</th>
                                                 <th>Candidate Surname</th>
                                                 <th>Candidate Other Name</th>
@@ -380,8 +381,6 @@
                                     @push('scripts')
                                         <script>
                                             $(function() {
-
-
                                                 var declined_candidate_datatable = $('#declined-candidate-datatable').DataTable({
                                                     processing: true,
                                                     serverSide: true,
@@ -437,8 +436,101 @@
                                                     ]
 
                                                 });
-
                                                 $("#declined-candidate-datatable").css("width", "99.5%");
+
+
+                                            });
+
+
+
+
+
+
+
+                                        </script>
+                                    @endpush
+                                </div>
+                                <div class="tab-pane" id="pending-candidates" style="position: relative;">
+
+                                    <table class="table" name="tablename" id="pending-candidate-datatable">
+                                        <thead>
+                                            <tr>
+                                                <th>Centre No</th>
+                                                <th>Centre Name</th>
+                                                <th>Candidate No</th>
+                                                <th>Candidate Surname</th>
+                                                <th>Candidate Other Name</th>
+                                                <th>Date Of Birth</th>
+                                                <th>Gender</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                    @push('scripts')
+                                        <script>
+                                            $(function() {
+
+                                                var pending_candidate_datatable = $('#pending-candidate-datatable').DataTable({
+                                                    processing: true,
+                                                    serverSide: true,
+                                                    deferRender: true,
+                                                    "lengthMenu": [
+                                                        [20, 50, 100, 200, 400, -1],
+                                                        [20, 50, 100, 200, 400, "All"]
+                                                    ],
+                                                    ajax: {
+                                                        url: "{{ route('sponsor.candidate.index') }}",
+                                                        data: function(d) {
+                                                            d.centre = $("#centre").val();
+                                                            d.level = $("#level").val();
+                                                            d.district = $("#district").val();
+                                                            d.pending_candidates = 'pending_candidates';
+                                                        }
+                                                    },
+                                                    columns: [{
+                                                            data: 'center_no',
+                                                            name: 'center_candidate.center_no',
+                                                            searchable: true
+                                                        },
+
+                                                        {
+                                                            data: 'center_name',
+                                                            name: 'centers.center_name',
+                                                            searchable: true
+                                                        }, {
+                                                            data: 'candidate_no',
+                                                            name: 'candidates.candidate_no',
+                                                            searchable: true
+                                                        },
+                                                        {
+                                                            data: 'candidate_surname',
+                                                            name: 'candidates.candidate_surname',
+                                                            searchable: true
+                                                        },
+                                                        {
+                                                            data: 'candidate_other_name',
+                                                            name: 'candidates.candidate_other_name',
+                                                            searchable: true
+                                                        },
+                                                        {
+                                                            data: 'date_of_birth',
+                                                            name: 'candidates.date_of_birth',
+                                                            searchable: true
+                                                        },
+                                                           {
+                                                            data: 'gender',
+                                                            name: 'candidates.gender',
+                                                            searchable: true
+                                                        },
+                                                        {
+                                                            data: 'status',
+                                                            name: 'status',
+                                                            searchable: false
+                                                        },
+                                                    ]
+
+                                                });
+                                                $("#pending-candidate-datatable").css("width", "99.5%");
 
 
 

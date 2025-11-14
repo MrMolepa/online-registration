@@ -14,11 +14,9 @@ $(document).ready(function () {
 });
 /********** Selected Payment method end**************/
 
-var registrationFee = 0;
-var subjectFee = 0;
-var localFee = 0;
-var bankCharge = 0;
-var increment = 0;
+var administrative_fee = 0;
+var subjectFee = {};
+
 
 $(document).ready(function () {
     // loader home page
@@ -193,53 +191,41 @@ $(document).ready(function () {
             },
             messages: {
                 candidate_no: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The candidate number is required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The candidate number is required",
                 },
                 alternative: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The alternative choice is required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The alternative choice is required",
                 },
                 national_id: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i>The national ID is required",
+                    required: "<i class='fas fa-exclamation-circle'></i>The national ID is required",
                 },
                 candidate_surname: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i>The candidate surname required",
+                    required: "<i class='fas fa-exclamation-circle'></i>The candidate surname required",
                 },
                 candidate_other_name: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The candidate othername required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The candidate othername required",
                 },
                 date_of_birth: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The date of birth is required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The date of birth is required",
                 },
                 gender: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i>The gender is required ",
+                    required: "<i class='fas fa-exclamation-circle'></i>The gender is required ",
                 },
                 email: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The email is required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The email is required",
                 },
                 phone_number: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i>The phone number is required",
+                    required: "<i class='fas fa-exclamation-circle'></i>The phone number is required",
                 },
                 center: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> The center  is required",
+                    required: "<i class='fas fa-exclamation-circle'></i> The center  is required",
                 },
 
                 number_of_subjects: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i>please select subject to proceed to billing",
+                    required: "<i class='fas fa-exclamation-circle'></i>please select subject to proceed to billing",
                 },
                 disclaimer: {
-                    required:
-                        "<i class='fas fa-exclamation-circle'></i> Terms and condition  ",
+                    required: "<i class='fas fa-exclamation-circle'></i> Terms and condition  ",
                 },
             },
         });
@@ -324,8 +310,7 @@ $(document).ready(function () {
                         url: "/registeration",
                         method: "POST",
                         cache: false,
-                        data:
-                            $("#msform").serialize() +
+                        data: $("#msform").serialize() +
                             "&" +
                             this.name +
                             "=" +
@@ -410,6 +395,9 @@ $(document).ready(function () {
             case "3":
                 location.href = "/private-candidate";
                 break;
+            case "4":
+                location.href = "/sponsor";
+                break;
             default:
                 break;
         }
@@ -433,6 +421,9 @@ $(document).ready(function () {
         $("#progressbar_content li")
             .eq($(".fieldset").index(current_fs))
             .removeClass("active");
+        $('input[name="number_of_subjects"]').removeClass(
+            "do-not-ignore"
+        );
 
         //show the previous fieldset
         previous_fs.show();
@@ -466,8 +457,6 @@ $(document).ready(function () {
         $("[name='alternative']").removeAttr("checked");
         $(this).attr("checked", "checked");
         var is_checked = $(this).prop("checked");
-        // $(type).index(this) == nth-of-type
-
         alternative(this);
         var i = $("[name='alternative']").index(this);
         $(".alternative-tab-pane").removeClass("on");
@@ -484,7 +473,9 @@ $(document).ready(function () {
         $.ajax({
             url: "/registeration",
             method: "POST",
-            data: {is_candidate_new: alternative},
+            data: {
+                is_candidate_new: alternative
+            },
             success: function (data) {
                 $("#new-candidate").html("").fadeOut(300);
                 $("#existing-candidate").html("").fadeOut(300);
@@ -544,7 +535,9 @@ $(document).ready(function () {
                     if ($.isEmptyObject(data.candidate)) {
                         // adding Subjects
                         $(".registed_subject").show().html(data.html);
-                        $(".registed_subject").css({fontSize: "13px"});
+                        $(".registed_subject").css({
+                            fontSize: "13px"
+                        });
                         // Show session for registed
                         $("#msform #session").attr("readonly", false);
 
@@ -553,10 +546,10 @@ $(document).ready(function () {
                         ).prop("hidden", false);
                         // Select level
                         $(
-                            '#msform #level option[value="' +
+                                '#msform #level option[value="' +
                                 data.center.level +
                                 '"]'
-                        )
+                            )
                             .attr("selected", "selected")
                             .change();
                         $("#level").attr("readonly", true);
@@ -582,21 +575,23 @@ $(document).ready(function () {
                         $("#msform #session").attr("readonly", false);
                         $(".registed_subject").show().html(data.html);
 
-                        $(".registed_subject").css({fontSize: "13px"});
+                        $(".registed_subject").css({
+                            fontSize: "13px"
+                        });
                         $(".personlinfo").show();
                         // Hide session for registed
                         $(
                             '#msform #session option[value="' +
-                                data.candidate.session +
-                                '"]'
+                            data.candidate.session +
+                            '"]'
                         ).attr("hidden", true);
                         $("#msform #session").val("").trigger("change");
                         // Select level
                         $(
-                            '#msform #level option[value="' +
+                                '#msform #level option[value="' +
                                 data.candidate.level +
                                 '"]'
-                        )
+                            )
                             .attr("selected", "selected")
                             .change();
                         $("#level").attr("readonly", true);
@@ -646,8 +641,7 @@ $(document).ready(function () {
             $.ajax({
                 url: "/private-multiform-personal",
                 method: "POST",
-                data:
-                    inputData +
+                data: inputData +
                     "&" +
                     "current_section" +
                     "=" +
@@ -675,8 +669,7 @@ $(document).ready(function () {
             $.ajax({
                 url: "/private-multiform-personal",
                 method: "POST",
-                data:
-                    inputData +
+                data: inputData +
                     "&current_section" +
                     "=" +
                     parentIndex +
@@ -701,21 +694,22 @@ $(document).ready(function () {
                             $("#personal-section .varify-infomation").hide();
                         } else {
                             next_section.show();
-                            current_section.animate(
-                                {opacity: 0},
-                                {
-                                    step: function (now) {
-                                        // for making fielset appear animation
-                                        opacity = 1 - now;
-                                        current_section.css({
-                                            display: "none",
-                                            position: "relative",
-                                        });
-                                        next_section.css({opacity: opacity});
-                                    },
-                                    duration: 500,
-                                }
-                            );
+                            current_section.animate({
+                                opacity: 0
+                            }, {
+                                step: function (now) {
+                                    // for making fielset appear animation
+                                    opacity = 1 - now;
+                                    current_section.css({
+                                        display: "none",
+                                        position: "relative",
+                                    });
+                                    next_section.css({
+                                        opacity: opacity
+                                    });
+                                },
+                                duration: 500,
+                            });
                         }
                     } else {
                         errorMessage(data);
@@ -735,21 +729,23 @@ $(document).ready(function () {
         previous_section.show();
 
         //hide the current fieldset with style
-        current_section.animate(
-            {opacity: 0},
-            {
-                step: function (now) {
-                    // for making fielset appear animation
-                    opacity = 1 - now;
-                    current_section.css({
-                        display: "none",
-                        position: "relative",
-                    });
-                    previous_section.css({opacity: opacity});
-                },
-                duration: 500,
-            }
-        );
+        current_section.animate({
+            opacity: 0
+        }, {
+            step: function (now) {
+                // for making fielset appear animation
+                opacity = 1 - now;
+
+                current_section.css({
+                    display: "none",
+                    position: "relative",
+                });
+                previous_section.css({
+                    opacity: opacity
+                });
+            },
+            duration: 500,
+        });
         setProgressBar(--current);
     });
     /********** Persoanl Validation End**************/
@@ -790,11 +786,10 @@ $(document).ready(function () {
                 subject_addition: increase,
             },
             success: function (data) {
-                console.log(data);
-                localFee = parseFloat(data.local_fee);
-                registrationFee = parseFloat(data.registration_fee);
-                subjectFee = parseFloat(data.subject_fee);
-                bankCharge = parseFloat(data.bank_charge);
+                $('#fee_group_id').val(data.fee_group_id);
+                $('#fine').val(data.total_fine);
+                administrative_fee = data.administrative_fee;
+                subjectFee = data.subjects_fee;
             },
         });
     }
@@ -829,11 +824,18 @@ $(document).ready(function () {
 
     /********** Checked Subjects **************/
     function checkedCheckBox() {
-        var numberOfChecked = $(
-            ".subjects_selection input:checkbox:checked"
-        ).length;
-        var subject_fee_total = numberOfChecked * subjectFee;
-        increment = bankCharge + registrationFee + localFee + subject_fee_total;
+        var subjects = [];
+
+        $(".subjects_selection input:checkbox:checked").each(function () {
+            const subject = $(this).val().split(",")
+            subjects.push(subject[0]);
+        });
+        var numberOfChecked = subjects.length;
+        var subject_fee_total = parseFloat(administrative_fee);
+        for (let index = 0; index < subjects.length; ++index) {
+            const subject = subjects[index];
+            subject_fee_total += parseFloat(subjectFee[subject]);
+        }
         if (numberOfChecked <= 0) {
             $(".subject_number").text(0);
             $(".total").text("M" + 0);
@@ -841,10 +843,10 @@ $(document).ready(function () {
             $("#number_of_subjects").removeAttr("value");
         } else {
             $(".subject_number").text(numberOfChecked);
-            $(".total").text("M" + increment);
+            $(".total").text("LSL" + subject_fee_total);
             $("#total_amount input[name='total_amount']").attr(
                 "value",
-                increment
+                subject_fee_total
             );
             $("#number_of_subjects").val(numberOfChecked);
         }

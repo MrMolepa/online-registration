@@ -20,9 +20,8 @@
                             <div class="container">
                                 <div class="row justify-content-center mt-0">
 
-                                    <div class="col-md-9 text-center p-0 mt-3 mb-2">
+                                    <div class="col-lg-9 col-md-10 col-sm-12 text-center p-0 mt-3 mb-2">
                                         <div class="card">
-
                                             <!-- <p>Fill all form field to go to next step</p> -->
                                             <div class="row justify-content-center">
                                                 <div class="col-md-12">
@@ -52,188 +51,190 @@
                                                         <fieldset id="candidate-information">
                                                             <div class="fieldset_container">
                                                                 <div class="form-card">
-                                                                    <div class="invoice-wrapper">
-                                                                        <div class="invoice-top">
-                                                                            <div class="row">
-                                                                                <div class="col-sm-12">
-                                                                                    <div class="invoice-top-left">
-                                                                                        <h2 class="client-company-name">
-                                                                                            Examinations
-                                                                                            Council of
-                                                                                            Lesotho
-                                                                                        </h2>
-                                                                                        <h6 class="client-address">
-                                                                                            {{ auth()->user()->center_no }}
-                                                                                            {{ $subjects->first()->center_name }}
-                                                                                        </h6>
-                                                                                        <h6><b>Total Fee</b>
-                                                                                            LSL
-                                                                                            {{ number_format((float) $total_amount, 2, '.', '') }}
-                                                                                        </h6>
-                                                                                        <h3 class="headline">Personal</h3>
-                                                                                        <input type="hidden"
-                                                                                            name="center_no"
-                                                                                            value="{{ $candidate->center_no }}">
-                                                                                        <input type="hidden"
-                                                                                            name="national_id"
-                                                                                            value="{{ $candidate->national_id }}">
-                                                                                        <input type="hidden"
-                                                                                            name="candidate_no"
-                                                                                            value="{{ $candidate->candidate_no}}">
-                                                                                        <input type="hidden"
-                                                                                            name="candidate_surname"
-                                                                                            value="{{ $candidate->candidate_surname }}">
-                                                                                        <input type="hidden"
-                                                                                            name="candidate_other_name"
-                                                                                            value="{{ $candidate->candidate_other_name }}">
-                                                                                        <input type="hidden" name="gender"
-                                                                                            value="{{ $candidate->gender }}">
-                                                                                        <input type="hidden"
-                                                                                            name="number_of_subjects"
-                                                                                            value="{{ $candidate->subject_number }}">
 
-                                                                                        <input type="hidden" name="session"
-                                                                                            value="{{ $candidate->session }}">
-                                                                                        <input type="hidden"
-                                                                                            name="financial_year"
-                                                                                            value="{{ $candidate->financial_year }}">
-                                                                                        <input type="hidden"
-                                                                                            name="total_amount"
-                                                                                            value="{{ $total_amount }}">
-                                                                                        <input type="hidden" name="level"
-                                                                                            value="{{ $candidate->level }}">
-                                                                                        <div class="form-group">
-                                                                                            <label
-                                                                                                for="candidate_email">Email</label>
-                                                                                            <input type="text"
-                                                                                                class="form-control  form-control-sm "
-                                                                                                id="candidate_email"
-                                                                                                name="candidate_email"
-                                                                                                placeholder="Email Address">
-                                                                                        </div>
-                                                                                        <div class="form-group">
-                                                                                            <label
-                                                                                                for="cadidate_phone">Phone
-                                                                                                Number</label>
-                                                                                            <input type="text"
-                                                                                                class="form-control form-control-sm"
-                                                                                                id="candidate_phone_number"
-                                                                                                name="candidate_phone_number"
-                                                                                                placeholder="Phone Number">
-                                                                                        </div>
-                                                                                        <div class="form-group col-12">
-                                                                                            <label
-                                                                                                for="special_need">Special
-                                                                                                needs</label>
-                                                                                            <select name="special_need"
-                                                                                                class="form-control form-control-sm"
-                                                                                                id="special_need">
-                                                                                                <option value="">
-                                                                                                    Please select special
-                                                                                                    need(s)</option>
-                                                                                                @foreach ($specialNeeds as $specialNeed)
-                                                                                                    <option
-                                                                                                        value="{{ $specialNeed->id }}">
-                                                                                                        {{ $specialNeed->name }}
-                                                                                                    </option>
-                                                                                                @endforeach
-                                                                                            </select>
-                                                                                        </div>
-                                                                                        <h3 class="headline">Address</h3>
-                                                                                        <div class="row">
-                                                                                            <div class="form-group col-6">
-                                                                                                <label
-                                                                                                    for="candidate_postal_address">Postal
-                                                                                                    Address </label>
-                                                                                                <input type="text"
-                                                                                                    class="form-control form-control-sm"
-                                                                                                    id="candidate_postal_address"
-                                                                                                    name="candidate_postal_address"
-                                                                                                    placeholder="P.O.Box 2398">
+                                                                    <div class="row">
+                                                                        <div class="col-sm-12">
+                                                                            <div class="invoice-top-left">
+                                                                                <h2 class="client-company-name">
+                                                                                    Examinations
+                                                                                    Council of
+                                                                                    Lesotho
+                                                                                </h2>
+                                                                                <h6 class="client-address">
+                                                                                    {{ auth()->user()->center_no }}
+                                                                                    {{ $subjects->first()->center_name }}
+                                                                                </h6>
+                                                                                <h6><b>Total Fee</b>
+                                                                                    LSL
+                                                                                    {{ number_format((float) $total_amount, 2, '.', '') }}
+                                                                                </h6>
+                                                                                <h3 class="headline">Personal</h3>
+                                                                                <input type="hidden" name="center_no"
+                                                                                    value="{{ $candidate->center_no }}">
 
-                                                                                            </div>
-                                                                                            <div class="form-group col-6">
-                                                                                                <label
-                                                                                                    for="candidate_physical_address">Physical
-                                                                                                    Address</label>
-                                                                                                <input type="text"
-                                                                                                    class="form-control form-control-sm "
-                                                                                                    id="candidate_physical_address"
-                                                                                                    name="candidate_physical_address"
-                                                                                                    placeholder="Qoaling">
-                                                                                            </div>
+                                                                                <input type="hidden" name="fine"
+                                                                                    value="{{ $total_fine }}">
 
-                                                                                            <div class="form-group col-6">
-                                                                                                <label
-                                                                                                    for="candidate_village">Village</label>
-                                                                                                <input type="text"
-                                                                                                    class="form-control form-control-sm"
-                                                                                                    id="candidate_village"
-                                                                                                    name="candidate_village"
-                                                                                                    placeholder="Ha Seoli">
-                                                                                            </div>
-                                                                                            <div class="form-group col-6">
-                                                                                                <label
-                                                                                                    for="candidate_district">District</label>
-                                                                                                <select
-                                                                                                    class="form-control form-control-sm"
-                                                                                                    name="candidate_district"
-                                                                                                    id="candidate_district">
-                                                                                                    <option value="">
-                                                                                                        Please Select
-                                                                                                        District</option>
-                                                                                                    @foreach ($districts as $district)
-                                                                                                        <option
-                                                                                                            value="{{ $district->district }}">
-                                                                                                            {{ $district->district }}
-                                                                                                        </option>
-                                                                                                    @endforeach
-                                                                                                </select>
-                                                                                            </div>
-                                                                                        </div>
+                                                                                <input type="hidden" name="candidate_id"
+                                                                                    value="{{ $candidate->id }}">
+
+                                                                                <input type="hidden" name="fee_group_id"
+                                                                                    value="{{ $candidate->fee_group_id }}">
+
+                                                                                <input type="hidden" name="national_id"
+                                                                                    value="{{ $candidate->national_id }}">
+                                                                                <input type="hidden" name="candidate_no"
+                                                                                    value="{{ $candidate->candidate_no }}">
+                                                                                <input type="hidden"
+                                                                                    name="candidate_surname"
+                                                                                    value="{{ $candidate->candidate_surname }}">
+                                                                                <input type="hidden"
+                                                                                    name="candidate_other_name"
+                                                                                    value="{{ $candidate->candidate_other_name }}">
+                                                                                <input type="hidden" name="gender"
+                                                                                    value="{{ $candidate->gender }}">
+                                                                                <input type="hidden"
+                                                                                    name="number_of_subjects"
+                                                                                    value="{{ $candidate->subject_number }}">
+
+                                                                                <input type="hidden" name="session"
+                                                                                    value="{{ $candidate->session }}">
+                                                                                <input type="hidden" name="financial_year"
+                                                                                    value="{{ $candidate->financial_year }}">
+                                                                                <input type="hidden" name="total_amount"
+                                                                                    value="{{ $total_amount }}">
+                                                                                <input type="hidden" name="level"
+                                                                                    value="{{ $candidate->level }}">
+                                                                                <div class="form-group col-sm-12">
+                                                                                    <label
+                                                                                        for="candidate_email">Email</label>
+                                                                                    <input type="text"
+                                                                                        class="form-control  form-control-sm "
+                                                                                        id="candidate_email"
+                                                                                        name="candidate_email"
+                                                                                        placeholder="Email Address">
+                                                                                </div>
+                                                                                <div class="form-group col-sm-12">
+                                                                                    <label for="cadidate_phone">Phone
+                                                                                        Number</label>
+                                                                                    <input type="text"
+                                                                                        class="form-control form-control-sm"
+                                                                                        id="candidate_phone_number"
+                                                                                        name="candidate_phone_number"
+                                                                                        placeholder="Phone Number">
+                                                                                </div>
+                                                                                <div class="form-group col-md-12">
+                                                                                    <label for="special_need">Special
+                                                                                        needs</label>
+                                                                                    <select name="special_need"
+                                                                                        class="form-control form-control-sm"
+                                                                                        id="special_need">
+                                                                                        <option value="">
+                                                                                            Please select special
+                                                                                            need(s)</option>
+                                                                                        @foreach ($specialNeeds as $specialNeed)
+                                                                                            <option
+                                                                                                value="{{ $specialNeed->id }}">
+                                                                                                {{ $specialNeed->name }}
+                                                                                            </option>
+                                                                                        @endforeach
+                                                                                    </select>
+                                                                                </div>
+                                                                                <h3 class="headline">Address</h3>
+                                                                                <div class="row">
+                                                                                    <div
+                                                                                        class="form-group col-md-6 col-sm-12">
+                                                                                        <label
+                                                                                            for="candidate_postal_address">Postal
+                                                                                            Address </label>
+                                                                                        <input type="text"
+                                                                                            class="form-control form-control-sm"
+                                                                                            id="candidate_postal_address"
+                                                                                            name="candidate_postal_address"
+                                                                                            placeholder="P.O.Box 2398">
+
+                                                                                    </div>
+                                                                                    <div
+                                                                                        class="form-group col-md-6 col-sm-12">
+                                                                                        <label
+                                                                                            for="candidate_physical_address">Physical
+                                                                                            Address</label>
+                                                                                        <input type="text"
+                                                                                            class="form-control form-control-sm "
+                                                                                            id="candidate_physical_address"
+                                                                                            name="candidate_physical_address"
+                                                                                            placeholder="Qoaling">
+                                                                                    </div>
+
+                                                                                    <div
+                                                                                        class="form-group col-md-6 col-sm-12">
+                                                                                        <label
+                                                                                            for="candidate_village">Village</label>
+                                                                                        <input type="text"
+                                                                                            class="form-control form-control-sm"
+                                                                                            id="candidate_village"
+                                                                                            name="candidate_village"
+                                                                                            placeholder="Ha Seoli">
+                                                                                    </div>
+                                                                                    <div
+                                                                                        class="form-group col-md-6 col-sm-12">
+                                                                                        <label
+                                                                                            for="candidate_district">District</label>
+                                                                                        <select
+                                                                                            class="form-control form-control-sm"
+                                                                                            name="candidate_district"
+                                                                                            id="candidate_district">
+                                                                                            <option value="">
+                                                                                                Please Select
+                                                                                                District</option>
+                                                                                            @foreach ($districts as $district)
+                                                                                                <option
+                                                                                                    value="{{ $district->district }}">
+                                                                                                    {{ $district->district }}
+                                                                                                </option>
+                                                                                            @endforeach
+                                                                                        </select>
                                                                                     </div>
                                                                                 </div>
-
                                                                             </div>
-                                                                        </div>
-                                                                        <div class="invoice-bottom">
-                                                                            <div class="row">
-                                                                                <div class="clearfix">
-                                                                                </div>
-                                                                                <div class="clearfix">
-                                                                                </div>
-                                                                                <div class="col-xs-12">
-                                                                                    <hr class="divider">
-                                                                                </div>
-                                                                                <div class="col-sm-3">
-                                                                                    <h6 class="text-left">
-                                                                                        support@ecol.org.ls
-                                                                                    </h6>
-                                                                                </div>
-                                                                                <div class="col-sm-3">
-                                                                                    <h6 class="text-center">
-                                                                                        +266 2231 2880
-                                                                                    </h6>
-                                                                                </div>
-                                                                                <div class="col-sm-3">
-                                                                                    <h6 class="text-right">
-                                                                                        +266
-                                                                                        2231 2880</h6>
-                                                                                </div>
-                                                                                <div class="col-sm-3">
-                                                                                    <h6 class="text-right">
-                                                                                        +266
-                                                                                        2231 28801</h6>
-                                                                                </div>
-                                                                            </div>
-
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                    <div class="invoice-bottom">
+                                                                        <div class="row">
+                                                                            <div class="clearfix">
+                                                                            </div>
+                                                                            <div class="clearfix">
+                                                                            </div>
+                                                                            <div class="col-xs-12">
+                                                                                <hr class="divider">
+                                                                            </div>
+                                                                            <div class="col-md-3 col-sm-12">
+                                                                                <h6 class="text-left">
+                                                                                    support@ecol.org.ls
+                                                                                </h6>
+                                                                            </div>
+                                                                            <div class="col-md-3 col-sm-12">
+                                                                                <h6 class="text-center">
+                                                                                    +266 2231 2880
+                                                                                </h6>
+                                                                            </div>
+                                                                            <div class="col-md-3 col-sm-12">
+                                                                                <h6 class="text-right">
+                                                                                    +266
+                                                                                    2231 2880</h6>
+                                                                            </div>
+                                                                            <div class="col-md-3 col-sm-12">
+                                                                                <h6 class="text-right">
+                                                                                    +266
+                                                                                    2231 28801</h6>
+                                                                            </div>
+                                                                        </div>
 
+                                                                    </div>
+
+                                                                </div>
                                                                 <input type="submit" name="next"
                                                                     class="next action-button" value="Next">
-
                                                             </div>
                                                         </fieldset>
 
@@ -242,7 +243,7 @@
                                                                 <div class="form-card">
                                                                     <h3 class="headline">Personal Information</h3>
                                                                     <div class="row">
-                                                                        <div class="form-group col-12">
+                                                                        <div class="form-group col-md-12">
                                                                             <label for="guardian_type">Relationship
                                                                                 Between</label>
                                                                             <select name="guardian_type"
@@ -258,7 +259,7 @@
                                                                                 @endforeach
                                                                             </select>
                                                                         </div>
-                                                                        <div class="form-group">
+                                                                        <div class="form-group col-md-12">
                                                                             <label for="guardian_national_id">National
                                                                                 Id</label>
                                                                             <input type="text"
@@ -267,7 +268,7 @@
                                                                                 name="guardian_national_id"
                                                                                 placeholder="national id">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_name">Other
                                                                                 Names</label>
                                                                             <input type="text"
@@ -275,7 +276,7 @@
                                                                                 id="guardian_name" name="guardian_name"
                                                                                 placeholder="Name">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_surname">Surname</label>
                                                                             <input type="text"
                                                                                 class="form-control form-control-sm"
@@ -283,14 +284,14 @@
                                                                                 name="guardian_surname"
                                                                                 placeholder="Surname">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_email">Email</label>
                                                                             <input type="text"
                                                                                 class="form-control form-control-sm"
                                                                                 id="guardian_email" name="guardian_email"
                                                                                 placeholder="Email">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_phone">Phone
                                                                                 Number</label>
                                                                             <input type="text"
@@ -302,7 +303,7 @@
                                                                     </div>
                                                                     <h3 class="headline">Address</h3>
                                                                     <div class="row">
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_postal_address">Postal
                                                                                 Address </label>
                                                                             <input type="text"
@@ -311,7 +312,7 @@
                                                                                 name="guardian_postal_address"
                                                                                 placeholder="P.O.Box 2398">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_physical_address">Physical
                                                                                 Address</label>
                                                                             <input type="text"
@@ -321,7 +322,7 @@
                                                                                 placeholder="Qoaling">
                                                                         </div>
 
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_village">Village</label>
                                                                             <input type="text"
                                                                                 class="form-control form-control-sm"
@@ -329,7 +330,7 @@
                                                                                 name="guardian_village"
                                                                                 placeholder="Ha Seoli">
                                                                         </div>
-                                                                        <div class="form-group col-6">
+                                                                        <div class="form-group col-md-6 col-sm-12">
                                                                             <label for="guardian_district">District</label>
                                                                             <select class="form-control form-control-sm"
                                                                                 name="guardian_district"
@@ -357,12 +358,12 @@
                                                         <!--Payment  -->
                                                         <fieldset>
                                                             <div class="fieldset_container payment">
+                                                                 <div class="title">Choose a payment method</div>
                                                                 <div class="payment-methods">
-                                                                    <div class="title">Choose a payment method</div>
-                                                                    <label class="payment-method basic-payment-method"
-                                                                        for="basic">
+
+                                                                    <label class="payment-method" for="credit-card">
                                                                         <input type="radio" name="payment"
-                                                                            id="basic" value="CreditCard" />
+                                                                            id="credit-card" value="CreditCard" />
                                                                         <div class="payment-method-content">
                                                                             <img loading="lazy"
                                                                                 src="{{ asset('assets/images/XzOzVHZ.jpg') }}"
@@ -374,9 +375,8 @@
                                                                             </div>
                                                                         </div>
                                                                     </label>
-                                                                    <label class="payment-method complete-payment-method"
-                                                                        for="complete">
-                                                                        <input type="radio" id="complete"
+                                                                    <label class="payment-method" for="vcl-mpesa">
+                                                                        <input type="radio" id="vcl-mpesa"
                                                                             name="payment" value="VclMpesa" />
                                                                         <div class="payment-method-content">
                                                                             <img loading="lazy"
@@ -384,6 +384,19 @@
                                                                                 alt="" />
                                                                             <div class="payment-method-details">
                                                                                 <span>M-pesa</span>
+                                                                                <p>Mobile money.</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </label>
+                                                                    <label class="payment-method" for="eco-cash">
+                                                                        <input type="radio" id="eco-cash"
+                                                                            name="payment" value="EcoCash" />
+                                                                        <div class="payment-method-content">
+                                                                            <img loading="lazy"
+                                                                                src="{{ asset('assets/images/private_candidate_payment/EcoCash.png') }}"
+                                                                                alt="" />
+                                                                            <div class="payment-method-details">
+                                                                                <span>EcoCash</span>
                                                                                 <p>Mobile money.</p>
                                                                             </div>
                                                                         </div>
@@ -689,7 +702,27 @@
                                                                         <a href="javascript:void(0)" id="mpesa_pay"
                                                                             class="btn btn-primary">Pay now </a>
                                                                     </div>
+                                                                    <div class="payment-tab-pane" id="ecocash">
+                                                                        <h2>Eco Cash</h2>
+                                                                        <p>Welcome to ECoL secure online payment. Proof of
+                                                                            payment
+                                                                            will be send to your mobile phone on successful
+                                                                            payment
+                                                                        </p>
+                                                                        <p>Don't hesitate to contact us for any concerns!
+                                                                        </p>
+                                                                        <div class="form-group">
+                                                                            <label for="ecocash_mobile">Phone
+                                                                                number</label>
+                                                                            <input type="text" name="ecocash_mobile"
+                                                                                class="form-control" id="ecocash_mobile"
+                                                                                placeholder="*Phone number">
 
+                                                                        </div>
+                                                                        <a href="javascript:void(0)" id="ecocash_pay"
+                                                                            class="btn btn-primary">Pay now </a>
+
+                                                                    </div>
                                                                 </div>
                                                                 <input type="button" name="previous"
                                                                     class="previous action-button-previous"
@@ -768,7 +801,7 @@
             });
 
             $(document).on("click", "#ecocash_pay", function() {
-                ecoCashComplete();
+                ecoCashComplete($(this));
             });
 
             // Cash Deposit upload-confirmation
@@ -855,112 +888,12 @@
                     }
                 });
             }
-            // 	ECocash
-            function ecoCashComplete() {
-                var candidateNo = $("input[name='candidate_No']").val();
-                var surname = $("input[name='surname']").val();
-                var other_name = $("input[name='other_name']").val();
-                var gender = $("input[name='gender']").val();
-                var email_Address = $("input[name='email_Address']").val();
-                var phone_No = $("input[name='phone_No']").val();
-                var payment = $("input[name='payment']:checked").val();
-                var centreNo = $("input[name='centreNo']").val();
-                var increaseSubjects = getCheckedBoxes("input[type='checkbox'][name='increaseSubjects']");
-                var Session = $("#session").find(":selected").val();
-                var level = $("#level").find(":selected").val();
-
-
-                var subject = getCheckedBoxes("input[type='checkbox'][name='subject[]']");
-                var mathematics = getCheckedBoxes("input[type='checkbox'][name='mathematics[]']");
-                var physcial_science = getCheckedBoxes("input[type='checkbox'][name='physcial_science[]']");
-                var number_of_subjects = $("input[name='number_of_subjects']").val();
-
-                // ECOCASH
-                // var ecocash_vendor_code = $("input[name='ecocash_vendor_code']").val();
-                // var ecocash_key = $("input[name='ecocash_key']").val();
-                var ecocash_mobile = $("input[name='ecocash_mobile']").val();
-                // var ecocash_Checksum = $("input[name='ecocash_Checksum']").val();
-                var ecocash_source_reference = $("input[name='ecocash_source_reference']").val();
-                // var ecocash_Merchant_MSISDN = $("input[name='ecocash_Merchant_MSISDN']").val();
-                var totalAmount = $("input[name='total-amount']").val();
-                totalAmount = parseFloat(totalAmount).toFixed(2);
-
-
-                var jsonData = {
-                    "mobile_number": ecocash_mobile,
-                    "total_amount": totalAmount,
-                };
-
-                jsonData['candidateNo'] = candidateNo;
-                jsonData['surname'] = surname;
-                jsonData['other_name'] = other_name;
-                jsonData['email_Address'] = email_Address;
-                jsonData['phone_No'] = phone_No;
-                jsonData['payment'] = payment;
-                jsonData['centreNo'] = centreNo;
-                jsonData['increaseSubjects'] = increaseSubjects;
-                jsonData['Session'] = Session;
-                jsonData['level'] = level;
-                jsonData['subject'] = subject
-                jsonData['mathematics'] = mathematics;
-                jsonData['physcial_science'] = physcial_science;
-                jsonData['number_of_subjects'] = number_of_subjects;
-                console.log(jsonData);
-
-                //    ECOCASH request
-                $.ajaxSetup({
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                            "content"
-                        ),
-                    },
-                });
-
-
-                $.ajax({
-                    url: "{{ route('register.ecoCashResponse') }}",
-                    method: "POST",
-                    cache: false,
-                    data: jsonData,
-                    success: function(response) {
-                        // ecocash response
-                        var data = response;
-                        console.log(data);
-                        if ($.isEmptyObject(data.errors)) {
-                            if (data.error) {
-                                $(".payement-error").find("ul").html('');
-                                $(".payement-error").css('display', 'block');
-                                $(".payement-error").find("ul").append('<li>' + data.error + '</li>');
-                            } else {
-                                var response = JSON.parse(data.success);
-                                if (response.return.field1 == 200) {
-                                    $(".payement-error").find("ul").html('');
-                                    $(".payement-error").css('display', 'block');
-                                    $(".payement-error").find("ul").append('<li>' + data.success.return+'</li>');
-                                } else {
-                                    $(".payement-error").find("ul").html('');
-                                    $(".payement-error").css('display', 'block');
-                                    $(".payement-error").find("ul").append('<li>' + response.return.field2 +
-                                        '</li>');
-                                }
-
-
-                            }
-                        } else {
-                            printErrorMsg(data.errors);
-                        }
-
-
-                    }
-                });
-            }
 
 
 
-            /*****  Show Candidate  *******/
+            showCandidateInformation();
 
-            showCandidateInformation() ;
-            function  showCandidateInformation() {
+            function showCandidateInformation() {
                 $.ajaxSetup({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -968,7 +901,7 @@
                 });
                 var i = 0;
                 $.ajax({
-                    url:"{{ route('candidate.profile.show')}}",
+                    url: "{{ route('candidate.profile.show') }}",
                     method: "GET",
                     success: function(data) {
                         var parent = "#msform";
@@ -976,16 +909,16 @@
                         var guardian = data.guardian === null ? {} : data.guardian;
                         var paid_fee = data.paid_fee === null ? {} : data.paid_fee;
                         var special_need = data.specialNeed === null ? {} : data.specialNeed;
-                    $(`form${parent} #candidate-information input,form${parent} #candidate-information select, form${parent} #candidate-information textarea`)
+                        $(`form${parent} #candidate-information input,form${parent} #candidate-information select, form${parent} #candidate-information textarea`)
                             .each(
                                 function(index) {
                                     var input = $(this);
                                     var type = input.prop('type');
-                                    var candidate_prifix_length= "candidate_".length;
+                                    var candidate_prifix_length = "candidate_".length;
                                     var name = input.attr('name').slice(candidate_prifix_length);
 
 
-                                    if (type!="hidden") {
+                                    if (type != "hidden") {
                                         $(`form${parent} #candidate-information [name='candidate_${name}']`)
                                             .val(candidate.hasOwnProperty(name) ? candidate[name] : '')
                                     }
@@ -996,28 +929,29 @@
                                 }
                             );
 
-                            $(`form${parent} #candidate-information [name='candidate_${name}']`)
-                                            .val(candidate.hasOwnProperty(name) ? candidate[name] : '')
+                        $(`form${parent} #candidate-information [name='candidate_${name}']`)
+                            .val(candidate.hasOwnProperty(name) ? candidate[name] : '')
 
-                      // specialNeed
-                      $(`form${parent} #candidate-information [name='special_need']`)
-                                            .val(special_need.hasOwnProperty('arrangement_id') ? special_need.arrangement_id : '')
-                            //guardian
+                        // specialNeed
+                        $(`form${parent} #candidate-information [name='special_need']`)
+                            .val(special_need.hasOwnProperty('arrangement_id') ? special_need.arrangement_id : '')
+                        //guardian
                         $(`form${parent} #candidate-guardian input,form${parent} #candidate-guardian select, form${parent} #candidate-guardian textarea`)
                             .each(
                                 function(index) {
                                     var input = $(this);
                                     var type = input.prop('type');
                                     var guardian_prifix_length = "guardian_".length;
-                                    var original_name=input.attr('name');
+                                    var original_name = input.attr('name');
                                     var name = input.attr('name').slice(guardian_prifix_length);
-                                    if (type!="hidden") {
-                                        if (original_name=="guardian_type") {
+                                    if (type != "hidden") {
+                                        if (original_name == "guardian_type") {
                                             $(`form${parent} #candidate-guardian [name='${original_name}']`)
-                                            .val(guardian.hasOwnProperty(original_name) ? guardian[original_name] : '')
-                                        }else{
+                                                .val(guardian.hasOwnProperty(original_name) ? guardian[
+                                                    original_name] : '')
+                                        } else {
                                             $(`form${parent} #candidate-guardian [name='guardian_${name}']`)
-                                            .val(guardian.hasOwnProperty(name) ? guardian[name] : '')
+                                                .val(guardian.hasOwnProperty(name) ? guardian[name] : '')
                                         }
 
                                     }
@@ -1064,8 +998,10 @@
                 }).done(function(data) {
 
                     var data = isJsonString(data) ? $.parseJSON(data) : data;
-                    console.log(data);
                     element.prop('disabled', false).html(caption);
+
+                    console.log(data);
+
                     if ($.isEmptyObject(data.errors)) {
                         // var data = $.parseJSON(data);
                         element.prop('disabled', false).html(caption);
@@ -1103,9 +1039,90 @@
                             }
                         }
                     } else {
+
                         printErrorMsg('#msform', data.errors)
                         element.prop('disabled', false).html(caption);
                     }
+
+
+
+                }).fail(function(xhr, status, error) {
+                    element.prop('disabled', false).html(caption);
+                });
+            }
+
+            // 	ECocash
+            function ecoCashComplete(element) {
+                var inputData = $("#msform").serialize();
+                //    M-Pesa request
+                $.ajaxSetup({
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                            "content"
+                        ),
+                    },
+                });
+
+                var caption = element.html();
+                $.ajax({
+                    url: "{{ route('candidate.transaction') }}",
+                    method: "POST",
+                    data: inputData,
+                    beforeSend: function() {
+                        element.prop('disabled', true).html("Processing.....");
+
+                    },
+                }).done(function(data) {
+                    console.log(data);
+
+                    var data = isJsonString(data) ? $.parseJSON(data) : data;
+                    element.prop('disabled', false).html(caption);
+
+
+
+                    if ($.isEmptyObject(data.errors)) {
+                        // var data = $.parseJSON(data);
+                        element.prop('disabled', false).html(caption);
+                        if (data.status == 1) {
+                            $('input[name="make_payment"]').prop("disabled", false);
+                            $('input[name="make_payment"]').trigger("click");
+                            if (data.publised) {
+                                $('.timetable-btns').show();
+                                $(".download-timetable").prop(
+                                    "href",
+                                    "print-timetable?centre_no=" +
+                                    data.output['centreNo'] +
+                                    "&candidate_no=" +
+                                    data.output['candidate_no'] +
+                                    "&session=" + data.output['session'] +
+                                    "&level=" + data.output['level'] +
+                                    "&download=1"
+                                );
+                                $(".send-email").prop(
+                                    "href",
+                                    "print-timetable?centre_no=" + data.output['centreNo'] +
+                                    "&candidate_no=" + data.output['candidate_no'] +
+                                    "&session=" + data.output['session'] +
+                                    "&level=" + data.output['level'] +
+                                    "&download=1&send=1"
+                                );
+
+
+                            } else {
+                                // download-type
+                                $(".download-type").html(
+                                    "You will get your Timetable once officially published ")
+                                // timetable-btns
+                                $('.timetable-btns').hide();
+                            }
+                        }
+                    } else {
+
+                        printErrorMsg('#msform', data.errors)
+                        element.prop('disabled', false).html(caption);
+                    }
+
+
 
                 }).fail(function(xhr, status, error) {
                     element.prop('disabled', false).html(caption);
@@ -1184,8 +1201,6 @@
                         var data = response;
 
                         console.log(data);
-
-
                         if ($.isEmptyObject(data.errors)) {
                             if (data.status == 1) {
                                 $("#confirmationModal").modal("hide");
@@ -1230,7 +1245,7 @@
 
                             $("#bank_confirmation").val('');
 
-                            printErrorMsg(data.errors);
+                            printErrorMsg('#msform', data.errors)
                         }
 
                     },
@@ -1298,7 +1313,7 @@
                             $("#confirmationModal").modal("hide");
                             element.prop('disabled', false).html(caption);
                             $("#bank_confirmation_balance").val('');
-                            printErrorMsg(data.errors);
+                            printErrorMsg('#msform', data.errors)
                         }
 
                     }
@@ -1307,15 +1322,15 @@
 
             /****  Print errors*******/
             function printErrorMsg(parent, msg) {
-                $(`${parent} input, ${parent} select, textarea`).each(function(index) {
+                $(`${parent} input, ${parent} select,${parent}  textarea`).each(function(index) {
                     $(`${parent} .invalid-feedback`).remove();
                     $(`${parent} .is-invalid`).removeClass('is-invalid');
                     // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
                 });
-                $.each(errors, function(key, errors) {
+                $.each(msg, function(key, errors) {
                     for (const error in errors) {
                         const value = errors[error];
-                        $(`[name='${key}']`).addClass('is-invalid');
+                        $(`${parent} [name='${key}']`).addClass('is-invalid');
                         $(`<span class='invalid-feedback'>${value}</span>`).insertAfter(
                             `${parent} [name='${key}']`)
 

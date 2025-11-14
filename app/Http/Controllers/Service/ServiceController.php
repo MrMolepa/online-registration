@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Invoice;
 use App\Models\Payment as PaymentModel;
 use Illuminate\Support\Facades\DB;
-use App\Libraries\fpdf\easyTable;
-use App\Libraries\fpdf\exFPDF;
 use App\Libraries\Mpesa\MpesaApi;
 use App\Mail\ConfirmationMail;
 use App\Models\Candidate;
@@ -21,25 +19,23 @@ use App\Models\OneTimeService;
 use App\Models\OneTimeServiceItemSale;
 use App\Models\OneTimeServicesItem;
 use App\Models\ServiceAttribute;
-use App\Models\Setting;
-use Dflydev\DotAccessData\Data;
-use GrahamCampbell\ResultType\Success;
+
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-
-
+// EcoCash
+use App\Libraries\EcoCash\EcoCashApi;
+use App\Libraries\SMS\SmsApi;
+use App\Models\OneTimeServicePaymentHistory;
 
 class ServiceController extends Controller
 {
     //
     public function index()
     {
-       $services = OneTimeService::with('OneTimeServicesItem')->where('status','=',1)->get();
+
+
+        $services = OneTimeService::with('OneTimeServicesItem')->where('status', '=', 1)->get();
         return view('service.services', compact('services'));
     }
     public function getOneTimeServicesItem(Request $request)
@@ -63,15 +59,16 @@ class ServiceController extends Controller
                             </button>
                       </div>";
         } else {
-            $financial_year =(date('m') <= 3)?   (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
+            $financial_year = (date('m') <= 3) ?   (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
             $oneTimeServices = OneTimeService::with('OneTimeServicesItem')
-            ->whereHas('OneTimeServicesItem', function($query) use ($financial_year){
-                $query->where('financial_year', '=',$financial_year );
-            })
-            ->findOrFail($request->service);
-            $oneTimeServicesItems =is_null($oneTimeServices)?array(): $oneTimeServices->OneTimeServicesItem;
+                ->whereHas('OneTimeServicesItem', function ($query) use ($financial_year) {
+                    $query->where('financial_year', '=', $financial_year);
+                })
+                ->findOrFail($request->service);
+            $oneTimeServicesItems = is_null($oneTimeServices) ? array() : $oneTimeServices->OneTimeServicesItem;
             foreach ($oneTimeServicesItems as  $oneTimeServicesItem) {
-                if ($oneTimeServicesItem->financial_year==$financial_year) {
+
+                if ($oneTimeServicesItem->financial_year == $financial_year) {
                     $html .= "<div class='form__radio'>
                             <label for=' $oneTimeServicesItem->name'>
                                 $oneTimeServicesItem->name  (M $oneTimeServicesItem->price.00)</label>
@@ -79,7 +76,6 @@ class ServiceController extends Controller
                         </div>
                         ";
                 }
-
             }
         }
 
@@ -95,7 +91,7 @@ class ServiceController extends Controller
             return response()->json(['errors' => $validator->errors()]);
         }
         // $reference_number = 'BFF-' . time()
-       $levels = Level::where('is_active', '=', 1)->get();
+        $levels = Level::where('is_active', '=', 1)->get();
         $serviceAttributes = ServiceAttribute::where(['one_time_service_id' => $request->service])->get();
         $attributesHTML = view('service.requirements.requirements', compact('serviceAttributes', 'levels'))->render();
         $personalInfoHTML = view('service.personal-info.personal-info')->render();
@@ -135,7 +131,7 @@ class ServiceController extends Controller
         }
     }
 
-     public function validCandidate(Request $request)
+    public function validCandidate(Request $request)
     {
 
         $validator = Validator::make($request->all(), [
@@ -148,7 +144,7 @@ class ServiceController extends Controller
         if (!isset($candidate)) {
             return response()->json(['errors' => 'Candidate number is Invalid'], 401);
         }
-        return response()->json($candidate ,200);
+        return response()->json($candidate, 200);
     }
 
 
@@ -280,7 +276,7 @@ class ServiceController extends Controller
 
 
         $oneTimeServiceItem = OneTimeServicesItem::find($request->serviceItem);
-        $financial_year =$oneTimeServiceItem->financial_year;
+        $financial_year = $oneTimeServiceItem->financial_year;
 
         $input = [
             'client_id' => $client_id,
@@ -329,6 +325,7 @@ class ServiceController extends Controller
     }
     public function paymentTransaction(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'service' => 'required',
             'first_name' => 'required',
@@ -353,30 +350,33 @@ class ServiceController extends Controller
                 if ($request->Lite_Payment_Card_Status == "0") {
                     $ecom_ConsumerOrderID =  $request->Ecom_ConsumerOrderID;
                     $amount =  $request->Lite_Order_Amount;
-                    $amount =    $amount / 100;
+                    $amount =  $amount / 100;
                     $register = $this->register($request);
                     $client_id = $register->client;
                     $reference_number = $register->reference_number;
-                    $financial_year =$register->financial_year;
-
-                    $invoice = new Invoice();
-                    $invoice->client_id = $client_id;
-                    $invoice->national_id=$request->national_identity;
-                    $invoice->level = "E-Service";
-                    $invoice->session = "E-Service";
-                    $invoice->service = "E-Service";
-                    $invoice->financial_year =  $financial_year;  //date('Y') . '-' . (date('Y') + 1);
-                    $invoice->reference_no =  $ecom_ConsumerOrderID;
-                    $invoice->amount = $amount;
-                    $invoice->save();
-                    $invoiceid = $invoice->id;
-                    PaymentModel::create([
-                        "invoice_id" =>  $invoiceid,
-                        "reference_no" => $ecom_ConsumerOrderID,
-                        "amount" => $amount,
-                    ]);
+                    // Payment Methods  1
+                    $paymentHestory  = new OneTimeServicePaymentHistory();
+                    $paymentHestory->client_id = $client_id;
+                    $paymentHestory->collected_by = 'online';
+                    $paymentHestory->amount = $amount;
+                    $paymentHestory->attachment = '';
+                    $paymentHestory->reference_no = $ecom_ConsumerOrderID;
+                    $paymentHestory->fine = 0;
+                    $paymentHestory->pay_via = 2;
+                    $paymentHestory->remarks = "$reference_number  Service paid via online Payments Trx ID $ecom_ConsumerOrderID";
+                    $paymentHestory->status = 1;
+                    $paymentHestory->save();
                     $status = 1;
                     $this->sendConfirmation($client_id, $request->serviceItem, $reference_number);
+
+                    $service = OneTimeServicesItem::with('oneTimeService.emails')->find($request->serviceItem);
+                    $msisdn = $request->phone;
+                    $message = "Dear $request->last_name  $request->first_name \n
+                               thank you for requesting $service->description with ECoL. \n
+                               You will be notified once the service is completed";
+                    SmsApi::message($msisdn, $message);
+
+
                     return response()->json([
                         'status' =>  $status,
                         'client' => $client_id,
@@ -412,37 +412,96 @@ class ServiceController extends Controller
                         $register = $this->register($request);
                         $client_id = $register->client;
                         $reference_number = $register->reference_number;
-                        $financial_year =$register->financial_year;
-                        $invoice = new Invoice();
-                        $invoice->client_id = $client_id;
-                         $invoice->national_id=$request->national_identity;
-                        $invoice->level = "E-Service";
-                        $invoice->session = "E-Service";
-                        $invoice->service = "E-Service";
-                        $invoice->financial_year =   $financial_year;
-                        $invoice->reference_no =   $thirdPartyConversationID;
-                        $invoice->amount = $amount;
-                        $invoice->save();
-                        $invoiceid = $invoice->id;
-                        PaymentModel::create([
-                            "invoice_id" =>  $invoiceid,
-                            "reference_no" =>  $thirdPartyConversationID,
-                            "amount" => $amount,
-                        ]);
+                        // Payment Methods  1
+                        $paymentHestory  = new OneTimeServicePaymentHistory();
+                        $paymentHestory->client_id = $client_id;
+                        $paymentHestory->collected_by = 'online';
+                        $paymentHestory->amount = $amount;
+                        $paymentHestory->attachment = '';
+                        $paymentHestory->reference_no = $thirdPartyConversationID;
+                        $paymentHestory->fine = 0;
+                        $paymentHestory->pay_via = 1;
+                        $paymentHestory->remarks = "$reference_number  Service $request->mpesa_mobile paid via online Payments Trx ID   $thirdPartyConversationID ";
+                        $paymentHestory->status = 1;
+                        $paymentHestory->save();
                         $status = 1;
-                     $this->sendConfirmation($client_id, $request->serviceItem, $reference_number);
-                          return response()->json([
+                        $this->sendConfirmation($client_id, $request->serviceItem, $reference_number);
+                        $service = OneTimeServicesItem::with('oneTimeService.emails')->find($request->serviceItem);
+                        $msisdn = $request->phone;
+                        $message = "Dear $request->last_name  $request->first_name \n
+                               thank you for requesting $service->description with ECoL. \n
+                               You will be notified once the service is completed";
+                        SmsApi::message($msisdn, $message);
+                        return response()->json([
                             'status' => $status,
                             'message' => $mpesa_body['output_ResponseDesc'],
                             'client' => $client_id,
                             'reference_number' => $reference_number
-                            ]);
+                        ]);
                         exit();
                     } else {
                         return response()->json(['errors' => ['mpesa_mobile' => array($mpesa_body['output_ResponseDesc'])]]);
                     }
                 } else {
                     return response()->json(['errors' => ['mpesa_mobile' => array('Transaction Failed')]]);
+                }
+                break;
+            case 'EcoCash':
+                // payment
+                $validator = Validator::make($request->all(), [
+                    'ecocash_mobile' => 'required|digits:8'
+                ]);
+                if ($validator->fails()) {
+                    return response()->json(['errors' => $validator->errors()]);
+                }
+
+                $service = OneTimeServicesItem::with('oneTimeService.emails')->find($request->serviceItem);
+                ob_start();
+                $ecoCashApi = new EcoCashApi();
+                $ecoCashApi =   $ecoCashApi->getEcoCashResponse($request->ecocash_mobile, $request->total_sale_price, $request->national_identity, $service->name);
+                ob_end_clean();
+                $status = 0;
+                if ($ecoCashApi) {
+                    // convert json to array
+                    if (!isset($ecoCashApi->txnstatus) && isset($ecoCashApi->extra_data) &&  isset($ecoCashApi->request_id)) {
+                        $thirdPartyConversationID =   $ecoCashApi->request_id;
+                        $amount =  $request->total_sale_price;
+                        $register = $this->register($request);
+                        $client_id = $register->client;
+                        $reference_number = $register->reference_number;
+                        // Payment Methods  1
+                        //
+                        $paymentHestory  = new OneTimeServicePaymentHistory();
+                        $paymentHestory->client_id = $client_id;
+                        $paymentHestory->collected_by = 'online';
+                        $paymentHestory->amount = $amount;
+                        $paymentHestory->attachment = '';
+                        $paymentHestory->reference_no = $thirdPartyConversationID;
+                        $paymentHestory->fine = 0;
+                        $paymentHestory->pay_via = 3;
+                        $paymentHestory->remarks = "Service paid via online Payments Trx ID   $thirdPartyConversationID ";
+                        $paymentHestory->status = 1;
+                        $paymentHestory->save();
+                        $status = 1;
+                        $this->sendConfirmation($client_id, $request->serviceItem, $reference_number);
+
+                        $msisdn = $request->phone;
+                        $message = "Dear $request->last_name  $request->first_name \n
+                               thank you for requesting $service->description with ECoL. \n
+                               You will be notified once the service is completed";
+                        SmsApi::message($msisdn, $message);
+                        return response()->json([
+                            'status' => $status,
+                            'message' => $ecoCashApi->message,
+                            'client' => $client_id,
+                            'reference_number' => $reference_number
+                        ]);
+                        exit();
+                    } else {
+                        return response()->json(['errors' => ['ecocash_mobile' =>  array($ecoCashApi->message)]]);
+                    }
+                } else {
+                    return response()->json(['errors' => ['ecocash_mobile' => array('Transaction Failed')]]);
                 }
                 break;
             default:
@@ -463,14 +522,12 @@ class ServiceController extends Controller
     private function sendConfirmation($client, $serviceItem, $reference_number)
     {
 
-        $emails = Setting::whereIn('meta_field', [
-            'business_email',
-            'finance_email',
-            'verification_email'
-        ])->pluck('meta_value')->toArray();
+        $oneTimeServicesItem = OneTimeServicesItem::with('oneTimeService.emails')->find($serviceItem);
+
+        $emails = $oneTimeServicesItem->oneTimeService->emails->pluck('email')->toArray();
 
         $client = Client::find($client);
-        $oneTimeServicesItem = OneTimeServicesItem::find($serviceItem);
+
         Mail::to($client->email)
             ->cc($emails)
             ->send(new ConfirmationMail($client, $oneTimeServicesItem, $reference_number));

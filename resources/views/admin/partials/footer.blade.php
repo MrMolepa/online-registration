@@ -17,15 +17,22 @@
 <script src="{{ asset('adminAssets/assets/vendor/popper.min.js') }}"></script>
 <script src="{{ asset('adminAssets/assets/vendor/jquery-slimscroll/jquery.slimscroll.min.js') }}"></script>
 <script src="{{ asset('adminAssets/assets/vendor/Chart.min.js') }}"></script>
-  <!-- jQuery UI -->
-  <script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.js" ></script>
+<!-- jQuery UI -->
+<script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
+<script src="{{ asset('adminAssets/assets/scripts/jquery-ui.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/gh/ilikenwf/nestedSortable/jquery.mjs.nestedSortable.js"></script>
+
 
 
 <script type="text/javascript" src="{{ asset('adminAssets/assets/vendor/daterangepicker/moment.min.js') }}"></script>
-<script type="text/javascript" src="{{ asset('adminAssets/assets/vendor/daterangepicker/daterangepicker.js') }}"></script>
+<script type="text/javascript" src="{{ asset('adminAssets/assets/vendor/daterangepicker/daterangepicker.js') }}">
+</script>
 
 <script src="{{ asset('adminAssets/assets/vendor/jquery-slimscroll/jquery.slimscroll.min.js') }}"></script>
 <script src="{{ asset('adminAssets/assets/vendor/jquery.dataTables.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/plugins/SortableNested.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.0.1/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>

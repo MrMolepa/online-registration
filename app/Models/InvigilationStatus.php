@@ -13,9 +13,12 @@ class InvigilationStatus extends Model
     protected $fillable = [
         'name',
         'description',
-        'progress_status',
-
-
+        'status',
+        'order_status',
+        'color_red',
+        'color_green',
+        'color_blue',
+        
 
     ];
 }

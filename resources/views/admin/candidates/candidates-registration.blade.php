@@ -618,8 +618,8 @@
 @section('script')
     <script>
         /*-----------------------------------/
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            /*Diplay candidates
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            /*----------------------------------*/
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    /*Diplay candidates
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    /*----------------------------------*/
 
         /********** Some Variable Initial Value **************/
 
@@ -886,7 +886,7 @@
                 sponsor,
                 subject,
                 type,
-                event =event
+                event = event
             );
             $('#amend-datatable').DataTable().ajax.reload(null, false);
         });
@@ -1184,11 +1184,11 @@
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="sponser" class="control-label">Sponsor</label>
-                                    <select name="sponser" class="form-control" id="sponser">
+                                    <select name="sponser" class="form-control" id="sponsor">
                                         <option value=" ">Please Select sponsor</option>
-                                        <option value="O">O</option>
-                                        <option value="M">M</option>
-                                        <option value="P">P</option>
+                                        @foreach ($sponsors as $sponsor)
+                                            <option value="{{ $sponsor->sponser }}">{{ $sponsor->sponser }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="form-group col-md-4">
@@ -1468,9 +1468,9 @@
                                         <label for="sponsor" class="control-label">Sponsor</label>
                                         <select name="sponser" class="form-control" id="sponsor">
                                             <option value=" ">Please Select sponsor</option>
-                                            <option value="O">O</option>
-                                            <option value="M">M</option>
-                                            <option value="P">P</option>
+                                            @foreach ($sponsors as $sponsor)
+                                                <option value="{{ $sponsor->sponser }}">{{ $sponsor->sponser }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group col-md-4">

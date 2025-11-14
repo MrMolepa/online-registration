@@ -278,13 +278,41 @@ $(document).ready(function () {
         $checkbox.on("change", function () {
             check(this);
         });
+
+
+
+
+
+        // All parent levels require .dropdown-toggle class
+        $('.dropdown-menu').find('.dropdown-submenu').not('.disabled').find('.dropdown-toggle').on('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            console.log('clicked');
+
+            // Remove "show" class in all siblings
+            $(this).parent().siblings().removeClass('show').find('.show').removeClass('show');
+
+            // Toggle submenu
+            $(this).parent().toggleClass('show').children('.dropdown-menu').toggleClass('show');
+
+            // Hide all levels when parent dropdown is closed
+            $(this).parents('.show').on('hidden.bs.dropdown', function(e) {
+                $('.dropdown-submenu .show, .dropdown-submenu.show').removeClass('show');
+            });
+        });
+
+
+
+
+
+
     });
 
     /*-----------------------------------/
 	/*	DISPLAY  DATATABLE
   /*----------------------------------*/
     $("#centresTable").DataTable();
- 
+
 
     /*-----------------------------------/
 	/*	PROFILE PICTURE

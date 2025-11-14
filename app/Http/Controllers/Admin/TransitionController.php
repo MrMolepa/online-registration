@@ -30,8 +30,8 @@ class TransitionController extends Controller
                 ->where('process', $process_id)->get();
             return DataTables::of($transitions)
                 ->setRowId('id')
-                ->editColumn('currentState', function ($row) {
-                    $states = State::get();
+                ->editColumn('currentState', function ($row)use($request) {
+                    $states = State::where('process','=',$request->process_id)->get();
 
                     $stateHTML = "";
                     $selectedState = "";
@@ -55,8 +55,8 @@ class TransitionController extends Controller
                     </div>";
                     return     $html;
                 })
-                ->editColumn('nextState', function ($row) {
-                    $states = State::get();
+                ->editColumn('nextState', function ($row) use($request) {
+                    $states = State::where('process','=',$request->process_id)->get();
                     $stateHTML = "";
                     $selectedState = "";
                     foreach ($states as   $state) {
@@ -88,7 +88,7 @@ class TransitionController extends Controller
                 ->make(true);
         }
         $process = Process::find($request->process_id);
-        $states = State::get();
+        $states = State::where('process','=',$request->process_id)->get();
         return view('admin.process.transition', compact('process', 'states'));
     }
 

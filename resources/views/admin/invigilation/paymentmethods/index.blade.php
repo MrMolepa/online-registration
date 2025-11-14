@@ -77,9 +77,16 @@
                                                                 placeholder="Enter payment method description">
                                                         </div>
                                                     </div>
+                                                    <div class="form-group row center col-sm-12">
+                                                        <div class="form-check">
+                                                            <label for="is_bank_name"
+                                                                class="col-sm-4 col-form-label">Bank Name</label>
+                                                            <input class="form-check-input" type="checkbox" value="1"
+                                                                name="is_bank_name" id="is_bank_name">
+                                                        </div>
+                                                    </div>
 
                                                     <div class="form-group row center col-sm-12">
-
                                                         <div class="form-check">
                                                             <label for="description"
                                                                 class="col-sm-4 col-form-label">Branch</label>
@@ -102,7 +109,7 @@
                                                             <label for="description" class="col-sm-4 col-form-label">Phone
                                                                 Number</label>
                                                             <input class="form-check-input" type="checkbox" value="1"
-                                                                name="is_phone_number" id="is_phone_number">
+                                                                name="is_payable_phone_number" id="is_payable_phone_number">
                                                         </div>
                                                     </div>
                                                     <div class="form-group row center col-sm-12">
@@ -114,6 +121,7 @@
                                                                 name="is_tin_number" id="is_tin_number">
                                                         </div>
                                                     </div>
+                                                     <div class="clearfix"></div>
                                                 </form>
                                             </div>
                                             <div class="modal-footer">
@@ -161,6 +169,14 @@
                                                             placeholder="Enter payment method description">
                                                     </div>
                                                 </div>
+                                                <div class="form-group row center col-sm-12">
+                                                    <div class="form-check">
+                                                        <label for="is_bank_name"
+                                                            class="col-sm-4 col-form-label">Bank Name</label>
+                                                        <input class="form-check-input" type="checkbox" value="1"
+                                                            name="is_bank_name" id="is_bank_name">
+                                                    </div>
+                                                </div>
 
                                                 <div class="form-group row center col-sm-12">
 
@@ -187,7 +203,7 @@
                                                         <label for="description" class="col-sm-4 col-form-label">Phone
                                                             Number</label>
                                                         <input class="form-check-input" type="checkbox" value="1"
-                                                            name="is_phone_number" id="is_phone_number">
+                                                            name="is_payable_phone_number" id="is_payable_phone_number">
                                                     </div>
                                                 </div>
                                                 <div class="form-group row center col-sm-12">
@@ -199,6 +215,7 @@
                                                             name="is_tin_number" id="is_tin_number">
                                                     </div>
                                                 </div>
+                                                 <div class="clearfix"></div>
                                             </form>
                                             <div class="modal-footer">
 
@@ -327,7 +344,12 @@
                                                                 'Value: ' + input.val());
                                                             var name = input.attr('name');
 
-                                                            $(`${form} #${name}`).val(invigilation[name]);
+
+                                                            if(input.attr('type')=="checkbox"){
+                                                                 $(`${form} #${name}`).attr("checked",invigilation[name]==1 ? true:false);
+                                                            }else{
+                                                                  $(`${form} #${name}`).val(invigilation[name]);
+                                                            }
                                                             $("#edit-paymentmethod-form").attr('action', url);
 
                                                         }
@@ -385,22 +407,27 @@
 
 
                                         /****  Print errors*******/
-                                        function printErrorMsg(parent, msg) {
-                                            $(`${parent} input, ${parent} select, textarea`).each(function(index) {
-                                                $(`${parent} .invalid-feedback`).remove();
-                                                $(`${parent} .is-invalid`).removeClass('is-invalid');
-                                                // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
-                                            });
-                                            $.each(msg, function(key, errors) {
-                                                for (const error in errors) {
-                                                    const value = errors[error];
-                                                    $(`[name='${key}']`).addClass('is-invalid');
-                                                    $(`<span class='invalid-feedback'>${value}</span>`).insertAfter(
-                                                        `${parent} [name='${key}']`)
+        function printErrorMsg(parent, msg) {
+            $(`${parent} input, ${parent} select, textarea`).each(function(index) {
+                $(`${parent} .help-block`).remove();
+                $(`${parent} .has-error`).removeClass('has-error');
+                // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
+            });
+            $.each(msg, function(key, errors) {
+                for (const error in errors) {
+                    const value = errors[error];
 
-                                                }
-                                            });
-                                        }
+                    $(`[name='${key}']`).parent().addClass('has-error');
+                    if (key == "gender") {
+                        $(`${parent} [name='${key}']`).next().append(`<span class='help-block'>${value}</span>`);
+                    } else {
+                        $(`<span class='help-block'>${value}</span>`).insertAfter(`${parent} [name='${key}']`)
+                    }
+
+
+                }
+            });
+        }
                                         /****  Print errors End*******/
 
 

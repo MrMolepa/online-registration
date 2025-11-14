@@ -26,7 +26,7 @@
                                                     value="MPESA" />
                                                 M-pesa
                                                 <input type="checkbox" name="payment_method[]" class="filter-checkbox"
-                                                    value="BANK-SLIP" />
+                                                    value="BANK" />
                                                 Bank slip
                                             </div>
 
@@ -59,23 +59,25 @@
                         <div class="panel-body">
                             <div class="custom-tabs-line tabs-line-bottom left-aligned">
                                 <ul class="nav" role="tablist">
-                                    <li class="active"><a href="#invoice" role="tab" data-toggle="tab">Invoices</a>
+                                    <li class="active"><a href="#invoice" role="tab" data-toggle="tab">Candidates
+                                            Payments</a>
                                     </li>
-                                    <li><a href="#payments" role="tab" data-toggle="tab">Payments</a></li>
+                                    <li><a href="#payments" role="tab" data-toggle="tab">Services Payments</a></li>
                                 </ul>
                             </div>
                             <div class="tab-content">
                                 <div class="tab-pane fade in active" id="invoice">
-
-
                                     <table class="table" name="tablename" id="invoices-datatable">
                                         <thead>
                                             <tr>
-                                                <th>Invoice ID</th>
-                                                <th>Client ID</th>
+                                                <th>Centre Number</th>
+                                                <th>Candidate No</th>
                                                 <th>First Name</th>
                                                 <th>Last Name</th>
-                                                <th>Reference NO</th>
+                                                <th>Fee Group</th>
+                                                <th>Pay via</th>
+                                                <th>Reference No</th>
+                                                <th>Fine</th>
                                                 <th>Amount</th>
                                                 <th>Date</th>
                                             </tr>
@@ -130,39 +132,58 @@
                                                         }
                                                     },
                                                     columns: [{
-                                                            data: 'id',
-                                                            name: 'id',
+                                                            data: 'center_no',
+                                                            name: 'center_candidate.center_no',
+                                                            searchable: true,
+
 
                                                         },
                                                         {
-                                                            data: 'client_id',
-                                                            name: 'client_id',
-
+                                                            data: 'candidate_no',
+                                                            name: 'center_candidate.candidate_no',
+                                                            searchable: true,
 
                                                         },
                                                         {
                                                             data: 'candidate_other_name',
-                                                            name: 'candidate_other_name',
-
-
+                                                            name: 'candidates.candidate_other_name',
+                                                            searchable: true,
                                                         },
                                                         {
                                                             data: 'candidate_surname',
-                                                            name: 'candidate_surname',
-
-
+                                                            name: 'candidates.candidate_surname',
+                                                            searchable: true,
                                                         },
                                                         {
+                                                            data: 'fee_group',
+                                                            name: 'fee_groups.name',
+                                                            searchable: false,
+
+                                                        },
+
+                                                        {
+                                                            data: 'name',
+                                                            name: 'fee_payment_method.name',
+                                                            searchable: false,
+                                                        },
+
+                                                        {
                                                             data: 'reference_no',
-                                                            name: 'reference_no',
+                                                            name: 'fee_candidate_histories.reference_no',
+                                                        },
+
+                                                        {
+                                                            data: 'fine',
+                                                            name: 'fee_candidate_histories.fine',
                                                         },
                                                         {
                                                             data: 'amount',
-                                                            name: 'amount',
+                                                            name: 'fee_candidate_histories.amount',
                                                         },
+
                                                         {
                                                             data: 'created_at',
-                                                            name: 'created_at',
+                                                            name: 'fee_candidate_histories.created_at',
                                                         }
 
                                                     ]
@@ -180,12 +201,14 @@
                                                             paymeny_methods.push($(this).val())
                                                         }
                                                     })
-                                                    table_school_fee.column(4).search(paymeny_methods.join('|'), true, false, true).draw();
+                                                    table_school_fee.column(6).search(paymeny_methods.join('|'), true, false, true).draw();
                                                 });
 
 
                                                 $("#year").on("change", function(event) {
                                                     $('#invoices-datatable').DataTable().ajax.reload();
+                                                    $("#payments-datatable").DataTable().ajax.reload();
+
                                                 });
 
                                             });
@@ -196,11 +219,14 @@
                                     <table class="table" name="tablename" id="payments-datatable">
                                         <thead>
                                             <tr>
-                                                <th>Payment ID</th>
-                                                <th>Invoice ID</th>
-                                                <th>Reference NO</th>
+                                                <th>ID</th>
+                                                <th>First Name</th>
+                                                <th>Last name</th>
+                                                <th>Pay via</th>
+                                                <th>Reference No</th>
+                                                <th>Fine</th>
                                                 <th>Amount</th>
-                                                <th>Payment Date</th>
+                                                <th>Date</th>
                                             </tr>
                                         </thead>
 
@@ -208,7 +234,7 @@
                                     @push('scripts')
                                         <script>
                                             $(function() {
-                                                var table_school_fee = $('#payments-datatable').DataTable({
+                                                var services_payments = $('#payments-datatable').DataTable({
                                                     processing: true,
                                                     serverSide: true,
                                                     deferRender: true,
@@ -239,24 +265,44 @@
                                                             titleAttr: 'PDF'
                                                         }
                                                     ],
-                                                    ajax: "{{ route('admin.payment-history.payments') }}",
+
+                                                    ajax: {
+                                                        url: "{{ route('admin.payment-history.payments') }}",
+                                                        data: function(d) {
+                                                            d.year = $("#year").val()
+                                                            d.payment_method = $('.filter-checkbox:checked').val();
+                                                        }
+                                                    },
                                                     columns: [{
                                                             data: 'id',
                                                             name: 'id',
 
                                                         },
                                                         {
-                                                            data: 'invoice_id',
-                                                            name: 'invoice_id',
+                                                            data: 'first_name',
+                                                            name: 'first_name',
+                                                        },
+                                                        {
+                                                            data: 'last_name',
+                                                            name: 'last_name',
+                                                        },
+                                                        {
+                                                            data: 'payment_method',
+                                                            name: 'payment_method',
                                                         },
                                                         {
                                                             data: 'reference_no',
                                                             name: 'reference_no',
                                                         },
                                                         {
+                                                            data: 'fine',
+                                                            name: 'fine',
+                                                        },
+                                                        {
                                                             data: 'amount',
                                                             name: 'amount',
                                                         },
+
                                                         {
                                                             data: 'created_at',
                                                             name: 'created_at',
@@ -267,6 +313,15 @@
                                                 });
 
                                                 $("#payments-datatable").css("width", "99.5%");
+                                                $('.filter-checkbox').on('change', function(e) {
+                                                    var paymeny_methods = []
+                                                    $.each($('.filter-checkbox'), function(i, elem) {
+                                                        if ($(elem).prop('checked')) {
+                                                            paymeny_methods.push($(this).val())
+                                                        }
+                                                    })
+                                                    services_payments.column(4).search(paymeny_methods.join('|'), true, false, true).draw();
+                                                });
 
                                             });
                                         </script>

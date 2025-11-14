@@ -104,14 +104,7 @@ class PaymentVerificationController extends Controller
     }
 
 
-    public  function removeEmptySubFolders($path)
-    {
-        $empty = true;
-        foreach (glob($path . DIRECTORY_SEPARATOR . "*") as $file) {
-            $empty &= is_dir($file) && $this->removeEmptySubFolders($file);
-        }
-        return $empty && rmdir($path);
-    }
+
     // Payment Verification  candidates
     public function privateCandidates()
     {
@@ -142,7 +135,7 @@ class PaymentVerificationController extends Controller
             })
             // ->join('center_candidate', 'center_candidate.candidate_no', '=', 'candidate_confirmation.candidate_no', 'left outer')
             ->orderBy('candidate_confirmation.checked_status', 'asc')
-            ->whereYear('candidate_confirmation.created_at', '=', (date('Y')-1))
+            ->whereYear('candidate_confirmation.created_at', '=', (date('Y') - 1))
             // ->where('candidate_info->Session', 'June')
             ->get();
         return DataTables::of($privateCandidates)
@@ -294,60 +287,89 @@ class PaymentVerificationController extends Controller
     public function centerCharges(Request $request, $center_no)
     {
         if ($request->ajax()) {
-            $center=Center::find($center_no);
+
+            $levels = DB::table('center_candidate')->select(
+                [
+                    'center_candidate.level'
+                ],
+            )
+                ->distinct()
+                ->orderBy('level')
+                ->where('financial_year', '=', $request->year)
+                ->where('center_no', '=', $center_no)
+                ->get();
 
 
+            $html = '';
+            $total_paid = 0;
+            $total_charges = 0;
+            $total_overdue=0;
 
-            $schoolfees = Payment::schoolfees($center_no, $center->level, "November", $request->year);
-            $other_sponsor_total =$schoolfees['sponsors']['O']['sponsor_overdue'];
-            $other_charges=$schoolfees['other_charges'];
-            $total_paid=$schoolfees['total_paid'];
-            $balance =  $other_sponsor_total +  $other_charges- $total_paid;
+
             $html = "<table class='table' name='tablename'>
-                        <thead>
+                         <thead>
+
                         </thead>
-                        <tbody>
-                            <tr>
-                                <th colspan='3'> </th>
-                                <th>Total Fees</th>
+                        <tbody>";
 
-                                <td colspan='2'>
-                                    LSL " . number_format( $other_sponsor_total, 2, '.', '') . "
-                                </td>
-                            </tr>
-                            <tr>
-                                <th colspan='3'></th>
-                                <th>Other Charges</th>
 
-                                <td colspan='2'>
-                                    LSL " . number_format( $other_charges, 2, '.', '') . "
-                                </td>
-                            </tr>
-                            <tr>
-                                <th colspan='3'> </th>
-                                <th>Bank charge</th>
-                                <td colspan='2'>
-                                    LSL
-                                </td>
-                            </tr>
-                            <tr>
-                                <th colspan='3'></th>
-                                <th>Paid Amount</th>
+            foreach ($levels as $level) {
+                $schoolfees = Payment::schoolfees($center_no, $level->level, "November", $request->year);
+                $level_overdue = $schoolfees['sponsors']['O']['sponsor_overdue'] + $schoolfees['sponsors']['P']['sponsor_overdue'];
+                $total_overdue += $level_overdue;
+                $level_total_paid = $schoolfees['total_paid'];
+                $level_charges = $schoolfees['other_charges'];
 
-                                <td colspan='2'>
-                                    LSL " . number_format($total_paid, 2, '.', '') . "
-                                </td>
-                            </tr>
-                            <tr>
-                                <th colspan='3'></th>
-                                <th>Balance</th>
+                if ($total_paid< $level_total_paid) {
+                    $total_paid= $level_total_paid;
+                }
+                if ( $total_charges<  $level_charges) {
+                    $total_charges=  $level_charges;
+                }
 
-                                <td colspan='2'>
-                                    LSL    " . number_format($balance, 2, '.', '') . "
+
+                $html .= "<tr>
+                             <th colspan='7'>$level->level </th>
+                           </tr>
+                            <tr>
+                                <th colspan='4'>Total Fees</th>
+                                <td colspan='3'>
+                                    LSL " . number_format($level_overdue, 2, '.', '') . "
                                 </td>
                             </tr>
+
+                            ";
+            }
+
+            $balance   = $total_overdue +  $total_charges - $total_paid;
+
+            $html .= "
+                      <tr>
+                         <th colspan='4'>Total Overdue</th>
+                            <td colspan='3'>
+                                LSL " . number_format( $total_overdue, 2, '.', '') . "
+                            </td>
+                        </tr>
+                        <tr>
+                         <th colspan='4'>Total Paid</th>
+                            <td colspan='3'>
+                                LSL " . number_format( $total_paid, 2, '.', '') . "
+                            </td>
+                        </tr>
+                        <tr>
+                         <th colspan='4'>Other Charges</th>
+                            <td colspan='3'>
+                                LSL " . number_format( $total_charges, 2, '.', '') . "
+                            </td>
+                        </tr>
+                         <tr>
+                         <th colspan='4'>Balance</th>
+                            <td colspan='3'>
+                                LSL " . number_format(   $balance, 2, '.', '') . "
+                            </td>
+                        </tr>
                         </tbody>
-                    </table>";
+                        </table>";
 
             return response()->json(['html' => $html]);
         }
@@ -605,7 +627,8 @@ class PaymentVerificationController extends Controller
 
         return response()->json([
             'privateCandidate' => $privateCandidate,
-            'candidateInfo' => $candidateInfo, 'url' => $url
+            'candidateInfo' => $candidateInfo,
+            'url' => $url
         ]);
     }
     // comments update

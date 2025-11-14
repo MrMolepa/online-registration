@@ -136,8 +136,8 @@
                             <div class="nav nav-tabs payment-method" id="nav-tab" role="tablist">
                             </div>
                             <div class="tab-content" id="nav-tabContent">
-                                <div class="tab-pane fade p-3" id="nav-home" role="tabpanel"
-                                    aria-labelledby="nav-home-tab">
+                                <div class="tab-pane fade p-3" id="credit-card" role="tabpanel"
+                                    aria-labelledby="credit-card-tab">
                                     <h2>EFT (Card Transactions)</h2>
                                     <div class="mt-2 sm:mt-0 form__field">
                                         <a id="iveri-litebox-button">Pay now</a>
@@ -320,8 +320,8 @@
                                             id="Ecom_BillTo_Telecom_Phone_Number" />
                                     </div>
                                 </div>
-                                <div class="tab-pane fade p-3 " id="nav-profile" role="tabpanel"
-                                    aria-labelledby="nav-profile-tab">
+                                <div class="tab-pane fade p-3 " id="eco-cash" role="tabpanel"
+                                    aria-labelledby="eco-cash-tab">
                                     <h2>EcoCash</h2>
                                     <div class="form-group">
                                         <label for="ecocash_mobile">Phone number</label>
@@ -385,7 +385,8 @@
                                             <p>You will receive an order confirmation email with details of your
                                                 order
                                                 and a link to track your process.</p>
-                                            <button class="btn btn-outline-success">Back Home</button>
+                                             <a href="/services" class="btn btn-outline-success" target="_blank">Back Home</a>
+
                                         </div>
 
                                     </div>
@@ -518,7 +519,7 @@
                             reference_no: reference_no
                         },
                         success: function(response) {
-                           
+
                             $("#personal-info").html("");
                             $("#progress-form__panel-2").html("");
                             $(".payment-method").html("");
@@ -593,6 +594,51 @@
                     });
                 }
                 /****End MPESA *******/
+
+
+                /**** EcoCash *******/
+                $(document).on("click", "#ecocash_pay", function() {
+                    ecoCashComplete($(this));
+                });
+                function ecoCashComplete(element) {
+                    var formData = new FormData($("#service-items").parents('form')[0]);
+                    formData.append("payment", "EcoCash");
+                    //   EcoCash request
+                    $.ajaxSetup({
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                                "content"
+                            ),
+                        },
+                    });
+                    var caption = element.html();
+                    $.ajax({
+                        url: "{{ route('services.transaction') }}",
+                        type: 'POST',
+                        xhr: function() {
+                            var myXhr = $.ajaxSettings.xhr();
+                            return myXhr;
+                        },
+                        data: formData,
+                        beforeSend: function() {
+                            element.prop('disabled', true).html("Processing...");
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    }).done(function(response) {
+                        if ($.isEmptyObject(response.errors)) {
+                            handleSuccess(response);
+                            element.prop('disabled', false).html(caption);
+                        } else {
+                            printErrorMsg("#eserviceform", response.errors);
+                            element.prop('disabled', false).html(caption);
+                        }
+                    }).fail(function(xhr, status, error) {
+                        element.prop('disabled', false).html(caption);
+                    });
+                }
+                /****END EcoCash *******/
 
                 /****Update Form *******/
 

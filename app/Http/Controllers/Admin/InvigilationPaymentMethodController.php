@@ -21,6 +21,21 @@ class InvigilationPaymentMethodController extends Controller
             $invigilations = InvigilationPaymentMethod::get();
             return DataTables::of($invigilations)
                 ->addIndexColumn()
+                ->addColumn('is_account_number', function ($row) {
+                    return ($row->is_account_number == '1') ? 'Yes' : 'No';
+                })
+                ->addColumn('is_bank_name', function ($row) {
+                    return ($row->is_bank_name == '1') ? 'Yes' : 'No';
+                })
+                ->addColumn('is_branch', function ($row) {
+                    return ($row->is_branch == '1') ? 'Yes' : 'No';
+                })
+                ->addColumn('is_phone_number', function ($row) {
+                    return ($row->is_payable_phone_number== '1') ? 'Yes' : 'No';
+                })
+                ->addColumn('is_tin_number', function ($row) {
+                    return ($row->is_tin_number == '1') ? 'Yes' : 'No';
+                })
                 ->addColumn('action', function ($row) {
 
                     $btn = '<a href="javascript:void(0)" data-toggle="tooltip"  data-url="' . route('admin.invigilations.paymentmethods.edit', $row->id)  . '" data-original-title="Edit" class="edit-paymentmethods btn btn-primary btn-sm fa fa-edit"></a>';
@@ -66,8 +81,9 @@ class InvigilationPaymentMethodController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'is_account_number' => $request->has('is_account_number') ? 1 : 0,
+            'is_bank_name' => $request->has('is_bank_name') ? 1 : 0,
             'is_branch' => $request->has('is_branch') ? 1 : 0,
-            'is_phone_number' => $request->has('is_phone_number') ? 1 : 0,
+            'is_payable_phone_number' => $request->has('is_payable_phone_number') ? 1 : 0,
             'is_tin_number' => $request->has('is_tin_number') ? 1 : 0,
 
         ]);
@@ -124,8 +140,9 @@ class InvigilationPaymentMethodController extends Controller
             $invigilation->name = $request->name;
             $invigilation->description = $request->description;
             $invigilation->is_account_number = $request->has('is_account_number') ? 1 : 0;
+            $invigilation->is_bank_name = $request->has('is_bank_name') ? 1 : 0;
             $invigilation->is_branch = $request->has('is_branch') ? 1 : 0;
-            $invigilation->is_phone_number = $request->has('is_phone_number') ? 1 : 0;
+            $invigilation->is_payable_phone_number = $request->has('is_payable_phone_number') ? 1 : 0;
             $invigilation->is_tin_number = $request->has('is_tin_number') ? 1 : 0;
             $invigilation->save();
         }

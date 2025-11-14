@@ -77,12 +77,8 @@ class SubjectsGrouping implements Rule
                     $checkIntersetlbse = array_intersect($subjects,  $lbseSubjects);
                     if (in_array($value[0]['type'], [3])) {
                         if (
-                            count($checkIntersetCompulsory) <= 3 ||
                             in_array($value[0]['type'], [3]) &&
-                            count($checkIntersetSciences) > 0 ||
-                            count($creativeSubjects) > 0 ||
                             count($checkIntersetPratical) == 0 &&
-                            count($checkIntersetSocialScience) > 0  &&
                             count($checkIntersetlbse) == 0
                         ) {
                             return true;
@@ -119,7 +115,6 @@ class SubjectsGrouping implements Rule
                     return false;
                 }
                 break;
-
             default:
                 break;
         }

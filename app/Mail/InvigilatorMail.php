@@ -12,17 +12,23 @@ class InvigilatorMail extends Mailable
     use Queueable, SerializesModels;
 
     public $url;
+    public $declined;
     public $surname;
     public $other_names;
     public $center_no;
+    public $center_name;
+    public $mailheader;
 
 
     public function __construct($data)
     {
         $this->url = $data['url'];
+        $this->declined = $data['declined'];
+        $this->center_no = $data['center_no'];
         $this->surname = $data['surname'];
         $this->other_names = $data['other_names'];
-        $this->center_no = $data['center_no'];
+        $this->center_name = $data['center_name'];
+        $this->mailheader = $data['mailheader'];
     }
 
     public function build()

@@ -18,6 +18,8 @@
                                 <h3 class="panel-title">Paid Services</h3>
                             </div>
                             <div class="panel-body">
+
+
                                 <fieldset>
                                     <legend>Filter</legend>
                                     <div class="pull-left col-md-4">
@@ -27,10 +29,7 @@
                                             </span>
                                             <select class="form-control status-dropdown" id="service-name">
                                                 <option value="">Please Select Service</option>
-                                                @foreach ($oneTimeServicesItems as $oneTimeServicesItem)
-                                                    <option value="{{ $oneTimeServicesItem->id }}">
-                                                        {{ $oneTimeServicesItem->name }}</option>
-                                                @endforeach
+
                                             </select>
                                         </div>
                                     </div>
@@ -51,6 +50,11 @@
                                     <div class="clearfix"></div>
                                 </fieldset>
 
+                                <a href="" style="margin: 0.9em;" class="btn btn-info" data-toggle="modal"
+                                    data-target="#export-services">
+                                    Export
+                                </a>
+
                                 <table class="table" name="tablename"id="sales">
                                     <thead>
                                         <tr>
@@ -67,170 +71,7 @@
 
 
                                 </table>
-                                @push('scripts')
-                                    <script>
-                                        $(function() {
-                                            var service = $('#sales').DataTable({
-                                                processing: true,
-                                                serverSide: true,
-                                                scrollY: 500,
-                                                scrollX: true,
-                                                scrollCollapse: true,
-                                                deferRender: true,
-                                                "lengthMenu": [
-                                                    [20, 50, 100, 200, 400, -1],
-                                                    [20, 50, 100, 200, 400, "All"]
-                                                ],
-                                                ajax: {
-                                                    url: "{{ route('admin.service-sales.index') }}",
-                                                    data: function(d) {
-                                                        d.year = $("#year").val();
-                                                        d.service = $("#service-name").val();
-                                                    }
-                                                },
 
-                                                columns: [{
-                                                        "className": 'dt-control',
-                                                        data: 'status',
-                                                        name: 'status',
-                                                        "orderable": false,
-                                                        "defaultContent": '',
-                                                        searchable: false
-                                                    },
-
-                                                    {
-                                                        data: 'first_name',
-                                                        name: 'first_name',
-                                                    },
-                                                    {
-                                                        data: 'last_name',
-                                                        name: 'last_name',
-                                                        searchable: true
-                                                    },
-                                                    {
-                                                        data: 'reference_number',
-                                                        name: 'reference_number',
-                                                        searchable: true
-                                                    },
-                                                     {
-                                                        data: 'created_at',
-                                                        name: 'created_at',
-                                                        searchable: true
-                                                    },
-                                                    {
-                                                        data: 'reference_no',
-                                                        name: 'reference_no',
-                                                        searchable: true
-                                                    },
-                                                    {
-                                                        data: 'name',
-                                                        name: 'name',
-                                                        searchable: true
-                                                    },
-
-
-                                                    {
-                                                        data: 'actions',
-                                                        name: 'actions',
-                                                        searchable: false,
-                                                        sortable: false
-                                                    }
-
-                                                ]
-
-                                            });
-                                            $("#sales").css("width", "98.5%");
-                                            // Add event listener for opening and closing details
-                                            $('#sales').on('click', 'td.dt-control', function() {
-                                                var tr = $(this).closest('tr');
-                                                var row = service.row(tr);
-                                                if (row.child.isShown()) {
-                                                    // This row is already open - close it
-                                                    row.child.hide();
-                                                    tr.removeClass('shown');
-                                                } else {
-                                                    // Open this row
-                                                    row.child(format(row.data())).show();
-                                                    tr.addClass('shown');
-                                                }
-                                            });
-
-
-
-                                            /* Formatting function for row details - modify as you need */
-                                            function format(d) {
-                                                var attributes = $.parseJSON(d.service_attributes);
-                                                var requirements = d.requirements;
-                                                var requirementHTML = "";
-                                                $.each(requirements, function(requirement_key, requirements_val) {
-                                                    if (attributes.filter(attribute => attribute.code === requirement_key && attribute
-                                                            .frontend_type === "file").length > 0) {
-                                                        requirementHTML += `<tr>
-                                                                                <td> ${requirement_key} :</td>
-                                                                                <td><a href='{{ asset('${requirements_val}') }}' 'data-toggle='tooltip' target="_blank" title='ggg'class='btn btn-primary btn-xs '>
-                                                                                        VIEW
-                                                                                        <i class='fas fa-eye'
-                                                                                            download>
-                                                                                        </i>
-                                                                                    </a>
-                                                                                </td>
-                                                                            </tr>`;
-
-
-                                                    } else {
-                                                        requirementHTML += `<tr>
-                                                                                <td> ${requirement_key} :</td>
-                                                                                <td>${requirements_val} </td>
-                                                                            </tr>`;
-                                                    }
-
-
-                                                });
-
-
-
-                                                // `d` is the original data object for the ro
-                                                // console.log(attributes);
-                                                // console.log(requirements);
-                                                return `<table cellpadding='5' cellspacing='0' border='0' style='padding-left:50px;'>
-                                                            <tr>
-                                                                <td> Service Name :</td>
-                                                                <td>${d.name} </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td> Full Names :</td>
-                                                                <td>${d.first_name} ${d.last_name}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Email  Address:</td>
-                                                                <td>${d.email} </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Phone Number:</td>
-                                                                <td>${d.phone} </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>ID Number or Passport Nmuber:</td>
-                                                                <td>${d.national_identity} </td>
-                                                            </tr>
-                                                            ${requirementHTML}
-
-
-                                                    </table>`;
-                                            }
-
-                                            $("#year").on("change", function(event) {
-                                                $('#sales').DataTable().ajax.reload();
-                                            });
-                                            $("#service-name").on("change", function(event) {
-                                                $('#sales').DataTable().ajax.reload();
-                                            });
-
-
-
-                                        });
-                                    </script>
-                                @endpush
                             </div>
                         </div>
                         <!-- END PANEL NO CONTROLS -->
@@ -269,6 +110,161 @@
                 hideMethod: "fadeOut",
             };
 
+            getServiceItems();
+            var service = $('#sales').DataTable({
+                processing: true,
+                serverSide: true,
+                scrollY: 500,
+                scrollX: true,
+                scrollCollapse: true,
+                deferRender: true,
+                "lengthMenu": [
+                    [20, 50, 100, 200, 400, -1],
+                    [20, 50, 100, 200, 400, "All"]
+                ],
+                ajax: {
+                    url: "{{ route('admin.service-sales.index') }}",
+                    data: function(d) {
+                        d.year = $("#year").val();
+                        d.service = $("#service-name").val();
+                    }
+                },
+
+                columns: [{
+                        "className": 'dt-control',
+                        data: 'status',
+                        name: 'status',
+                        "orderable": false,
+                        "defaultContent": '',
+                        searchable: false
+                    },
+
+                    {
+                        data: 'first_name',
+                        name: 'first_name',
+                    },
+                    {
+                        data: 'last_name',
+                        name: 'last_name',
+                        searchable: true
+                    },
+                    {
+                        data: 'reference_number',
+                        name: 'reference_number',
+                        searchable: true
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'created_at',
+                        searchable: true
+                    },
+                    {
+                        data: 'reference_no',
+                        name: 'reference_no',
+                        searchable: true
+                    },
+                    {
+                        data: 'name',
+                        name: 'name',
+                        searchable: true
+                    },
+
+
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        searchable: false,
+                        sortable: false
+                    }
+
+                ]
+
+            });
+            $("#sales").css("width", "98.5%");
+            // Add event listener for opening and closing details
+            $('#sales').on('click', 'td.dt-control', function() {
+                var tr = $(this).closest('tr');
+                var row = service.row(tr);
+                if (row.child.isShown()) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Open this row
+                    row.child(format(row.data())).show();
+                    tr.addClass('shown');
+                }
+            });
+            /* Formatting function for row details - modify as you need */
+            function format(d) {
+                var attributes = $.parseJSON(d.service_attributes);
+                var requirements = d.requirements;
+                var requirementHTML = "";
+                $.each(requirements, function(requirement_key, requirements_val) {
+                    if (attributes.filter(attribute => attribute.code === requirement_key && attribute
+                            .frontend_type === "file").length > 0) {
+                        requirementHTML += `<tr>
+                                                                                <td> ${requirement_key} :</td>
+                                                                                <td><a href='{{ asset('${requirements_val}') }}' 'data-toggle='tooltip' target="_blank" title='ggg'class='btn btn-primary btn-xs '>
+                                                                                        VIEW
+                                                                                        <i class='fas fa-eye'
+                                                                                            download>
+                                                                                        </i>
+                                                                                    </a>
+                                                                                </td>
+                                                                            </tr>`;
+
+
+                    } else {
+                        requirementHTML += `<tr>
+                                                                                <td> ${requirement_key} :</td>
+                                                                                <td>${requirements_val} </td>
+                                                                            </tr>`;
+                    }
+
+
+                });
+
+
+
+                // `d` is the original data object for the ro
+                // console.log(attributes);
+                // console.log(requirements);
+                return `<table cellpadding='5' cellspacing='0' border='0' style='padding-left:50px;'>
+                                                            <tr>
+                                                                <td> Service Name :</td>
+                                                                <td>${d.name} </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td> Full Names :</td>
+                                                                <td>${d.first_name} ${d.last_name}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Email  Address:</td>
+                                                                <td>${d.email} </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Phone Number:</td>
+                                                                <td>${d.phone} </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>ID Number or Passport Nmuber:</td>
+                                                                <td>${d.national_identity} </td>
+                                                            </tr>
+                                                            ${requirementHTML}
+
+
+                                                    </table>`;
+            }
+
+            $("#year").on("change", function(event) {
+                getServiceItems();
+                $('#sales').DataTable().ajax.reload();
+
+            });
+            $("#service-name").on("change", function(event) {
+                $('#sales').DataTable().ajax.reload();
+            });
             /**********  Get particular  Records for Service check **************/
             $(document).on("click", ".btn-edit-check", function() {
                 var url = $(this).data('url');
@@ -535,6 +531,29 @@
             }
             /**** Initailize Select2 functions *******/
 
+            $('#downloadBtn').on('click', function() {
+                var action = $("#exportForm").attr('action')
+                var inputData = $("#exportForm").serialize();
+                if (inputData ) {
+                    action += "?" + inputData ;
+                }
+
+                // 🔄 Show loading state
+                let $btn = $(this);
+                $btn.prop('disabled', true).text('Preparing...');
+
+                // 🚀 Trigger download
+                window.location.href = action;
+
+                // ⏳ Re-enable button after short delay
+                setTimeout(function() {
+                    $btn.prop('disabled', false).text('Export');
+                }, 5000);
+            });
+
+
+
+
 
 
             /****  Print errors*******/
@@ -562,6 +581,50 @@
             }
 
             /****  Print errors End*******/
+
+
+
+            /****  GET SERVICE ITEMS*******/
+            function getServiceItems() {
+                var url = "{{ route('admin.service-sales.index') }}";
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                $.ajax({
+                    url: url,
+                    method: "GET",
+                    data: {
+                        year: $("#year").val(),
+                        service_items: 'service_items'
+                    },
+                    success: function(data) {
+                        var serviceItems = data.serviceItem;
+
+                        $('#service-name').html('');
+                        $('#service-name').append($('<option>', {
+                            value: '',
+                            text: 'Select Service Name'
+                        }));
+                        $.each(serviceItems, function(i, item) {
+                            $('#service-name').append($('<option>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                    }
+                });
+
+
+
+            }
+
+
+            /****  GET SERVICE ITEMS END*******/
+
+
+
         });
     </script>
 
@@ -695,10 +758,59 @@
                 <div class="modal-footer">
                     <button type="submit" name="save-comments" class="btn btn-primary" id="save-comments">Save</button>
                     <button type="button" class="btn btn-danger resetform" data-dismiss="modal">Close</button>
-
                 </div>
             </div>
         </div>
     </div>
     <!-- END COMMENTS -->
+
+
+    <!-- EXPORT SERVICE MODAL -->
+    <div class="modal fade bd-modal-md" id="export-services" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog ">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="modal-title">Export Files</h3>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('admin.service-sales.exportFiles') }}" method="post" id="exportForm">
+                        <div>
+                            @csrf
+                        </div>
+
+                        <div class="form-group">
+                            <label for="file_name">File Name</label>
+                            <select class="form-control" id="file_name" name="file_name">
+                                <option value="">Please Select Service</option>
+                                @foreach ($serviceAttributes as $serviceAttribute)
+                                    <option value="{{ $serviceAttribute->code }}">{{ $serviceAttribute->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label" for="start_date">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" id="start_date"
+                                value="" />
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label" for="end_date">End Date</label>
+                            <input type="date" class="form-control" name="end_date" id="end_date" value="" />
+                        </div>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" name="download-files" class="btn btn-primary" id="downloadBtn">Save</button>
+                    <button type="button" class="btn btn-danger resetform" id="close"
+                        data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!--END EXPORT SERVICE MODEL -->
 @endsection

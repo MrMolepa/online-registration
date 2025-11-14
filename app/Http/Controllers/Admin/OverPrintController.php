@@ -11,6 +11,9 @@ use App\Libraries\fpdfcertificate\exFPDF;
 use App\Models\Center;
 use App\Models\CenterCandidate;
 use App\Models\OptionHeader;
+use App\Models\PdfTemplate;
+use App\Services\PDFService;
+use Illuminate\Support\Arr;
 use setasign\Fpdi\Fpdi;
 
 class OverPrintController extends Controller
@@ -18,7 +21,15 @@ class OverPrintController extends Controller
     public function index(Request $request)
     {
 
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
+
+
+
+        $years =  CenterCandidate::select(DB::raw('financial_year'))
+            ->orderBy('financial_year', 'DESC')
+            ->distinct()
+            ->get();
+        $financial_year = $years->first()->financial_year;
+
         $districts = DB::table('centers')
             ->join('center_candidate', 'centers.center_no', '=', 'center_candidate.center_no')
             ->select('centers.district', 'centers.district_code')
@@ -26,6 +37,12 @@ class OverPrintController extends Controller
             ->where('center_candidate.financial_year', '=', $financial_year)
             ->orderBy('centers.center_no', 'ASC')
             ->get()->pluck('district', 'district_code');
+
+        $sessions =  CenterCandidate::select(DB::raw('session'))
+            ->where('center_candidate.financial_year', '=', $financial_year)
+            ->orderBy('session', 'DESC')
+            ->distinct()
+            ->get();
         $levels =  CenterCandidate::select(DB::raw('level as level'))
             ->where('center_candidate.financial_year', '=', $financial_year)
             ->orderBy('level', 'DESC')
@@ -34,17 +51,16 @@ class OverPrintController extends Controller
             ->pluck('level');
 
 
+        $pdfTemplates = PdfTemplate::get();
         if ($request->ajax()) {
             $center = $request->center_no;
             $district = $request->district;
             $level = $request->level;
-
             $centers = DB::table('centers')
                 ->select('centers.center_no', 'centers.center_name')
                 ->join('center_candidate', 'centers.center_no', '=', 'center_candidate.center_no')
                 ->groupBy('center_candidate.center_no')
                 ->where('center_candidate.financial_year', '=', $financial_year);
-
             $subjects =  DB::table('over_print_subjects');
 
             if (!empty($center)) {
@@ -54,7 +70,7 @@ class OverPrintController extends Controller
                 $centers = $centers->where('centers.district_code', '=', $district);
             }
             if (!empty($level)) {
-                $subjects =  $subjects->where('level', '=',  $level) ;
+                $subjects =  $subjects->where('level', '=',  $level);
                 $centers = $centers->where('center_candidate.level', '=', $level);
             }
 
@@ -65,28 +81,19 @@ class OverPrintController extends Controller
                 ->get();
 
 
-            return response()->json(['centers' => $centers,'subjects'=>$subjects]);
+            return response()->json(['centers' => $centers, 'subjects' => $subjects]);
         }
 
-        return view('admin.overprint.overprint', compact('districts', 'levels'));
+        return view('admin.pdf.overprint', compact('districts', 'levels', 'sessions', 'years', 'pdfTemplates'));
     }
-
-
     public function print(Request $request)
     {
-
-
-
-
-
-
-
 
 
         $center = $request->center_no;
         $district = $request->district;
         $level = $request->level;
-        $subject= $request->subject;
+        $subject = $request->subject;
 
         $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
         $over_print_candidates = DB::table('candidate_subject')
@@ -135,9 +142,9 @@ class OverPrintController extends Controller
 
 
         if (!empty($subject)) {
-            $multpleChoiceSubjects  =   $multpleChoiceSubjects ->where('subject_code', '=', $subject);
+            $multpleChoiceSubjects  =   $multpleChoiceSubjects->where('subject_code', '=', $subject);
         }
-        $multpleChoiceSubjects=  $multpleChoiceSubjects->orderBy('subject_code', 'ASC')
+        $multpleChoiceSubjects =  $multpleChoiceSubjects->orderBy('subject_code', 'ASC')
             ->get()->pluck('subject_code')->toArray();
 
 
@@ -180,23 +187,19 @@ class OverPrintController extends Controller
                     $center_no = $candidate->center_no;
                     $center_name = $candidate->center_name;
                     // Subject info
-
-
-
-                 $subject_code = $over_print_subjects->subject_code;
-                 $subject_name = $over_print_subjects->subject_name;
-                 if (in_array($subject_code,['0181'] )) {
-                    $optionHeader = OptionHeader::find($candidate->subject_option);
-                    $subject_code=$candidate->subject_code."_".$optionHeader->alternative_option_code;
-                    $subject_name =$over_print_subjects->subject_name." ". $optionHeader->description;
-                 }
-                $exams_date =  date('Y-m-d', strtotime($over_print_subjects->exam_date));
+                    $subject_code = $over_print_subjects->subject_code;
+                    $subject_name = $over_print_subjects->subject_name;
+                    if (in_array($subject_code, ['0181'])) {
+                        $optionHeader = OptionHeader::find($candidate->subject_option);
+                        $subject_code = $candidate->subject_code . "_" . $optionHeader->alternative_option_code;
+                        $subject_name = $over_print_subjects->subject_name . " " . $optionHeader->description;
+                    }
+                    $exams_date =  date('Y-m-d', strtotime($over_print_subjects->exam_date));
 
 
                     //########################################################
                     // Statemnt of results
                     $pdf->AddPage();
-
                     if (!$request->has('blank')) {
                         $pdf->setSourceFile($file);
                         $tplIdx = $pdf->importPage(1);
@@ -215,17 +218,17 @@ class OverPrintController extends Controller
                     // Exams date:
                     $pdf->SetXY(27.12,  46.2);
                     $pdf->Cell($width * 2 / 4, 6, $exams_date, 0);
-
                     // Subject Name:
                     $pdf->SetXY(80.77,  87.87);
                     $pdf->Cell($width * 2 / 4, 6, $subject_name, 0);
-
                     // Candidate Number
                     $pdf->Code39(136.14, 18, 'Candidate Number', $candidate_no);
                     // Center Number
                     $pdf->Code39(142, 42, 'Center Number', $center_no);
                     // Subject Code
                     $pdf->Code39(145, 66, 'Subject Code', "$subject_code");
+
+
                     $pdf->Rotate(90, 201, 214);
                     $pdf->Text(201, 214,  $center_name);
                     $pdf->Rotate(0);
@@ -236,7 +239,7 @@ class OverPrintController extends Controller
 
 
 
-       $pdf->Output("Scanners"  . ".pdf", "I");
+        $pdf->Output("Scanners"  . ".pdf", "I");
         $pdf->Output("Scanners"  . ".pdf", "F");
         header("Content-type: application/pdf");
         header("Content-disposition: attectment; filename = Scanners" . '.pdf');
@@ -244,6 +247,49 @@ class OverPrintController extends Controller
         unlink("Scanners" . '.pdf');
         exit;
         ob_end_flush();
-
     }
-}
+
+
+    public function overPrint(Request $request)
+    {
+
+        $request->validate([
+            'template' => 'required',
+        ]);
+
+        $template = $request->template;
+        $pdfTemplate = PdfTemplate::find($template);
+        $inputs = $request->except(['template', 'print', '_token', 'blank']);
+        $filteredData = collect($inputs)->reject(function ($value) {
+            return is_null($value);
+        })->all();
+
+        $values = (object)$filteredData;
+        $culumns = $this->getTableColumns($pdfTemplate->data_source);
+        $filteredData =  array_map(function ($value) use ($culumns) {
+            if (in_array($value, $culumns)) {
+                return [
+                    'column' => $value,
+                    'operator' => "equals"
+                ];
+            }
+        }, array_keys($filteredData));
+        $felters = array_filter($filteredData, function ($value) {
+            return $value !== null;
+        });
+        $pdf = new  PDFService();
+        $pdf->generatePdf($template, $felters, $values, 100000);
+        exit();
+    }
+
+
+    protected function getTableColumns($tableName)
+    {
+        try {
+            $columns = DB::getSchemaBuilder()->getColumnListing($tableName);
+            return $columns;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+  }

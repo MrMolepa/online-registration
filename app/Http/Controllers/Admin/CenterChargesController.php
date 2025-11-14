@@ -20,25 +20,24 @@ class CenterChargesController extends Controller
      */
     public function index(Request $request)
     {
-        $center = Center::findOrFail($request->center_no);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
+
+        $financial_year = $request->year;
         if ($request->ajax()) {
-            $centerOtherCharges = CenterOtherCharge::with('center', 'user')
+            $centerOtherCharges = CenterOtherCharge::with('center')
                 ->where('financial_year', '=',  $financial_year)
-                ->where('center_id', '=', $request->center_no)->get();
+                ->where('center_no', '=', $request->center_no)->get();
 
             return DataTables::of($centerOtherCharges)
                 // ->addIndexColumn()
                 ->editColumn('actions', function ($row) {
-                    $html = "<button type='button' class='btn btn-sm btn-primary editBtn' data-url='" . route('admin.center-charges.edit', $row->id) . "'> Edit</button>
-                              <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='" . route('admin.center-charges.destroy', $row->id) . "'> Delete</button>";
+                    $html = "<button type='button' class='btn btn-sm btn-primary edit-charge' data-url='" . route('admin.centre-collection.center-charges.edit', $row->id) . "'> Edit</button>
+                              <button type='button' class='btn btn-sm btn-danger delete-charge' data-url='" . route('admin.centre-collection.center-charges.destroy', $row->id) . "'> Delete</button>";
                     return     $html;
                 })
                 ->rawColumns(['actions'])
                 ->make(true);
         }
-        $centerOtherCharges = CenterOtherCharge::with('center', 'user')->where('center_id', '=', $request->center_no)->get();
-        return view('admin.finance.othercharges.othercharges', compact('centerOtherCharges', 'center'));
+
     }
 
     /**
@@ -59,22 +58,23 @@ class CenterChargesController extends Controller
      */
     public function store(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'center_no' => 'required',
-            'charge' => 'required|numeric',
-            'comments' => 'required',
+            'amount' => 'required|numeric',
+            'session' => 'required',
+            'financial_year' => 'required',
+            'remarks' => 'required',
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
         CenterOtherCharge::create([
-            'center_id' => $request->center_no,
-            'charge' => $request->charge,
-            'added_by' => auth()->user()->id,
-            'financial_year' => $financial_year,
-            'comments' => $request->comments,
+            'center_no' => $request->center_no,
+            'amount' => $request->amount,
+            'financial_year' => $request->financial_year,
+            'session' =>  $request->session,
+            'collected_by' => auth()->user()->email,
+            'remarks' => $request->remarks,
         ]);
         return response()->json(['success' => 'Successfully added the records']);
     }
@@ -99,8 +99,8 @@ class CenterChargesController extends Controller
     public function edit($id)
     {
         $centerOtherCharge = CenterOtherCharge::findOrFail($id);
-        $url = route('admin.center-charges.update', $id);
-        return response()->json(['centerOtherCharge' => $centerOtherCharge, 'url' => $url]);
+        $url = route('admin.centre-collection.center-charges.update', $id);
+        return response()->json(['charge' => $centerOtherCharge, 'url' => $url]);
     }
 
     /**
@@ -113,17 +113,22 @@ class CenterChargesController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'charge' => 'required|numeric',
-            'comments' => 'required',
+            'center_no' => 'required',
+            'amount' => 'required|numeric',
+            'session' => 'required',
+            'financial_year' => 'required',
+            'remarks' => 'required',
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
-
-        $centerOtherCharge = CenterOtherCharge::with('center', 'user')->findOrFail($id);
-        $centerOtherCharge->charge = $request->charge;
-        $centerOtherCharge->added_by = auth()->user()->id;
-        $centerOtherCharge->comments = $request->comments;
+        $centerOtherCharge = CenterOtherCharge::with('center')->findOrFail($id);
+        $centerOtherCharge->center_no = $request->center_no;
+        $centerOtherCharge->amount = $request->amount;
+        $centerOtherCharge->financial_year = $request->financial_year;
+        $centerOtherCharge->session = $request->session;
+        $centerOtherCharge->collected_by = auth()->user()->email;
+        $centerOtherCharge->remarks = $request->remarks;
         $centerOtherCharge->save();
         return response()->json(['success' => 'Successfully updated the records']);
     }

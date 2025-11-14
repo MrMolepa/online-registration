@@ -88,17 +88,14 @@ class User extends Authenticatable
 
     public function document_user_profile()
     {
-        return $this->morphToMany(DocumentUser::class, 'document_user');
+        return $this->morphOne(DocumentUser::class, 'document_user');
     }
 
 
 
 
-    //
+    
 
 
-    public function roles()
-    {
-        return $this->morphMany(User::class,'roleable');
-    }
+
 }

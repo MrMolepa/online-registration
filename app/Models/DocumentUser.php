@@ -18,8 +18,9 @@ class DocumentUser extends Model
 
 
     protected $fillable = [
-        'documentUser_id',
-        'documentUser_type',
+        'document_user_id',
+        'document_user_type',
+        'role_id',
     ];
 
 
@@ -28,7 +29,8 @@ class DocumentUser extends Model
 
     public function document_user()
     {
-        return $this->morphTo();
+        return $this->morphTo(__FUNCTION__, 'document_user_type', 'document_user_id');
+        // return $this->morphTo('document_user');
     }
 
 

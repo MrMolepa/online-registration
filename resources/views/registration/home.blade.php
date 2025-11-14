@@ -78,6 +78,9 @@
                             <div class="row justify-content-center">
                                 <div class="col-md-12">
                                     <form action="" method="post" id="msform">
+                                        @csrf
+                                        <input type="hidden" name="fee_group_id" id="fee_group_id">
+                                        <input type="hidden" name="fine" id="fine">
                                         <!-- fieldsets -->
 
                                         <!-- Personal Information & Verification -->
@@ -99,7 +102,7 @@
                                                                     <i class="fas fa-user-edit" loading="lazy"></i>
                                                                     <div class="alternative-details">
                                                                         <span>Existing Candidate Number</span>
-                                                                        <p>2006-2023</p>
+                                                                        <p>2006-{{ date('Y') - 1 }}</p>
                                                                     </div>
                                                                 </div>
                                                             </label>
@@ -111,7 +114,7 @@
                                                                     <i class="fas fa-plus-square" loading="lazy"></i>
                                                                     <div class="alternative-details">
                                                                         <span>New Candidate Number</span>
-                                                                        <p>2024</p>
+                                                                        <p>{{ date('Y') }}</p>
                                                                     </div>
                                                                 </div>
                                                             </label>
@@ -141,8 +144,8 @@
                                                     <div class="row">
                                                         <div class="form-group col-12">
                                                             <label for="guardian_type">Relationship</label>
-                                                            <select name="guardian_type" class="form-control required "
-                                                                id="guardian_type">
+                                                            <select name="guardian_type"
+                                                                class="form-control required " id="guardian_type">
                                                                 <option value="">Please select
                                                                     relationship</option>
                                                                 @foreach ($guardian_types as $guardian_type)
@@ -202,8 +205,8 @@
                                                                 address</label>
                                                             <input type="text" class="form-control required  "
                                                                 id="guardian_physical_address"
-                                                                name="guardian_physical_address" placeholder="Selakhapane"
-                                                                value="">
+                                                                name="guardian_physical_address"
+                                                                placeholder="Selakhapane" value="">
                                                         </div>
 
                                                         <div class="form-group col-6">
@@ -372,8 +375,8 @@
                                                     </div>
                                                     <div class="nav nav-tabs" id="nav-tab" role="tablist">
                                                         <a class="nav-item" id="nav-home-tab" data-toggle="tab"
-                                                            href="#nav-home" role="tab" aria-controls="nav-home"
-                                                            aria-selected="true">
+                                                            href="#credit-card" role="tab"
+                                                            aria-controls="nav-home" aria-selected="true">
                                                             <img src="assets/images/XzOzVHZ.jpg" width="95px"
                                                                 height="65px" alt="">
                                                             <input type="radio" name="payment" checked
@@ -386,18 +389,26 @@
                                                                 width="115px" height="65px" alt="">
                                                             <input type="radio" name="payment" value="VclMpesa" />
                                                         </a>
-                                                        {{-- <a class="nav-item " id="nav-contact-tab" data-toggle="tab"
-                                                            href="#nav-contact" role="tab"
+                                                        <a class="nav-item " id="ecocash-tab" data-toggle="tab"
+                                                            href="#eco-cash" role="tab"
+                                                            aria-controls="nav-contact" aria-selected="false">
+                                                            <img src="{{ asset('assets/images/private_candidate_payment/EcoCash.png') }}"
+                                                                width="95px" height="65px" alt="">
+                                                            <input type="radio" name="payment" value="EcoCash" />
+                                                        </a>
+                                                        {{-- <a class="nav-item " id="nav-cash-deposit-tab" data-toggle="tab"
+                                                            href="#cash-deposit" role="tab"
                                                             aria-controls="nav-contact" aria-selected="false">
                                                             <img src="assets/images/private_candidate_payment/deposit.png"
                                                                 width="95px" height="65px" alt="">
                                                             <input type="radio" name="payment"
                                                                 value="CashDeposit" />
                                                         </a> --}}
+
                                                     </div>
                                                     <div class="tab-content" id="nav-tabContent">
-                                                        <div class="tab-pane fade" id="nav-home" role="tabpanel"
-                                                            aria-labelledby="nav-home-tab">
+                                                        <div class="tab-pane fade" id="credit-card" role="tabpanel"
+                                                            aria-labelledby="redit-card">
                                                             <div class="form-group">
                                                                 <p>Welcome to ECoL secure online payment. Proof of
                                                                     payment will be send to your email on successful
@@ -652,22 +663,6 @@
                                                                     id="Ecom_BillTo_Telecom_Phone_Number" />
                                                             </div>
                                                         </div>
-                                                        <div class="tab-pane fade " id="nav-profile" role="tabpanel"
-                                                            aria-labelledby="nav-profile-tab">
-                                                            <h2>EcoCash</h2>
-                                                            <p>Welcome to ECoL secure online payment. Proof of payment
-                                                                will be send to your email on successful payment</p>
-                                                            <p>Don't hesitate to contact us for any concerns!</p>
-                                                            <div class="form-group">
-                                                                <label for="ecocash_mobile">Phone number</label>
-                                                                <input type="text" name="ecocash_mobile"
-                                                                    class="form-control" id="ecocash_mobile"
-                                                                    placeholder="*Phone number">
-
-                                                            </div>
-                                                            <a href="javascript:void(0)" id="ecocash_pay"
-                                                                class="btn btn-primary">Pay now </a>
-                                                        </div>
                                                         <div class="tab-pane fade" id="vcl-mpesa" role="tabpanel"
                                                             aria-labelledby="nav-profile-tab">
                                                             <h2>M-PESA</h2>
@@ -685,7 +680,23 @@
                                                             <a href="javascript:void(0)" id="mpesa_pay"
                                                                 class="btn btn-primary">Pay now </a>
                                                         </div>
-                                                        <div class="tab-pane fade" id="nav-contact" role="tabpanel"
+                                                        <div class="tab-pane fade" id="eco-cash" role="tabpanel"
+                                                            aria-labelledby="nav-profile-tab">
+                                                            <h2>EcoCash</h2>
+                                                            <p>Welcome to ECoL secure online payment. Proof of payment
+                                                                will be send to your email on successful payment</p>
+                                                            <p>Don't hesitate to contact us for any concerns!</p>
+                                                            <div class="form-group">
+                                                                <label for="ecocash_mobile">Phone number</label>
+                                                                <input type="text" name="ecocash_mobile"
+                                                                    class="form-control" id="ecocash_mobile"
+                                                                    placeholder="*Phone number">
+
+                                                            </div>
+                                                            <a href="javascript:void(0)" id="ecocash_pay"
+                                                                class="btn btn-primary">Pay now </a>
+                                                        </div>
+                                                        <div class="tab-pane fade" id="cash-deposit" role="tabpanel"
                                                             aria-labelledby="nav-contact-tab">
                                                             <h2>Cash Deposit</h2>
                                                             <p>Welcome to ECoL secure online payment. Upload of payment
@@ -751,6 +762,96 @@
         </section>
         <!-- end MultiStep Form -->
     </main>
+
+
+    <div class="disclaimer-overlay">
+        <div class="disclaimer">
+            <h2 class="disclaimer-title">Terms and Conditions </h2>
+            <div class="disclaimer-message">
+                <h5>By engaging with ECoL regarding your examinations, you agree to the terms outlined below:</h5>
+                <ol>
+                    <li>Introduction
+                        <ul>
+                            <p>The Examinations Council of Lesotho (ECoL) is committed to protecting your personal
+                                information.</p>
+                        </ul>
+                    </li>
+                    <li>
+                        Collection and Use of Personal Information
+                        <p>ECoL collects and processes your personal information solely for the purposes of
+                            administering,
+                            processing, and calculating your examination results. This may include, but is not limited
+                            to.</p>
+                        <ul>
+                            <li>Your name, surname, and identification details.</li>
+                            <li>Examination registration details.</li>
+                            <li>Examination scores and performance data.</li>
+                        </ul>
+                    </li>
+
+
+                    <li>
+                        Sharing of Personal Information
+                        <p>Your personal information will only be shared with third parties who are.</p>
+                        <ul>
+                            <li>Formal ECoL partners.</li>
+                            <li>Drectly involved in the processing and calculation of examination results.</li>
+                            <li>Bound by confidentiality and data protection agreements</li>
+                            <p>ECoL will not sell, distribute, or disclose your personal information to unauthorized
+                                third parties</p>
+                        </ul>
+                    </li>
+
+
+                    <li>
+                        Data Protection, Security and Compliance
+                        <p>CoL takes reasonable technical and administrative measures to protect your personal
+                            information against unauthorized access, loss, or misuse.
+                            ECoL adheres to internationally recognized security and quality standards, including:</p>
+                        <ul>
+                            <li>ISO/IEC 27001:2013 – Information Security Management System (ISMS) certification.</li>
+                            <li>ISO 9001: 2015 – Quality Management System (QMS) certification.</li>
+                            <li>Bound by confidentiality and data protection agreements</li>
+                            <p>These certifications ensure that your personal data is managed securely and processed
+                                with high-quality standards.</p>
+                        </ul>
+                    </li>
+
+
+                    <li>
+                        Your Rights
+                        <p>You have the right to:</p>
+                        <ul>
+                            <li>Request access to your personal information.</li>
+                            <li>Request correction of inaccurate information.</li>
+                            <li>Object to the processing of your data under certain circumstances.</li>
+                            <li>Decline and not register for examinations.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        Retention of Personal Information
+                        <p>Your personal information will be retained for as long as necessary to fulfill the purposes
+                            outlined in this document and in accordance with applicable laws.</p>
+
+                    </li>
+
+                    <li>
+                        Contact Information
+                        <p>For any inquiries or concerns regarding the processing of your personal information, please
+                            contact ECoL through official communication channels.</p>
+
+                    </li>
+                </ol>
+            </div>
+            <div class="disclaimer-buttons">
+                <button class="agree-btn" disabled>I Agree</button>
+                <button class="decline-btn">Decline</button>
+            </div>
+            <div class="decline-message">
+                Access to this website has been denied. Thank you for understanding.
+            </div>
+        </div>
+    </div>
 
     <!-- Modal HTML iveri -->
     <div id="iveri-litebox" class="center-block"></div>
@@ -833,6 +934,27 @@
     <!--  Notifications Plugin  toastr  -->
     <script src="{{ asset('school/assets/js/toastr.min.js') }}"></script>
     <script>
+        // Disclaimer
+        $(document).on("click", ".agree-btn", function() {
+            $('.disclaimer-overlay').css({
+                "display": "none"
+            });
+        });
+
+        $(document).on("click", ".decline-btn", function() {
+            location.href = "/";
+        });
+
+        $('.disclaimer-message').scroll(function() {
+            if ($(this).scrollTop() + $(this).height() >= $(this)[0].scrollHeight - 100) {
+                $('.agree-btn').attr('disabled', null);
+            }
+        });
+
+
+
+
+
         /*****  Display candidates*******/
 
         /*****  Display candidates*******/
@@ -861,7 +983,7 @@
         });
 
         $(document).on("click", "#ecocash_pay", function() {
-            ecoCashComplete();
+            ecoCashComplete($(this));
         });
 
         // Cash Deposit upload-confirmation
@@ -943,65 +1065,16 @@
                             $('#iveri-litebox-button').hide();
                         }
                     } else {
-                        printErrorMsg('#msform',data.errors)
+                        printErrorMsg('#msform', data.errors)
                     }
                 }
             });
         }
 
         // 	ECocash
-        function ecoCashComplete() {
-            var candidateNo = $("input[name='candidate_No']").val();
-            var surname = $("input[name='surname']").val();
-            var other_name = $("input[name='other_name']").val();
-            var gender = $("input[name='gender']").val();
-            var email_Address = $("input[name='email_Address']").val();
-            var phone_No = $("input[name='phone_No']").val();
-            var payment = $("input[name='payment']:checked").val();
-            var centreNo = $("input[name='centreNo']").val();
-            var increaseSubjects = getCheckedBoxes("input[type='checkbox'][name='increaseSubjects']");
-            var Session = $("#session").find(":selected").val();
-            var level = $("#level").find(":selected").val();
-
-
-            var subject = getCheckedBoxes("input[type='checkbox'][name='subject[]']");
-            var mathematics = getCheckedBoxes("input[type='checkbox'][name='mathematics[]']");
-            var physcial_science = getCheckedBoxes("input[type='checkbox'][name='physcial_science[]']");
-            var number_of_subjects = $("input[name='number_of_subjects']").val();
-
-            // ECOCASH
-            // var ecocash_vendor_code = $("input[name='ecocash_vendor_code']").val();
-            // var ecocash_key = $("input[name='ecocash_key']").val();
-            var ecocash_mobile = $("input[name='ecocash_mobile']").val();
-            // var ecocash_Checksum = $("input[name='ecocash_Checksum']").val();
-            var ecocash_source_reference = $("input[name='ecocash_source_reference']").val();
-            // var ecocash_Merchant_MSISDN = $("input[name='ecocash_Merchant_MSISDN']").val();
-            var totalAmount = $("input[name='total_amount']").val();
-            totalAmount = parseFloat(totalAmount).toFixed(2);
-
-
-            var jsonData = {
-                "mobile_number": ecocash_mobile,
-                "total_amount": totalAmount,
-            };
-
-            jsonData['candidateNo'] = candidateNo;
-            jsonData['surname'] = surname;
-            jsonData['other_name'] = other_name;
-            jsonData['email_Address'] = email_Address;
-            jsonData['phone_No'] = phone_No;
-            jsonData['payment'] = payment;
-            jsonData['centreNo'] = centreNo;
-            jsonData['increaseSubjects'] = increaseSubjects;
-            jsonData['Session'] = Session;
-            jsonData['level'] = level;
-            jsonData['subject'] = subject
-            jsonData['mathematics'] = mathematics;
-            jsonData['physcial_science'] = physcial_science;
-            jsonData['number_of_subjects'] = number_of_subjects;
-            console.log(jsonData);
-
-            //    ECOCASH request
+        function ecoCashComplete(element) {
+            var inputData = $("#msform").serialize();
+            //    M-Pesa request
             $.ajaxSetup({
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
@@ -1010,50 +1083,65 @@
                 },
             });
 
-
+            var caption = element.html();
             $.ajax({
-                url: "{{ route('register.ecoCashResponse') }}",
+                url: "{{ route('transaction') }}",
                 method: "POST",
-                cache: false,
-                data: jsonData,
-                success: function(response) {
-                    // ecocash response
-                    var data = response;
-                    console.log(data);
-                    if ($.isEmptyObject(data.errors)) {
-                        if (data.error) {
-                            $(".payement-error").find("ul").html('');
-                            $(".payement-error").css('display', 'block');
-                            $(".payement-error").find("ul").append('<li>' + data.error + '</li>');
+                data: inputData,
+                beforeSend: function() {
+                    element.prop('disabled', true).html("Processing.....");
+
+                },
+            }).done(function(data) {
+                var data = isJsonString(data) ? $.parseJSON(data) : data;
+                console.log(data);
+                element.prop('disabled', false).html(caption);
+                if ($.isEmptyObject(data.errors)) {
+                    // var data = $.parseJSON(data);
+                    element.prop('disabled', false).html(caption);
+                    if (data.status == 1) {
+                        $('input[name="make_payment"]').prop("disabled", false);
+                        $('input[name="make_payment"]').trigger("click");
+                        if (data.publised) {
+                            $(' timetable-btns').show();
+                            $(".download-timetable").prop(
+                                "href",
+                                "print-timetable?centre_no=" +
+                                data.output['centreNo'] +
+                                "&candidate_no=" +
+                                data.output['candidate_no'] +
+                                "&session=" + data.output['session'] +
+                                "&level=" + data.output['level'] +
+                                "&download=1"
+                            );
+                            $(".send-email").prop(
+                                "href",
+                                "print-timetable?centre_no=" + data.output['centreNo'] +
+                                "&candidate_no=" + data.output['candidate_no'] +
+                                "&session=" + data.output['session'] +
+                                "&level=" + data.output['level'] +
+                                "&download=1&send=1"
+                            );
+
+
                         } else {
-                            var response = JSON.parse(data.success);
-                            if (response.return.field1 == 200) {
-                                $(".payement-error").find("ul").html('');
-                                $(".payement-error").css('display', 'block');
-                                $(".payement-error").find("ul").append('<li>' + data.success.return+'</li>');
-                            } else {
-                                $(".payement-error").find("ul").html('');
-                                $(".payement-error").css('display', 'block');
-                                $(".payement-error").find("ul").append('<li>' + response.return.field2 +
-                                    '</li>');
-                            }
-
-
+                            // download-type
+                            $(".download-type").html(
+                                "You will get your Timetable once officially published ")
+                            // timetable-btns
+                            $('.timetable-btns').hide();
                         }
-                    } else {
-                        $.each(data.errors, function(key, errors) {
-                            for (const error in errors) {
-                                const value = errors[error];
-                                toastr.error(value);
-                            }
-                        });
+
                     }
-
-
+                } else {
+                    printErrorMsg('#msform', data.errors)
+                    element.prop('disabled', false).html(caption);
                 }
+
+            }).fail(function(xhr, status, error) {
+                element.prop('disabled', false).html(caption);
             });
         }
-
         // MPESA
         function vclMpesaComplete(element) {
             var inputData = $("#msform").serialize();
@@ -1117,7 +1205,7 @@
 
                     }
                 } else {
-                    printErrorMsg('#msform',data.errors)
+                    printErrorMsg('#msform', data.errors)
                     element.prop('disabled', false).html(caption);
                 }
 
@@ -1244,7 +1332,7 @@
 
                         $("#bank_confirmation").val('');
 
-                        printErrorMsg('#msform',data.errors)
+                        printErrorMsg('#msform', data.errors)
                     }
 
                 },
@@ -1313,15 +1401,13 @@
                         element.prop('disabled', false).html(caption);
                         $("#bank_confirmation_balance").val('');
 
-                        printErrorMsg('#msform',data.errors)
+                        printErrorMsg('#msform', data.errors)
 
                     }
 
                 }
             });
         }
-
-
 
 
         /****  Print errors*******/

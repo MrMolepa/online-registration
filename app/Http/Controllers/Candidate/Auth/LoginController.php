@@ -26,8 +26,12 @@ class LoginController extends Controller
         $password = $request->password;
         $remember = $request->remember;
         //If Successful redirect to intended location
+        $financial_year = (date('Y') - 1) . '-' . date('Y');
 
-        if (Auth::guard('candidate')->attempt(['national_id' =>   $national_id, 'password' => $password], $remember)) {
+        if (Auth::guard('candidate')->attempt([
+            'national_id' =>   $national_id,
+            'password' => $password,
+            ], $remember)) {
             return redirect()->intended(route('candidate.home'));
         }
 

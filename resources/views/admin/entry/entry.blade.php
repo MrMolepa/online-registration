@@ -55,14 +55,11 @@
                                         </select>
                                     </div>
                                     <div class="form-group col-md-3">
-                                        <label for="year">Option</label>
-                                        <select class="form-control status-dropdown" name="option" id="option">
-                                            <option value="">Select Option</option>
-                                            @foreach ($options as $option)
-                                                <option value="{{ $option->option_code }}">{{ $option->option_code }}
-                                                </option>
-                                            @endforeach
-
+                                        <label for="entry">Entry</label>
+                                        <select class="form-control status-dropdown" name="entry" id="entry">
+                                            <option value="entries">Entries</option>
+                                            <option value="entries_kingdom">Entries Kingdom</option>
+                                            <option value="entries_paid">Paid Entries</option>
                                         </select>
                                     </div>
                                     <div class="form-group col-md-6">
@@ -126,7 +123,7 @@
             var center = $("#center").val() || []
             var subject = $("#subject").val() || [];
             var year = $("#year").val();
-            var option = $("#option").val();
+
 
             /**********  Center_no,level,session Change get Subjects,   **************/
             $(document).on("change",
@@ -145,14 +142,13 @@
                 center = $(this).val() || [];
                 year = $("#year").val();
                 subject = $("#subject").val() || [];
-                option = $("#option").val();
+
                 candidate_per_center(
                     level,
                     session,
                     center,
                     subject,
                     year,
-                    option ,
                     event = event
                 );
 
@@ -168,8 +164,8 @@
                 center = $("#center").val() || []
                 subject = $(this).val() || [];
                 year = $("#year").val();
-                sponsor = $("#sponsor").val();
-                option = $("#option").val();
+
+
 
 
                 candidate_per_center(
@@ -178,7 +174,6 @@
                     center,
                     subject,
                     year,
-                    option,
                     event = event
                 );
 
@@ -199,7 +194,7 @@
                     center = $("#center").val() || []
                     subject = $("#subject").val() || [];
                     year = $("#year").val();
-                    option = $("#option").val();
+
 
 
 
@@ -211,10 +206,9 @@
                         center,
                         subject,
                         year,
-                        option,
                         event = null
                     );
-                    $('#amend-datatable').DataTable().ajax.reload(null, false);
+
 
                 });
             /**********  Candidates filter  End    **************/
@@ -234,7 +228,7 @@
 
                 center = $("#center").val() || []
                 subject = $("#subject").val() || [];
-                option = $("#option").val();
+
 
 
                 candidate_per_center(
@@ -243,10 +237,9 @@
                     center,
                     subject,
                     year,
-                    option,
                     event = null
                 );
-                $('#amend-datatable').DataTable().ajax.reload(null, false);
+
             });
             /**********  Candidates Main Search End   **************/
 
@@ -259,7 +252,7 @@
 
                 center = $("#center").val() || []
                 subject = $("#subject").val() || [];
-                option = $(this).val();
+
 
 
                 candidate_per_center(
@@ -268,10 +261,9 @@
                     center,
                     subject,
                     year,
-                    option,
                     event = null
                 );
-                $('#amend-datatable').DataTable().ajax.reload(null, false);
+
             });
 
             /**********  Candidates Main Search Start    **************/
@@ -288,7 +280,7 @@
                 center = $("#center").val() || []
                 subject = $("#subject").val() || [];
                 year = $(this).val();
-                option = $("#option").val();
+
 
                 candidate_per_center(
                     level,
@@ -296,10 +288,9 @@
                     center,
                     subject,
                     year,
-                    option,
                     event = null
                 );
-                $('#amend-datatable').DataTable().ajax.reload(null, false);
+
             });
             /**********  Candidates Main Search End   **************/
 
@@ -311,7 +302,7 @@
                 center,
                 subject,
                 year,
-                option
+
             );
             /****  AJAX Main Function Who Perform All Tasks Start *******/
             function candidate_per_center(
@@ -320,7 +311,6 @@
                 center,
                 subject,
                 year,
-                option,
                 event = null
             ) {
 
@@ -339,7 +329,6 @@
                         center: center,
                         subject: subject,
                         year: year,
-                        option: option
                     },
                     beforeSend: function() {
                         // setting a timeout
@@ -400,7 +389,7 @@
                         console.log(error + ": " + jqXHR.responseText);
                         return {
                             results: []
-                        }; // Return dataset to load after error
+                        };
                     }
                 },
                 width: '100%',

@@ -5,14 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\ClientMail;
 use App\Models\CenterCandidate;
+use App\Models\OneTimeServiceItemSale;
 use App\Models\OneTimeServicesItem;
 use App\Models\ServiceAttribute;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
+use ZipStream\ZipStream;
+use ZipStream\OperationMode;
+
 
 
 class ServiceSaleContolller extends Controller
@@ -28,7 +35,7 @@ class ServiceSaleContolller extends Controller
             ->orderBy('year', 'desc')
             ->distinct()
             ->get()->pluck('year');
-        $oneTimeServicesItems = OneTimeServicesItem::get();
+
         if ($request->ajax()) {
             $paid_services = DB::table('one_time_services_item_sale')
                 ->select(
@@ -38,7 +45,7 @@ class ServiceSaleContolller extends Controller
                     'clients.phone',
                     'clients.national_identity',
                     'one_time_services_item.name',
-                    'invoices.reference_no',
+                    'one_time_service_payment_histories.reference_no',
                     'one_time_services_item_sale.id',
                     'one_time_services_item_sale.one_time_services_id',
                     'one_time_services_item_sale.price',
@@ -49,7 +56,7 @@ class ServiceSaleContolller extends Controller
                     'one_time_services_item_sale.created_at',
                 )
                 ->join('clients', 'one_time_services_item_sale.client_id', '=', 'clients.id')
-                ->join('invoices', 'one_time_services_item_sale.client_id', '=', 'invoices.client_id')
+                ->join('one_time_service_payment_histories', 'one_time_services_item_sale.client_id', '=', 'one_time_service_payment_histories.client_id')
                 ->join('one_time_services_item', function ($join) {
                     $join->on('one_time_services_item_sale.one_time_services_item_id', '=', 'one_time_services_item.id');
                     $join->on('one_time_services_item_sale.financial_year', '=', 'one_time_services_item.financial_year');
@@ -62,11 +69,12 @@ class ServiceSaleContolller extends Controller
                 $paid_services = $paid_services->where('one_time_services_item.financial_year', $request->year);
             }
             $paid_services = $paid_services->orderBy('one_time_services_item_sale.is_checked', 'ASC')
-            ->orderBy('one_time_services_item_sale.created_at', 'DESC')
+                ->orderBy('one_time_services_item_sale.created_at', 'DESC')
                 ->get();
-
-
-
+            if ($request->has('service_items')) {
+                $oneTimeServicesItems = OneTimeServicesItem::where('financial_year', '=', $request->year)->get();
+                return response()->json(['serviceItem' =>    $oneTimeServicesItems]);
+            }
             return DataTables::of($paid_services)
                 ->setRowId('id')
                 ->editColumn('first_name', function ($model) {
@@ -90,7 +98,7 @@ class ServiceSaleContolller extends Controller
                 ->addColumn('price', function ($model) {
                     return $model->price;
                 })
-                 ->addColumn('created_at', function ($model) {
+                ->addColumn('created_at', function ($model) {
                     return $model->created_at;
                 })
                 ->editColumn('requirements', function ($model) {
@@ -140,7 +148,13 @@ class ServiceSaleContolller extends Controller
                 ->rawColumns(['status', 'first_name', 'last_name', 'email', 'phone', 'national_identity', 'requirements', 'actions'])
                 ->make(true);
         }
-        return view('admin.services.sales', compact('years', 'oneTimeServicesItems'));
+
+        $services = OneTimeServicesItem::where('financial_year', $years[0])
+            ->get();
+        $serviceAttributes = ServiceAttribute::groupBy('one_time_service_id')
+            ->where('frontend_type', '=', 'file')->get();
+
+        return view('admin.services.sales', compact('years', 'serviceAttributes', 'services'));
     }
 
     /**
@@ -152,6 +166,182 @@ class ServiceSaleContolller extends Controller
     {
         //
     }
+
+
+
+
+
+
+
+
+    public function exportFiles(Request $request)
+    {
+        $start   = $request->query('start_date');
+        $end     = $request->query('end_date');
+        $fileField = $request->file_name; // DB column storing file path
+
+        $query = DB::table('v_one_time_services_item_sale');
+
+
+
+        // Only apply filter if both dates are non-empty strings
+        if (!empty($start) && !empty($end)) {
+            $start = Carbon::createFromFormat('Y-m-d', $start)->startOfDay();
+            $end   = Carbon::createFromFormat('Y-m-d', $end)->endOfDay();
+
+            $query->whereBetween('created_at', [$start, $end]);
+        }
+
+        ini_set('memory_limit', '-1');
+        set_time_limit(-1);
+
+        // Filename for download
+        $zipFileName = $start && $end
+            ? "{$fileField}_{$start}_to_{$end}.zip"
+            : "$fileField" . now()->format('Ymd_His') . '.zip';
+
+        return response()->streamDownload(function () use ($query, $fileField, $zipFileName) {
+            // Initialize ZipStream for version 2.x
+            $zip = new ZipStream(
+                outputName: $zipFileName,
+                sendHttpHeaders: false
+            );
+
+            static $added = [];
+
+            // Process records in chunks
+            $query->orderBy('id')->chunk(100, function ($records) use ($zip, $fileField, &$added) {
+                foreach ($records as $record) {
+                    if (!isset($record->{$fileField})) {
+                        Log::warning("File field '$fileField' not found in record ID: " . ($record->id ?? 'unknown'));
+                        continue;
+                    }
+
+                    $path = $record->{$fileField};
+                    if (!$path) {
+                        Log::warning("Empty file path for record ID: " . ($record->id ?? 'unknown'));
+                        continue;
+                    }
+
+                    Log::debug("Raw database path: $path");
+                    $relativePath = preg_replace('#/{2,}#', '/', ltrim(str_replace('storage/', 'app/public/', $path), '/'));
+                    $fullPath = storage_path($relativePath); // Try storage/public/
+                    Log::debug("Trying full path (public): $fullPath");
+
+                    if (!file_exists($fullPath) || !is_readable($fullPath)) {
+
+                        Log::debug("Fallback full path (app/public): $fullPath");
+
+                        if (!file_exists($fullPath) || !is_readable($fullPath)) {
+                            Log::warning("File not found or not readable: $fullPath");
+                            continue;
+                        }
+                    }
+
+                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION) ?: 'bin';
+                    $title = $record->first_name . " " . $record->last_name . "_" . $record->item_name  ?? $record->id;
+                    $fileName = $title . '-' . $record->id . '.' . $extension;
+
+                    $i = 1;
+                    while (in_array($fileName, $added)) {
+                        $fileName = $title . '-' . $record->id . '-' . $i++ . '.' . $extension;
+                    }
+                    $added[] = $fileName;
+
+                    Log::info("Adding file to ZIP: $fileName from $fullPath");
+                    $zip->addFileFromPath($fileName, $fullPath);
+                }
+            });
+
+            $zip->finish();
+        }, $zipFileName, [
+            'Content-Type'  => 'application/octet-stream',
+            'Cache-Control' => 'no-cache, must-revalidate',
+        ]);
+    }
+
+    public function exportFilesa(Request $request)
+    {
+        $start   = $request->query('start_date');
+        $end     = $request->query('end_date');
+        $fileField = $request->file_name; // DB column storing file path
+
+        $query = DB::table('v_one_time_services_item_sale');
+
+
+
+        // Only apply filter if both dates are non-empty strings
+        if (!empty($start) && !empty($end)) {
+            $start = Carbon::createFromFormat('Y-m-d', $start)->startOfDay();
+            $end   = Carbon::createFromFormat('Y-m-d', $end)->endOfDay();
+
+            $query->whereBetween('created_at', [$start, $end]);
+        }
+
+        // Filename for download
+        $zipFileName = $start && $end
+            ? "exported_files_{$start}_to_{$end}.zip"
+            : 'exported_files_' . now()->format('Ymd_His') . '.zip';
+
+        return response()->streamDownload(function () use ($query, $fileField, $zipFileName) {
+            // Initialize ZipStream for version 2.x
+            $zip = new ZipStream(
+                outputName: $zipFileName,
+                sendHttpHeaders: false // Let Laravel handle headers
+            );
+
+            static $added = [];
+
+            // Process records in chunks to handle large data
+            $query->orderBy('id')->chunk(100, function ($records) use ($zip, $fileField, &$added) {
+                foreach ($records as $record) {
+                    if (!isset($record->{$fileField})) {
+                        Log::warning("File field '$fileField' not found in record ID: " . $record->id);
+                        continue;
+                    }
+
+
+                    $path = ltrim(str_replace('storage/', 'public/', $record->{$fileField}), '/');
+                    if (!$path) {
+                        Log::warning("Empty file path for record ID: " . $record->id);
+                        continue;
+                    }
+
+                    $fullPath = storage_path('app/' . $path);
+                    if (!file_exists($fullPath)) {
+                        Log::warning("File not found or not readable: $fullPath");
+                        continue;
+                    }
+
+
+                    $fullPath = storage_path('/' . ltrim($path, '/'));
+                    if (!file_exists($fullPath)) {
+                        Log::warning("File not found: $fullPath");
+                        continue;
+                    }
+
+                    $extension = pathinfo($fullPath, PATHINFO_EXTENSION);
+                    $title = $record->reference_no ?? $record->id;
+                    $fileName = $title . '-' . $record->id . '.' . $extension;
+
+                    // Ensure unique file names
+                    $i = 1;
+                    while (in_array($fileName, $added)) {
+                        $fileName = $title . '-' . $record->id . '-' . $i++ . '.' . $extension;
+                    }
+                    $added[] = $fileName;
+
+                    $zip->addFileFromPath($fileName, $fullPath);
+                }
+            });
+
+            $zip->finish();
+        }, $zipFileName, [
+            'Content-Type'  => 'application/octet-stream',
+            'Cache-Control' => 'no-cache, must-revalidate',
+        ]);
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -191,7 +381,7 @@ class ServiceSaleContolller extends Controller
                 'clients.phone',
                 'clients.national_identity',
                 'one_time_services_item.name',
-                'invoices.reference_no',
+                'one_time_service_payment_histories.reference_no',
                 'one_time_services_item_sale.id',
                 'one_time_services_item_sale.one_time_services_id',
                 'one_time_services_item_sale.price',
@@ -201,7 +391,7 @@ class ServiceSaleContolller extends Controller
                 'one_time_services_item_sale.is_checked'
             )
             ->join('clients', 'one_time_services_item_sale.client_id', '=', 'clients.id')
-            ->join('invoices', 'one_time_services_item_sale.client_id', '=', 'invoices.client_id')
+            ->join('one_time_service_payment_histories', 'one_time_services_item_sale.client_id', '=', 'one_time_service_payment_histories.client_id')
             ->join('one_time_services_item', function ($join) {
                 $join->on('one_time_services_item_sale.one_time_services_item_id', '=', 'one_time_services_item.id');
                 $join->on('one_time_services_item_sale.financial_year', '=', 'one_time_services_item.financial_year');
@@ -336,7 +526,7 @@ class ServiceSaleContolller extends Controller
                 'clients.phone',
                 'clients.national_identity',
                 'one_time_services_item.name',
-                'invoices.reference_no',
+                'one_time_service_payment_histories.reference_no',
                 'one_time_services_item_sale.id',
                 'one_time_services_item_sale.one_time_services_id',
                 'one_time_services_item_sale.price',
@@ -347,7 +537,8 @@ class ServiceSaleContolller extends Controller
                 'one_time_services_item_sale.is_checked'
             )
             ->join('clients', 'one_time_services_item_sale.client_id', '=', 'clients.id')
-            ->join('invoices', 'one_time_services_item_sale.client_id', '=', 'invoices.client_id')
+            ->join('one_time_service_payment_histories', 'one_time_services_item_sale.client_id', '=', 'one_time_service_payment_histories.client_id')
+
             ->join('one_time_services_item', function ($join) {
                 $join->on('one_time_services_item_sale.one_time_services_item_id', '=', 'one_time_services_item.id');
                 $join->on('one_time_services_item_sale.financial_year', '=', 'one_time_services_item.financial_year');
@@ -389,7 +580,7 @@ class ServiceSaleContolller extends Controller
                 'clients.phone',
                 'clients.national_identity',
                 'one_time_services_item.name',
-                'invoices.reference_no',
+                'one_time_service_payment_histories.reference_no',
                 'one_time_services_item_sale.id',
                 'one_time_services_item_sale.one_time_services_id',
                 'one_time_services_item_sale.price',
@@ -399,7 +590,7 @@ class ServiceSaleContolller extends Controller
                 'one_time_services_item_sale.is_checked'
             )
             ->join('clients', 'one_time_services_item_sale.client_id', '=', 'clients.id')
-            ->join('invoices', 'one_time_services_item_sale.client_id', '=', 'invoices.client_id')
+            ->join('one_time_service_payment_histories', 'one_time_services_item_sale.client_id', '=', 'one_time_service_payment_histories.client_id')
             ->join('one_time_services_item', function ($join) {
                 $join->on('one_time_services_item_sale.one_time_services_item_id', '=', 'one_time_services_item.id');
                 $join->on('one_time_services_item_sale.financial_year', '=', 'one_time_services_item.financial_year');
@@ -428,7 +619,7 @@ class ServiceSaleContolller extends Controller
                             } else {
                                 $fileName =  'Service' . '-' . time() . '-' . $request->file("$key")->getClientOriginalName();
                                 $filePath = $request->file("$key")->storeAs('services/' .  $reference_number, $fileName, 'public');
-                              
+
                                 $requirementsArray[$key] =  "/storage/$filePath";
                             }
                         }
@@ -440,7 +631,7 @@ class ServiceSaleContolller extends Controller
                         } else {
                             $fileName =  'Service' . '-' . time() . '-' . $request->file("$key")->getClientOriginalName();
                             $filePath = $request->file("$key")->storeAs('services/' .  $reference_number, $fileName, 'public');
-                           
+
                             $requirementsArray[$key] =  "/storage/$filePath";
                         }
                     }
@@ -493,8 +684,6 @@ class ServiceSaleContolller extends Controller
             return response()->json(['errors' => $validator->errors()]);
         }
 
-
-
         $client = DB::table('one_time_services_item_sale')
             ->select(
                 'clients.first_name',
@@ -503,18 +692,19 @@ class ServiceSaleContolller extends Controller
                 'clients.phone',
                 'clients.national_identity',
                 'one_time_services_item.name',
-                'invoices.reference_no',
+                'one_time_service_payment_histories.reference_no',
                 'one_time_services_item_sale.price'
             )
             ->join('clients', 'one_time_services_item_sale.client_id', '=', 'clients.id')
-            ->join('invoices', 'one_time_services_item_sale.client_id', '=', 'invoices.client_id')
+            ->join('one_time_service_payment_histories', 'one_time_services_item_sale.client_id', '=', 'one_time_service_payment_histories.client_id')
+
             ->join('one_time_services_item', function ($join) {
                 $join->on('one_time_services_item_sale.one_time_services_item_id', '=', 'one_time_services_item.id');
                 $join->on('one_time_services_item_sale.financial_year', '=', 'one_time_services_item.financial_year');
             })->where('one_time_services_item_sale.id', '=', $id)
             ->first();
 
-        $email = $client->email;
+        $email = $request->email;
 
         DB::table('one_time_services_item_sale')
             ->where('id', $id)
@@ -542,10 +732,10 @@ class ServiceSaleContolller extends Controller
      */
     public function destroy($id)
     {
-        $query = 'DELETE one_time_services_item_sale,clients,invoices
+        $query = 'DELETE one_time_services_item_sale,clients,one_time_service_payment_histories
              FROM one_time_services_item_sale
             INNER JOIN clients ON clients.id =one_time_services_item_sale.client_id
-            INNER JOIN invoices ON invoices.client_id =one_time_services_item_sale.client_id
+            INNER JOIN one_time_service_payment_histories ON one_time_service_payment_histories.client_id =one_time_services_item_sale.client_id
             WHERE one_time_services_item_sale.id = ?';
         DB::delete($query, array($id));
         return response()->json(['success' => "Successfully deleted the records"]);

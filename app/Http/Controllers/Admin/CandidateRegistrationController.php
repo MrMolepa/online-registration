@@ -448,6 +448,14 @@ class CandidateRegistrationController extends Controller
      */
     public function store(Request $request)
     {
+
+
+        $sponsors = DB::table('funders')
+                    ->select(
+                        'sponsor',
+                        'name',
+                        'description'
+                    )->pluck('sponsor')->toArray();
         $validationRules = [
             1 => [
                 'candidate_no' => ['required'],
@@ -458,7 +466,7 @@ class CandidateRegistrationController extends Controller
                 'candidate_other_name' => ['required'],
                 'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-8 years'],
                 'gender' => ['required', 'in:M,F'],
-                'sponser' => ['required', 'in:M,O,P'],
+                'sponser' => ['required',  Rule::in($sponsors )],
                 'type' => ['required', 'in:1,2,3'],
                 'type' => ['required'],
                 'session' => ['required'],
@@ -655,8 +663,12 @@ class CandidateRegistrationController extends Controller
                     ])->first();
                     if ($guardian_address !== null) {
                         $guardian_address->update([
-                            'user_id', '=', $request->guardian_national_id,
-                            'user_type', '=', Guardian::class,
+                            'user_id',
+                            '=',
+                            $request->guardian_national_id,
+                            'user_type',
+                            '=',
+                            Guardian::class,
                             "postal_address" => $request->guardian_postal_address,
                             "physical_address" => $request->guardian_physical_address,
                             "village" => $request->guardian_village,
@@ -776,8 +788,12 @@ class CandidateRegistrationController extends Controller
 
                     if ($guardian_address !== null) {
                         $guardian_address->update([
-                            'user_id', '=', $request->guardian_national_id,
-                            'user_type', '=', Guardian::class,
+                            'user_id',
+                            '=',
+                            $request->guardian_national_id,
+                            'user_type',
+                            '=',
+                            Guardian::class,
                             "postal_address" => $request->guardian_postal_address,
                             "physical_address" => $request->guardian_physical_address,
                             "village" => $request->guardian_village,
@@ -886,14 +902,11 @@ class CandidateRegistrationController extends Controller
             ->where("guardians.candidate", '=',  $candidate->candidate_no)
             ->first();
 
-
-
-
-
-
         return response()->json([
             'candidate' => $candidate,
-            'action' => $url, $subjectsHTML, 'editable' => $editable,
+            'action' => $url,
+            $subjectsHTML,
+            'editable' => $editable,
             'editable_fields' => $editable_fields,
             'guardian' => $guardian,
             'paid_fee' =>  $candidate->amount
@@ -1298,6 +1311,13 @@ class CandidateRegistrationController extends Controller
      */
     public function update(Request $request, $id)
     {
+
+        $sponsors = DB::table('funders')
+                    ->select(
+                        'sponsor',
+                        'name',
+                        'description'
+                    )->pluck('sponsor')->toArray();
         $validationRules = [
             1 => [
                 'candidate_no' => ['required'],
@@ -1308,7 +1328,7 @@ class CandidateRegistrationController extends Controller
                 'candidate_other_name' => ['required'],
                 'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-8 years'],
                 'gender' => ['required', 'in:M,F'],
-                'sponser' => ['required', 'in:M,O,P'],
+                 'sponser' => ['required',  Rule::in($sponsors )],
                 'type' => ['required', 'in:1,2,3'],
                 'type' => ['required'],
                 'session' => ['required'],
@@ -1429,144 +1449,67 @@ class CandidateRegistrationController extends Controller
             ]);
 
         //Candidate User
-        $candidateUser = CandidateUser::where('candidate_no', '=', $candidate_no)
-            ->where('center_no', '=', $candidate->center_no)
-            ->where('session', '=', $candidate->session)
-            ->where('financial_year', '=', $candidate->financial_year)->first();
-        if ($candidateUser) {
-            CandidateUser::where('candidate_no', '=', $candidate_no)
-                ->where('center_no', '=', $candidate->center_no)
-                ->where('session', '=', $candidate->session)
-                ->update([
-                    'national_id' => $request->national_id,
-                    'username' => $request->candidate_surname . " " . $request->candidate_other_name,
-                    'password' =>  Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
-                    'candidate_password' => str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth))),
-                ]);
-        }
-
-        //Invoice
-        $invoice = Invoice::where('client_id', '=', $candidate_no)
-            ->where('session', '=', $candidate->session)
-            ->where('level', '=', $candidate->level)
-            ->where('financial_year', '=', $candidate->financial_year)->first();
-        if ($invoice) {
-            Invoice::where('client_id', '=', $candidate_no)
-                ->where('session', '=', $candidate->session)
-                ->where('level', '=', $candidate->level)
-                ->where('financial_year', '=', $candidate->financial_year)
-                ->update([
-                    'national_id' => $request->national_id,
-                    'session' => $request->session,
-                    'level' => $request->level,
-                    'financial_year' => $candidate->financial_year,
-                ]);
-        }
-        $candidate_arrangement = CandidateArrangement::where([
-            ["candidate_no", '=', $request->candidate_no]
-        ])->first();
-        if ($candidate_arrangement !== null) {
-            $candidate_arrangement->update(['arrangement_id' => $request->special_need]);
-        } else {
-            $candidate_arrangement = CandidateArrangement::create([
+        CandidateUser::updateOrCreate(
+            [
                 'candidate_no' =>  $request->candidate_no,
-                'arrangement_id' => $request->special_need
-            ]);
-        }
-
-
-        $candidate_address = Address::where([
-            ['user_id', '=', $candidate->national_id],
-            ['user_type', '=', Candidate::class]
-        ])->first();
-
-
-        if ($candidate_address !== null) {
-            $candidate_address->update([
-                'user_id' => $request->national_id,
-                'user_type' => Candidate::class,
+                'center_no' => $candidate->center_no,
+                'session' => $candidate->session,
+                'financial_year' => $candidate->financial_year,
+            ],
+            [
+                'national_id' => $request->national_id,
+                'username' => $request->candidate_surname . " " . $request->candidate_other_name,
+                'password' =>  Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
+                'candidate_password' => str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth))),
+            ]
+        );
+        //Special Needs
+        CandidateArrangement::updateOrCreate(
+            ['candidate_no' =>  $request->candidate_no],
+            ['arrangement_id' => $request->special_need]
+        );
+        //Candidate Address
+        Address::updateOrCreate(
+            [
+                'user_id' => $candidate->national_id,
+                'user_type' => Candidate::class
+            ],
+            [
                 "postal_address" => $request->postal_address,
                 "physical_address" => $request->physical_address,
                 "village" => $request->village,
                 "district" => $request->district,
+            ]
+        );
 
-            ]);
-        } else {
-            $candidate_address = Address::create([
-                'user_id' => $request->national_id,
-                'user_type' => Candidate::class,
-                "postal_address" => $request->postal_address,
-                "physical_address" => $request->physical_address,
-                "village" => $request->village,
-                "district" => $request->district,
-            ]);
-        }
-
-        $guardian_detail = Guardian::where([
-            ['candidate', '=', $request->candidate_no],
-        ])->first();
-
-
-
-        if ($guardian_detail  !== null) {
-            $guardian_detail->update([
+        //Guardian
+        Guardian::updateOrCreate(
+            [
+                'candidate'=>$request->candidate_no,
                 'national_id' => $request->guardian_national_id,
+            ],
+            [
                 "guardian_type" => $request->guardian_type,
                 "name" => $request->guardian_name,
                 "surname" => $request->guardian_surname,
                 "email" => $request->guardian_email,
                 "phone_number" => $request->guardian_phone_number
-            ]);
-
-            $guardian_address = Address::where([
-                ['user_id', '=', $request->guardian_national_id],
-                ['user_type', '=', Guardian::class],
-            ])->first();
-
-
-
-
-            if ($guardian_address !== null) {
-                $guardian_address->update([
-                    'user_id', '=', $request->guardian_national_id,
-                    'user_type', '=', Guardian::class,
-                    "postal_address" => $request->guardian_postal_address,
-                    "physical_address" => $request->guardian_physical_address,
-                    "village" => $request->guardian_village,
-                    "user_id" => $request->guardian_national_id,
-                    "district" => $request->guardian_district,
-                ]);
-            } else {
-                Address::create([
-                    'user_id' => $request->guardian_national_id,
-                    'user_type' => Guardian::class,
-                    "postal_address" => $request->guardian_postal_address,
-                    "physical_address" => $request->guardian_physical_address,
-                    "village" => $request->guardian_village,
-                    "user_id" => $request->guardian_national_id,
-                    "district" => $request->guardian_district,
-                ]);
-            }
-        } else {
-            Guardian::create([
-                "candidate" => $candidate_no,
-                'national_id' => $request->guardian_national_id,
-                "guardian_type" => $request->guardian_type,
-                "name" => $request->guardian_name,
-                "surname" => $request->guardian_surname,
-                "email" => $request->guardian_email,
-                "phone_number" => $request->guardian_phone_number
-            ]);
-            Address::create([
-                'user_id' => $request->guardian_national_id,
+            ]
+        );
+        Address::updateOrCreate(
+            [
+                'user_id'=>$request->guardian_national_id,
+                'user_type'=> Guardian::class
+            ],
+            [
                 "postal_address" => $request->guardian_postal_address,
                 "physical_address" => $request->guardian_physical_address,
                 "village" => $request->guardian_village,
                 "user_id" => $request->guardian_national_id,
-                "user_type" => Guardian::class,
                 "district" => $request->guardian_district,
-            ]);
-        }
+            ]
+        );
+
         //Center Candidate
         $candidate = CenterCandidate::find($id);
         $candidate->center_no =  $center;
@@ -1606,7 +1549,7 @@ class CandidateRegistrationController extends Controller
                     'subject_code' => $value['subject_code'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' => $candidate->financial_year,
                 ],
                 [
                     'candidate_no' => $request->candidate_no,
@@ -1615,7 +1558,7 @@ class CandidateRegistrationController extends Controller
                     'subject_option' => $value['subject_option'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' =>  $candidate->financial_year,
                 ]
             );
         }
@@ -1805,6 +1748,8 @@ class CandidateRegistrationController extends Controller
 
     private function register($request)
     {
+
+
         $subject_number = count($request->subjects);
         $center = $request->center_no;
         $candidate = new CenterCandidate();
@@ -1866,12 +1811,10 @@ class CandidateRegistrationController extends Controller
                     'candidates.date_of_birth',
                     'candidates.gender',
                     'center_candidate.sponser',
-                    DB::raw("(SELECT SUM(invoices.amount) FROM invoices  WHERE
-                    invoices.client_id = center_candidate.candidate_no and
-                    invoices.national_id = center_candidate.national_id and
-                    invoices.session = center_candidate.session and
-                    invoices.financial_year = center_candidate.financial_year
-                    ) AS  amount"),
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.amount) FROM fee_candidate_histories  WHERE
+                    fee_candidate_histories.candidate_id = center_candidate.id
+                    and fee_candidate_histories.status='1'
+                    ),0) AS  amount"),
                     DB::raw('candidate_arrangement.arrangement_id as special_need'),
                     'center_candidate.email',
                     'center_candidate.phone_number',
@@ -1902,11 +1845,11 @@ class CandidateRegistrationController extends Controller
             ->leftJoin('candidate_arrangement', function ($join) {
                 $join->on('candidate_subject.candidate_no', '=', 'candidate_arrangement.candidate_no');
             })
-            ->leftJoin('invoices', function ($join) {
-                $join->on('candidate_subject.candidate_no', '=', 'invoices.client_id');
-                $join->on('candidate_subject.level', '=', 'invoices.level');
-                $join->on('candidate_subject.session', '=', 'invoices.session');
-                $join->on('candidate_subject.financial_year', '=', 'invoices.financial_year');
+
+
+            ->leftJoin('fee_candidate_histories', function ($join) {
+                $join->on('candidate_subject.candidate_no', '=', 'fee_candidate_histories.candidate_id')
+                    ->where('fee_candidate_histories.status', '=', 1);
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
             ->where("center_candidate.id", '=', $id)

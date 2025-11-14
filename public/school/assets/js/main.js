@@ -470,7 +470,6 @@ $(document).ready(function () {
     // check all
 
     // ID selector on Master Checkbox
-
     var checkedAll = "#select-all",
         checkedItems = "[name='candidates[]']";
 

@@ -4,23 +4,21 @@
         <!-- MAIN CONTENT -->
         <div class="main-content">
             <div class="container-fluid">
-                <h3 class="page-title">Manage Invigilator roles</h3>
+                <h3 class="page-title">Manage Roles allocation</h3>
                 <div class="row">
                     <div class="col-md-12">
                         <!-- PANEL NO CONTROLS -->
                         <div class="panel">
                             <div class="panel-heading">
-                                <h3 class="panel-title">Invigilator roles<b></b></h3>
+                                <h3 class="panel-title">Roles allocation<b></b></h3>
                             </div>
+
                             <div class="panel-body">
-                                {{--  --}}
+
                                 <button type="button" class="btn btn-primary" data-toggle="modal"
                                     data-target="#add-role-modal">
-                                    + Add roles
+                                    + Roles allocation
                                 </button>
-                                <br>
-                                <br>
-
                                 <table class="table table-striped" id="data-table-invigilation">
                                     <thead>
                                         <tr>
@@ -29,23 +27,26 @@
                                             <th>Candidate Range</th>
                                             <th>Number of Invigilator</th>
                                             <th>Amount</th>
+                                            <th>Session paid</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     </tbody>
                                 </table>
+
                             </div>
                         </div>
-                        <!-- END PANEL NO CONTROLS -->
                     </div>
-
+                    <!-- END PANEL NO CONTROLS -->
                 </div>
 
-
             </div>
+
+
         </div>
-        <!-- END MAIN CONTENT -->
+    </div>
+    <!-- END MAIN CONTENT -->
     </div>
 
 
@@ -76,10 +77,12 @@
                             <label for="invigilation_type" class="col-sm-12 col-form-label">Invigilation Type</label>
                             <div class="col-sm-12">
                                 <select class="form-control" name="invigilation_type_id">
-                                    <option selected>Select</option>
+                                    <option value="">Select</option>
 
                                     @foreach ($invigilatortypes as $invigilatortype)
-                                        <option value="{{ $invigilatortype->id }}">{{ $invigilatortype->name }}</option>
+                                        <option value="{{ $invigilatortype->id }}">
+                                            {{ $invigilatortype->name }}-{{ $invigilatortype->invigilation_catergories->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -89,7 +92,7 @@
                                 Range</label>
                             <div class="col-sm-12">
                                 <select class="form-control col-sm-12" name="invigilation_candidate_id">
-                                    <option selected>Select</option>
+                                    <option value="">Select</option>
 
                                     @foreach ($invigilatorCandidates as $invigilatorCandidate)
                                         <option value="{{ $invigilatorCandidate->id }}">
@@ -110,11 +113,25 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="amount" class="col-sm-12 col-form-label">Amount</label>
+                            <label for="invigilator_paymentamount_id" class="col-sm-12 col-form-label">Amount</label>
                             <div class="col-sm-12">
-                                <input type="number" class="form-control" name="amount" id="amount" placeholder="0">
+                                <select class="form-control" name="invigilator_paymentamount_id">
+                                    <option value="">Select</option>
+
+                                    @foreach ($invigilatorPaymentamounts as $invigilatorPaymentamount)
+                                        <option value="{{ $invigilatorPaymentamount->id }}">
+                                            M {{ $invigilatorPaymentamount->amount }}.00</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
+
+                        <div class="form-check form-group row">
+                            <label for="description" class="col-sm-4 col-form-label">Is payment based on sessions</label>
+                            <input class="form-check-input" type="checkbox" value="1" name="is_sessions"
+                                id="is_sessions">
+                        </div>
+
 
                     </form>
                 </div>
@@ -148,7 +165,9 @@
                                     <option selected></option>
 
                                     @foreach ($invigilatortypes as $invigilatortype)
-                                        <option value="{{ $invigilatortype->id }}">{{ $invigilatortype->name }}</option>
+                                        <option value="{{ $invigilatortype->id }}">
+                                            {{ $invigilatortype->name }}-{{ $invigilatortype->invigilation_catergories->name }}
+                                        </option>
                                     @endforeach
 
 
@@ -182,11 +201,24 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="amount" class="col-sm-12 col-form-label">Amount</label>
+                            <label for="invigilation_type" class="col-sm-12 col-form-label">Amount</label>
                             <div class="col-sm-12">
-                                <input type="number" class="form-control" name="amount" id="amount"
-                                    placeholder="0">
+                                <select class="form-control" name="invigilator_paymentamount_id"
+                                    id="invigilator_paymentamount_id">
+                                    <option value="">Select</option>
+
+                                    @foreach ($invigilatorPaymentamounts as $invigilatorPaymentamount)
+                                        <option value="{{ $invigilatorPaymentamount->id }}">
+                                            M {{ $invigilatorPaymentamount->amount }}.00</option>
+                                    @endforeach
+                                </select>
                             </div>
+                        </div>
+
+                        <div class="form-check form-group row">
+                            <label for="description" class="col-sm-4 col-form-label">Is payment based on sessions</label>
+                            <input class="form-check-input" type="checkbox" value="1" name="is_sessions"
+                                id="is_sessions">
                         </div>
 
                     </form>
@@ -236,8 +268,8 @@
 
                         },
                         {
-                            data: 'invigilation_type.name',
-                            name: 'invigilation_type.name'
+                            data: 'invigilation_type',
+                            name: 'invigilation_type'
                         },
                         {
                             data: 'candidate_range',
@@ -248,8 +280,12 @@
                             name: 'invigilator_number'
                         },
                         {
-                            data: 'amount',
-                            name: 'amount'
+                            data: 'invigilator_paymentamount.amount',
+                            name: 'invigilator_paymentamount.amount'
+                        },
+                        {
+                            data: 'is_sessions',
+                            name: 'is_sessions'
                         },
 
                         {
@@ -303,15 +339,39 @@
                                 function(index) {
                                     var input = $(this);
                                     console.log('Type: ' + input.attr('type') + 'Name: ' + input
-                                        .attr('name') +
+                                        .attr(
+                                            'name') +
                                         'Value: ' + input.val());
                                     var name = input.attr('name');
-
-                                    $(`${form} #${name}`).val(invigilation[name]);
                                     $("#role-edit-form").attr('action', url);
+                                    if (input.attr('type') == "checkbox") {
+                                        $(`${form} #${name}`).attr("checked", invigilation[
+                                            name] == 1 ? true : false);
+                                    } else {
+                                        $(`${form} #${name}`).val(invigilation[name]);
+                                    }
 
                                 }
                             );
+
+
+
+
+
+
+                            // $(`${form} input, ${form} select`).each(
+                            //     function(index) {
+                            //         var input = $(this);
+                            //         console.log('Type: ' + input.attr('type') + 'Name: ' + input
+                            //             .attr('name') +
+                            //             'Value: ' + input.val());
+                            //         var name = input.attr('name');
+
+                            //         $(`${form} #${name}`).val(invigilation[name]);
+                            //         $("#role-edit-form").attr('action', url);
+
+                            //     }
+                            // );
                         },
                         error: function(data) {
                             console.log('Error:', data);
@@ -365,16 +425,23 @@
                 /****  Print errors*******/
                 function printErrorMsg(parent, msg) {
                     $(`${parent} input, ${parent} select, textarea`).each(function(index) {
-                        $(`${parent} .invalid-feedback`).remove();
-                        $(`${parent} .is-invalid`).removeClass('is-invalid');
+                        $(`${parent} .help-block`).remove();
+                        $(`${parent} .has-error`).removeClass('has-error');
                         // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
                     });
                     $.each(msg, function(key, errors) {
                         for (const error in errors) {
                             const value = errors[error];
-                            $(`[name='${key}']`).addClass('is-invalid');
-                            $(`<span class='invalid-feedback'>${value}</span>`).insertAfter(
-                                `${parent} [name='${key}']`)
+
+                            $(`[name='${key}']`).parent().addClass('has-error');
+                            if (key == "gender") {
+                                $(`${parent} [name='${key}']`).next().append(
+                                    `<span class='help-block'>${value}</span>`);
+                            } else {
+                                $(`<span class='help-block'>${value}</span>`).insertAfter(
+                                    `${parent} [name='${key}']`)
+                            }
+
 
                         }
                     });

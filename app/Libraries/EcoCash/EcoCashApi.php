@@ -11,111 +11,104 @@ class EcoCashApi
 
 
 
-    public function payMerchant($phone_number, $amount)
+    public function payMerchant($phone_number, $amount,$transactionReference='',$itemsDesc = '')
     {
         $token = $this->generateECoshToken();
-        $access_token = $token->access_token;
-        $requestId = "EcoCash$phone_number" . time();
-        $url = "http://197.155.192.226:8083/openapi/PayMerchant";
-        $postData = json_encode(array(
-            "msisdn" => $phone_number,
-            "merchantNumber" => "69065108",
-            "merchCode" => "27596",
-            "amount" => $amount,
-            "requestId" =>   $requestId,
-            "vendor_code" => "ecol",
-            "api_key" => "",
-            "checksum" => "",
-            "callbackurl" => ""
-        ));
+        if (!$token) {
+            return false;
+        }
+
+
+        // Check if token exists and assign it, otherwise return false
+        $access_token = $token->token ?? false;
+
+        //Generate Token
+        //API URL
+        $url = "https://dt-externalproxy-1.etl.co.ls/etl/ecoussd/pay-merchant";
+        $requestId = "Eco-$phone_number-$transactionReference-" . time();
+
+        // Prepare your post parameters as JSON
+        $postData = [
+            'msisdn' => "266$phone_number",
+            'short_code' => "99247", //99247,27596
+            'amount' => $amount,
+            'request_id' =>  $requestId,
+        ];
 
         $curl = curl_init();
-
-        //Set your auth headers
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData));
         curl_setopt($curl, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json',
             'Authorization: Bearer ' . $access_token
         ));
-        //setup the request, you can also use CURLOPT_URL
-        curl_setopt($curl, CURLOPT_URL,   $url);
 
-        // Returns the data/output as a string instead of raw data
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
-        // get stringified data/output. See CURLOPT_RETURNTRANSFER
-        $output = "";
-        $response = false;
         $output = curl_exec($curl);
-        // close curl resource to free up system resources
-        curl_close($curl);
-        if( $output!== false) {
-            $responseObject =(object) json_decode($output, true) ;
-            $responseObject->requestId = $requestId;
-            $responseObject->access_token= $access_token;
-            $response = $responseObject;
+
+        if (curl_errno($curl)) {
+            $responseData = (object) json_decode($curl, true);
         }
-        return  $response;
+        curl_close($curl);
+        $responseData = json_decode($output, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $responseData = (object) json_decode($output, true);
+        }
+        return (object) $responseData;
     }
 
 
-    public function getEcoCashResponse($phone_number, $amount){
-        $payMerchant=$this->payMerchant($phone_number, $amount);
-        sleep(30);
+    public function getEcoCashResponse($phone_number, $amount,$transactionReference='',$itemsDesc = '')
+    {
+        $payMerchant = $this->payMerchant($phone_number, $amount,$transactionReference,$itemsDesc);
         if ($payMerchant) {
-            $requestId= $payMerchant->requestId;
-            $access_token= $payMerchant->access_token;
-            $done = true;
-            $response=false;
-            while($done){
-                $status=$this->checkTransactionStatus($requestId,$access_token);
-                if ($status->txnstatus!='417' && $status->message!=='Pending' ) {
-                    $response= $status;
-                    $done = false;
-                }
-            }
-         return   $response ;
+            return   $payMerchant;
         }
         return false;
     }
 
 
-    public function checkTransactionStatus($requestId,$access_token)
+    public function checkTransactionStatus($requestId, $access_token)
     {
-        $url = "http://197.155.192.226:8083/openapi/QueryTransactionStatus";
-        $postData = json_encode(array(
-            "transactionId" => $requestId,
-            "vendor_code" => "ecol",
-            "api_key" => "",
-            "checksum" => "",
-        ));
 
+
+        $url = "https://dt-externalproxy-1.etl.co.ls/etl/ecoussd/check/transaction/$requestId";
         $curl = curl_init();
-
-         //Set your auth headers
-         curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+        // Set your auth headers
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json',
             'Authorization: Bearer ' . $access_token
         ));
-        //setup the request, you can also use CURLOPT_URL
-        curl_setopt($curl, CURLOPT_URL,   $url);
-        // Returns the data/output as a string instead of raw data
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $postData);
-        // get stringified data/output. See CURLOPT_RETURNTRANSFER
-        $output = "";
-        $response = false;
+
+        // Setup the request URL
+        curl_setopt($curl, CURLOPT_URL, $url);
+
+        // Make it a GET request (default is GET, but explicitly setting it)
+        curl_setopt($curl, CURLOPT_HTTPGET, true);
+
+        // Return the data/output as a string instead of printing it
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        // Execute the request
         $output = curl_exec($curl);
-        // close curl resource to free up system resources
+
+        // Close curl resource to free up system resources
         curl_close($curl);
-        if( $output!== false) {
-            $responseObject =(object) json_decode($output, true) ;
+
+        $response = false;
+
+        if ($output !== false) {
+            $responseObject = (object) json_decode($output, true);
             $responseObject->requestId = $requestId;
             $response = $responseObject;
         }
-        return  $response;
+
+        return $response;
     }
+
+
+
 
 
 
@@ -123,52 +116,34 @@ class EcoCashApi
     {
         //Generate Token
         //API URL
-        $url = "http://197.155.192.226:8083/token";
-        //Prepare you post parameters
-        $postData = array(
+        $url = "https://dt-externalproxy-1.etl.co.ls/etl/ecoussd/auth/login";
+
+        // Prepare your post parameters as JSON
+        $postData = [
             'username' => 'ecol',
-            'password' => 'ecolVZE$!#$e!j1LE#$#exam',
-            'grant_type' => 'password'
-        );
+            'password' => 'syvx444S',
+        ];
 
         $curl = curl_init();
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_URL,   $url);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($postData));
-        $output = "";
-        $response = false;
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postData));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Accept: application/json' // optional, good practice
+        ]);
+
         $output = curl_exec($curl);
-        // close curl resource to free up system resources
-        curl_close($curl);
-        if( $output!== false) {
-            $response =(object) json_decode($output, true) ;
+
+        if (curl_errno($curl)) {
+            $responseData = (object) json_decode($curl, true);
         }
-        return  $response;
-    }
-
-
-    public function ecoCashCallBackUrl(Request $request)
-    {
-        // store call back data
-        $callback = file_get_contents('php://input');
-        $callbackurl = json_decode($callback, true);
-        return $callbackurl;
-    }
-
-    //Cryptophraohy extension -> OpenSSL -> base64
-    public function ecoCashChecksum($uniqieID)
-    {
-        $data = "ECOL" . "30626c006b435422a78445b524e6f436c231739d6b31d8d3bf1a10d47c63f9c3" . "000006" . $uniqieID;
-        // 3coCa2ho83C01s02i
-        // fetch private key from file and ready it
-        $fp = fopen(public_path('cetificate/cert.key'), "r");
-        $priv_key = fread($fp, 8192);
-        fclose($fp);
-        $binary_signature = "";
-        openssl_sign($data, $binary_signature, $priv_key);
-        $binary_signature = base64_encode($binary_signature);
-        return   $binary_signature;
-        // ==================== END Of our code ===================//
+        curl_close($curl);
+        $responseData = json_decode($output, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $responseData = (object) json_decode($output, true);
+        }
+        return (object) $responseData;
     }
 }

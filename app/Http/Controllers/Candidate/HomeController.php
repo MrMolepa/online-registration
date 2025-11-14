@@ -10,6 +10,7 @@ use App\Models\Candidate;
 use App\Models\CandidateArrangement;
 use App\Models\Center;
 use App\Models\CenterCandidate;
+use App\Models\FeeFine;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Subject;
@@ -24,8 +25,7 @@ class HomeController extends Controller
 
     public function index()
     {
-
-
+        $financial_year = auth()->user()->financial_year;
         $national_id = auth()->user()->national_id;
         $subjects = DB::table('candidate_subject')
             ->select(
@@ -46,6 +46,43 @@ class HomeController extends Controller
                     'candidates.gender',
                     'center_candidate.sponser',
                     'subjects.subject_code',
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.amount) FROM fee_candidate_histories  WHERE
+                    fee_candidate_histories.candidate_id = center_candidate.id
+                    ),0) AS  amount_paid"),
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.fine) FROM fee_candidate_histories  WHERE
+                    fee_candidate_histories.candidate_id = center_candidate.id
+                    ),0) AS  fine"),
+                    DB::raw("COALESCE((Select sum(fee_group_details.amount) from fee_groups
+                    inner join fee_group_details on  fee_group_details.fee_group_id=fee_groups.id
+                    inner join fee_types on  fee_types.id=fee_group_details.fee_type_id
+                    inner join sessions on  sessions.id=fee_groups.session_id
+                    inner join levels on  levels.id=fee_groups.level_id
+                    where fee_groups.candidate_type=CASE center_candidate.type
+                                                WHEN 1 THEN 1
+                                                WHEN 2 THEN 3
+                                                ELSE 3
+                                                END
+                    and sessions.session=center_candidate.session and
+                     levels.level=center_candidate.level and
+                     sessions.financial_year=center_candidate.financial_year
+                    and  fee_group_details.subject_code in (
+                    (SELECT  candidate_subject.subject_code  FROM `candidate_subject`
+                    WHERE `candidate_subject`.`candidate_no`=`center_candidate`.`candidate_no` AND
+                        `candidate_subject`.`level`=`center_candidate`.`level` AND
+                        `candidate_subject`.`session`=`center_candidate`.`session` AND
+                        `candidate_subject`.`financial_year`=`center_candidate`.`financial_year`
+                        union SELECT '-' as subject_code)
+                    )),0) as exam_fee"),
+                    DB::raw("(Select fee_groups.id from fee_groups
+                                inner join fee_group_details on
+                                fee_group_details.fee_group_id=fee_groups.id
+                                inner join fee_types on fee_types.id=fee_group_details.fee_type_id
+                                inner join sessions on sessions.id=fee_groups.session_id
+                                inner join levels on levels.id=fee_groups.level_id
+                                where fee_groups.candidate_type=CASE center_candidate.type WHEN 1 THEN 1 WHEN 2 THEN 3 ELSE 3 END and
+                            sessions.session=center_candidate.session and
+                            levels.level=center_candidate.level and
+                            sessions.financial_year=center_candidate.financial_year LIMIT 1) as fee_group_id"),
                     'subjects.subject_name',
                     'candidate_subject.subject_option'
                 ],
@@ -58,98 +95,44 @@ class HomeController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->join('centers', 'centers.center_no', '=', 'center_candidate.center_no')
-            ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session', 'subjects.subject_code')
             ->where("center_candidate.national_id", '=', $national_id)
-            ->where("center_candidate.financial_year", '=', date('Y') . '-' . (date('Y') + 1))
+            ->where("center_candidate.financial_year", '=', $financial_year)
             ->where("center_candidate.session", '=', auth()->user()->session)
             ->get();
-
-
         $candidate =  $subjects->first();
-        $amount_paid = Invoice::where([
-            ['client_id', $candidate->candidate_no],
-            ['financial_year', $candidate->financial_year],
-            ['level', $candidate->level],
-            ['national_id', $national_id],
-            ['session', $candidate->session]
-        ])->sum('amount');
-        $schoolFees =    DB::table('fees_stracture')
-            ->where('candidate_type', '=', 'lgcse-school')
-            ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1))
-            ->first();
-        $schoolPrivate = DB::table('fees_stracture')
-            ->where('candidate_type', '=', 'lgcse-private')
-            ->where('financial_year', '=',  date('Y') . '-' . (date('Y') + 1))
+        $amount_paid =  $candidate->amount_paid;
+        $total_amount = $candidate->exam_fee + $candidate->fine;
+        $groupId = $candidate->fee_group_id;
+        $total_fine = 0;
+        $fine = FeeFine::where('fee_group_id', '=', $groupId)
+            ->where('start_date', '<=',   date('Y-m-d'))
+            ->where('end_date', '>=',   date('Y-m-d'))
             ->first();
 
-
-        $practicalSubjects = ['0179', '0189', '0191', '0192', '0194', '0417', '0190'];
-        $delf = Subject::where('is_delf', '=', 1)->get()->pluck('subject_code')->toArray();
-        $total_amount = 0;
-        if (in_array($candidate->type, [2, 3])) {
-            foreach ($subjects as $subject) {
-                if (in_array($subject->subject_code, $practicalSubjects)) {
-                    $total_amount += ($schoolPrivate->subject_fee) + $schoolPrivate->practical_subject_fee;
-                } else if (in_array($subject, $delf)) {
-                    $total_amount += ($schoolPrivate->delf_fee);
-                } else {
-                    $total_amount += ($schoolPrivate->subject_fee);
-                }
+        $total_amount =$total_amount - $amount_paid;
+        if ($total_amount > 0) {
+            $total_fine = is_null($fine) ? 0 : $fine->fine_value;
+            if ($total_amount > ($total_amount * 5 / 100)  &&   $fine !== null) {
+                $total_amount += $total_fine;
             }
-            $total_amount  += ($schoolPrivate->local_fee + $schoolPrivate->registration_fee);
-        } else {
-
-
-            foreach ($subjects as $subject) {
-                if (in_array($subject->subject_code, $practicalSubjects)) {
-                    $total_amount += ($schoolFees->subject_fee) + $schoolFees->practical_subject_fee;
-                } else if (in_array($subject->subject_code, $delf)) {
-                    $total_amount += ($schoolFees->delf_fee);
-                } else if (in_array($subject, $delf)) {
-                    $total_amount += ($schoolPrivate->delf_fee);
-                } else {
-                    $total_amount += ($schoolFees->subject_fee);
-                }
-            }
-            $total_amount  +=  $schoolFees->local_fee + $schoolFees->registration_fee;
         }
-        $total_amount  =  $total_amount - $amount_paid;
-
-        $is_paid = DB::table('late_fees')
-            ->select('*')
-            ->where('financial_year', '=', $candidate->financial_year)
-            ->where('session', '=', $candidate->session)
-            ->where('amount', '=',  abs($total_amount))
-            ->first();
-        if ($is_paid != null) {
-            $total_amount += $is_paid->amount;
-        }
-
-        $late_fee = DB::table('late_fees')
-            ->select('*')
-            ->whereDate('start_date', '<=', date("Y-m-d"))
-            ->whereDate('end_date', '>=', date("Y-m-d"))
-            ->first();
-        if ($total_amount > $schoolFees->subject_fee && $late_fee !== null) {
-            $total_amount += $late_fee->amount;
-        }
-
         // Approval for Sponsored
         $request_action = DB::table('request_action')
-        ->select([DB::raw("count(request_action.id) as total")])
-        ->join('requests', 'requests.id', '=', 'request_action.request_id')
-        ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
-        ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
-        ->join('actions', 'actions.id', '=', 'request_action.action_id')
-        ->join('processes', 'processes.id', '=', 'actions.process')
-        ->join('action_types', 'action_types.id', '=', 'actions.action_type')
-        ->where('requests.request_data_id', '=', $candidate->id)
-        ->where('requests.request_data', '=', CenterCandidate::class)
-        ->where('request_action.is_complete', '=', 1)
-        ->where('action_types.name', '=', 'Approve')
-        ->groupBy('request_action.request_id')
-        ->having(DB::raw("count(request_action.request_id)"),'=',1)
-        ->first();
+            ->select([DB::raw("count(request_action.id) as total")])
+            ->join('requests', 'requests.id', '=', 'request_action.request_id')
+            ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
+            ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
+            ->join('actions', 'actions.id', '=', 'request_action.action_id')
+            ->join('processes', 'processes.id', '=', 'actions.process')
+            ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+            ->where('requests.request_data_id', '=', $candidate->id)
+            ->where('requests.request_data', '=', CenterCandidate::class)
+            ->where('request_action.is_complete', '=', 1)
+            ->where('action_types.name', '=', 'Approve')
+            ->groupBy('request_action.request_id')
+            ->having(DB::raw("count(request_action.request_id)"), '>', 1)
+            ->first();
+
         $timetable = "";
         $is_filled = true;
         $candidate_profile = route('candidate.profile.index');
@@ -174,7 +157,7 @@ class HomeController extends Controller
             ->where('center_candidate.session', '=',  $candidate->session)
             ->where('center_candidate.financial_year', '=',  $candidate->financial_year)
             ->first();
-            $gurdian = DB::table('guardians')
+        $gurdian = DB::table('guardians')
             ->select(
                 'guardians.candidate',
             )
@@ -193,21 +176,20 @@ class HomeController extends Controller
             ->whereNotNull('guardians.email')
             ->where('guardians.candidate', '=', $candidate->candidate_no)
             ->first();
-            if (!$center_candidate) {
-                $is_filled =false;
-                $timetable .= "<div class='alert alert-danger' role='alert'>
+        if (!$center_candidate) {
+            $is_filled = false;
+            $timetable .= "<div class='alert alert-danger' role='alert'>
                                 Please  Complete <a href='{$candidate_profile}' class='alert-link'>Candidate Profile</a>.
                             </div>";
-            }
+        }
 
-            if (!$gurdian) {
-                $is_filled =false;
-                $timetable .= "<div class='alert alert-danger' role='alert'>
+        if (!$gurdian) {
+            $is_filled = false;
+            $timetable .= "<div class='alert alert-danger' role='alert'>
                                 Please  Complete <a href='{$next_kin}' class='alert-link'>Next of Kin Profile</a>.
                             </div>";
-            }
-
-        if ($total_amount <= 0 || $request_action && $is_filled ) {
+        }
+        if ($total_amount <= 0 ||  $request_action) {
             $candidate_no = $candidate->candidate_no;
             $center_no = $candidate->center_no;
             $session = $candidate->session;
@@ -227,7 +209,7 @@ class HomeController extends Controller
                 'download' => 1,
                 'send' => 1
             ]);
-            $timetable ="<div class='timetable-btns my-2'>
+            $timetable = "<div class='timetable-btns my-2'>
                                 <a href='$download' class='btn btn-sm btn-primary download-timetable'><i class='fa fa-download '></i>
                                     Download</a>
                                 <a href='$send' class='btn btn-sm btn-primary send-email'><i class=' far fa-paper-alternativee'></i>
@@ -278,12 +260,7 @@ class HomeController extends Controller
                     $join->on('candidate_subject.session', '=', 'center_candidate.session');
                     $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
                 })
-                ->join('invoices', function ($join) {
-                    $join->on('center_candidate.candidate_no', '=', 'invoices.client_id');
-                    $join->on('center_candidate.level', '=', 'invoices.level');
-                    $join->on('center_candidate.session', 'invoices.session');
-                    $join->on('center_candidate.financial_year', 'invoices.financial_year');
-                })
+
                 ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
                 ->where('center_candidate.financial_year', '=', date('Y') . '-' . (date('Y') + 1))
                 ->where('center_candidate.level', '=', $level)

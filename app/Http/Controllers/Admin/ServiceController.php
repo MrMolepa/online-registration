@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CenterCandidate;
 use App\Models\OneTimeService;
+use App\Models\OneTimeServicesItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -18,10 +21,63 @@ class ServiceController extends Controller
     public function index(Request $request)
     {
 
+
+        $years =  CenterCandidate::select(DB::raw('financial_year as year'))
+            ->orderBy('year', 'DESC')
+            ->distinct()
+            ->get()->pluck('year');
+
         if ($request->ajax()) {
+
+            if ($request->has('service_items')) {
+                $oneTimeServiceItems = OneTimeServicesItem::where(['financial_year' => $request->year]);
+                return DataTables::eloquent($oneTimeServiceItems)
+                    ->setRowId('id')
+                    ->editColumn('id', function ($row) {
+                        return  $row->id;
+                    })
+                    ->editColumn('name', function ($row) {
+                        $html = "
+                        <div class='form-group'>
+                        <span class='editSpan period'> $row->name</span>
+                        <input class='editInput period form-control' type='text' name='name' value='$row->name'>
+                        </div>";
+                        return     $html;
+                    })
+                    ->editColumn('description', function ($row) {
+                        $html = "<div class='form-group'>
+                        <span class='editSpan period'> $row->description</span>
+                        <input class='editInput period form-control' type='text' name='description' value='$row->description'>
+                        </div>";
+                        return     $html;
+                    })
+                    ->editColumn('financial_year', function ($row) {
+                        $html = "<div class='form-group'>
+                        <span class='editSpan period'> $row->financial_year</span>
+                        <input class='editInput period form-control' type='text' name='financial_year' value='$row->financial_year'>
+                        </div>";
+                        return     $html;
+                    })
+                    ->editColumn('price', function ($row) {
+                        $html = "<div class='form-group'>
+                        <span class='editSpan period'> $row->price</span>
+                        <input class='editInput period form-control' type='text' name='price' value='$row->price'>
+                        </div>";
+                        return     $html;
+                    })
+                    ->editColumn('action', function ($row) {
+                        $html = "<button type='button' class='btn btn-sm btn-primary editBtn'> Edit</button>
+                                  <button type='button' class='btn btn-sm btn-success saveBtn' data-url='" . route('admin.service-item.update', $row->id) . "'> Save</button>
+                                  <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='" . route('admin.service-item.destroy', $row->id) . "'> Delete</button>";
+                        return     $html;
+                    })
+                    ->rawColumns(['name', 'description', 'financial_year', 'price', 'action'])
+                    ->make(true);
+            }
+
+
             $services  =  OneTimeService::query();
-            //  `name`, `desciption`,
-            return DataTables::eloquent( $services)
+            return DataTables::eloquent($services)
                 ->setRowId('id')
                 ->editColumn('id', function ($row) {
                     return  $row->id;
@@ -45,6 +101,14 @@ class ServiceController extends Controller
                     $html = "<a href='" . route('admin.service-item.index', ['service' => $row->id]) . "' type='button' class='btn  btn-primary' >Service Item</a>";
                     return    $html;
                 })
+                ->editColumn('emails', function ($row) {
+                    $html = "<a href='" . route('admin.service-emails.index', ['service' => $row->id]) . "' type='button' class='btn service-email-btn  btn-primary' >Emails</a>";
+                    return    $html;
+                })
+                ->editColumn('service_item', function ($row) {
+                    $html = "<a href='" . route('admin.service-item.index', ['service' => $row->id]) . "' type='button' class='btn  btn-primary' >Service Item</a>";
+                    return    $html;
+                })
                 ->editColumn('requirements', function ($row) {
                     $html = "<a href='" . route('admin.service-requirements.index', ['service' => $row->id]) . "' type='button' class='btn  btn-secondary' >Requirements</a>";
                     return    $html;
@@ -55,10 +119,10 @@ class ServiceController extends Controller
                               <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='" . route('admin.services.destroy', $row->id) . "'> Delete</button>";
                     return     $html;
                 })
-                ->rawColumns(['name', 'desciption', 'service_item', 'requirements', 'action'])
+                ->rawColumns(['name', 'desciption', 'emails', 'service_item', 'requirements', 'action'])
                 ->toJson();
         }
-        return view('admin.services.services');
+        return view('admin.services.services', compact('years'));
     }
 
     /**
@@ -68,7 +132,34 @@ class ServiceController extends Controller
      */
     public function create()
     {
-        //
+
+        $prev_year = (date('Y') - 1) . '-' . date('Y');
+        $next_year = date('Y') . '-' . (date('Y') + 1);
+
+        $oneTimeServiceItems = OneTimeServicesItem::where(['financial_year' =>   $prev_year])->get();
+
+
+        foreach ($oneTimeServiceItems as  $oneTimeServiceItem) {
+            $original = OneTimeServicesItem::find($oneTimeServiceItem->id);
+            $dump = OneTimeServicesItem::where([
+                'financial_year' => $next_year,
+                'name' => $oneTimeServiceItem->name
+            ])->first();
+
+            if ($original &&   !$dump) {
+                // Clone the record
+                $clone = $original->replicate();
+
+                // Modify specific attributes
+                $clone->financial_year = $next_year;
+                $clone->created_at = now();
+                $clone->updated_at = now();
+                $clone->save();
+            }
+
+        }
+
+        return response()->json(['success' =>  'sucess']);
     }
 
     /**
@@ -110,9 +201,7 @@ class ServiceController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
-    {
-    }
+    public function edit($id) {}
 
     /**
      * Update the specified resource in storage.

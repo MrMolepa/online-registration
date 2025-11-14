@@ -12,28 +12,28 @@ use Illuminate\Database\Eloquent\Builder;
 class DocumentComments extends Model
 {
     use HasFactory;
-    protected $primaryKey = "id";
-    protected  $table = 'document_comments';
-    public $incrementing = false;
 
-    const CREATED_AT = 'createdDate';
-    const UPDATED_AT = 'modifiedDate';
+    protected  $table = 'document_comments';
+
+
+    const CREATED_AT = 'created_date';
+    const UPDATED_AT = 'modified_date';
 
     protected $fillable = [
-        'documentId', 'comment', 'createdBy',
-        'modifiedBy', 'isDeleted'
+        'document_id', 'comment', 'created_by',
+        'modified_by', 'is_deleted'
     ];
 
     public function user()
     {
-        return $this->belongsTo($this->type, 'userId');
+        return $this->belongsTo(DocumentUser::class, 'user_id');
     }
 
 
 
     public function document()
     {
-        return $this->belongsTo(Documents::class, 'documentId');
+        return $this->belongsTo(Documents::class, 'document_id');
     }
 
     protected static function boot()
@@ -41,18 +41,15 @@ class DocumentComments extends Model
         parent::boot();
 
         static::creating(function (Model $model) {
-            $userId = Auth::parseToken()->getPayload()->get('userId');
-            $model->createdBy= $userId;
-            $model->modifiedBy =$userId;
-            $model->setAttribute($model->getKeyName(), Uuid::uuid4());
+            $userId = Auth::user()->document_user_profile->id;
+            $model->created_by= $userId;
+            $model->modified_by =$userId;
         });
         static::updating(function (Model $model) {
-            $userId = Auth::parseToken()->getPayload()->get('userId');
-            $model->modifiedBy =$userId;
+            $userId =Auth::user()->document_user_profile->id;
+            $model->modified_by =$userId;
         });
 
-        static::addGlobalScope('isDeleted', function (Builder $builder) {
-            $builder->where('documentComments.isDeleted', '=', 0);
-        });
+
     }
 }

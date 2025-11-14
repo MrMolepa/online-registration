@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Libraries\fpdf\easyTable;
 use App\Libraries\fpdf\exFPDF;
 use App\Models\CenterCandidate;
+use App\Models\InvigilationCatergories;
 use App\Models\Level;
 use App\Models\Role;
 use App\Models\Session;
@@ -181,7 +182,9 @@ class CentersController extends Controller
                     $html = "
                     <select class='edit-role form-control' data-url='$actionUrl' name='role'>";
                     foreach ($roles as $role) {
-                        $selected = $role->id == $row->users[0]->roles[0]->id ? "selected" : " ";
+                        $center_role=isset($row->users[0]->roles[0]->id)?$row->users[0]->roles[0]->id :"";
+
+                        $selected = $role->id == $center_role ? "selected" : " ";
                         $html .= "<option value='$role->id'  $selected>$role->display_name</option>";
                     }
                     $html .= "</select>";
@@ -209,7 +212,11 @@ class CentersController extends Controller
                 ->make();
         }
         $levels = Level::get();
-        return view('admin.centers.centers', compact('levels'));
+        $catergories = InvigilationCatergories::get();
+        $sessions = Session::groupBy('session')->get()->pluck('session')->toArray();
+        $districts = Center::groupBy('district_code')
+            ->whereNotNull('district_code')->get();
+        return view('admin.centers.centers', compact('levels','catergories','sessions','districts'));
     }
 
     public function allCenters(Request $request)
@@ -342,27 +349,35 @@ class CentersController extends Controller
         $validator = Validator::make($request->all(), [
             'center_no' => 'required|max:255|unique:centers,center_no',
             'center_name' => 'required|max:255',
-            'district' => 'required|max:255',
             'district_code' => 'required|max:255',
             'address' => 'required|max:255',
+            'center_full_name' => 'required|max:255',
             'level' => 'required|max:255',
+            'category_id' => 'required|max:255',
+            'sessions' => 'required|max:255',
             'email' => 'required|max:255|email|unique:users,email',
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
 
+
+        $district = Center::groupBy('district_code')
+        ->where('district_code',$request->district_code)
+        ->first();
         $password = bin2hex(random_bytes(3));
+        $sessions = json_encode($request->sessions);
         Center::create([
             'center_no' => $request->center_no,
             'center_name' => $request->center_name,
-            'district' => $request->district,
-            'district_code' => $request->district_code,
+            'district' => $district->district,
+            'district_code' => $district->district_code,
             'address' => $request->address,
             'level' => $request->level,
-            'center_full_name' => $request->centre_name . " " . $request->district,
-            'district_address' => $request->address . " " . $request->district
-
+            'center_full_name' => $request->center_full_name . " " . $district->district,
+            'district_address' => $request->address . " " . $district->district,
+            'category_id'=>$request->category_id,
+            'sessions' => $sessions
         ]);
         $user = new User();
         $user->user_type = 'center';
@@ -454,26 +469,32 @@ class CentersController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'center_name' => 'required|max:255',
-            'district' => 'required|max:255',
             'district_code' => 'required|max:255',
             'address' => 'required|max:255',
             'level' => 'required|max:255',
             'email' => 'required|max:255|email',
+            'category_id' => 'required|max:255',
+            'center_full_name'=>'required|max:255',
+
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
+        $district = Center::groupBy('district_code')
+        ->where('district_code',$request->district_code)
+        ->first();
         $center = Center::where('center_no', '=', $id)->first();
         $center->center_name = $request->center_name;
-        $center->district = $request->district;
-        $center->district_code = $request->district_code;
+        $center->district =  $district->district;
+        $center->district_code = $district->district_code;
         $center->address = $request->address;
         $center->level = $request->level;
-        $center->center_full_name = $request->center_name . " " . $request->district;
-        $center->district_address = $request->address . " " . $request->district;
+        $center->center_full_name = $request->center_full_name. " " .  $district->district;
+        $center->district_address = $request->address . " " .  $district->district;
+        $center->category_id=$request->category_id;
         $center->save();
         $user = User::where('center_no', '=', $id)->where('user_type', '=', 'center')->first();
-        $user->occupation = $request->district;
+        $user->occupation = $district->district;
         $user->username = $id;
         $user->center_no = $id;
         $user->center_name = $request->center_name;

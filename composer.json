@@ -14,7 +14,10 @@
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.3",
+        "league/oauth2-client": "^2.8",
+        "league/oauth2-google": "^4.0",
         "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "3.0",
         "matthew-elisha/fpdf-easytable": "dev-master",
         "mike42/escpos-php": "^2.2",
         "phpmailer/phpmailer": "^6.5",
@@ -23,6 +26,7 @@
         "santigarcor/laratrust": "^6.3",
         "spatie/laravel-activitylog": "^3.17",
         "spatie/laravel-backup": "^6.16",
+        "symfony/mailer": "^6.1",
         "yajra/laravel-datatables-oracle": "^9.18"
     },
     "require-dev": {

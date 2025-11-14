@@ -13,10 +13,12 @@ class InvigilationPaymentMethod extends Model
     protected $fillable = [
         'name',
         'description',
+        'is_bank_name',
         'is_account_number',
         'is_branch',
-        'is_phone_number',
+        'is_payable_phone_number',
         'is_tin_number',
+
 
     ];
 }

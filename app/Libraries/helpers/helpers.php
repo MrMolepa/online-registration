@@ -1,10 +1,17 @@
 <?php
 
 use App\Models\Candidate;
+use App\Models\Center;
 use App\Models\CenterCandidate;
 use App\Models\FeeStracture;
+use App\Models\Invitation;
 use App\Models\Publication;
+use App\Models\Session;
 use Illuminate\Support\Facades\DB;
+
+
+
+
 
 function is_opened($level, $session)
 {
@@ -30,7 +37,6 @@ function is_activate($level)
     return isset($open_level) ? true : false;
 }
 
-
 function is_publised($level, $session)
 {
     $publication = Publication::where('level', '=', $level)
@@ -39,18 +45,45 @@ function is_publised($level, $session)
     return isset($publication) ? true : false;
 }
 
-
 function is_paid($candidate_no, $national_id, $level, $session, $financial_year)
 {
-    $invoices = DB::table('invoices')
-        ->where('client_id', '=', $candidate_no)
+
+
+
+    $candidate = DB::table('center_candidate')
+        ->where('candidate_no', '=', $candidate_no)
         ->where('national_id', '=', $national_id)
         ->where('level', '=', $level)
         ->where('session', '=', $session)
         ->where('financial_year', '=', $financial_year)
         ->first();
-    return isset($invoices) ? true : false;
+
+
+    $invoices = DB::table('fee_candidate_histories')
+        ->where('fee_candidate_histories.candidate_id', '=', $candidate->id)
+        ->where('fee_candidate_histories.status', '=', 1)
+        ->first();
+
+    $approval_sponsored = DB::table('request_action')
+        ->select(['requests.request_data_id'])
+        ->join('requests', 'requests.id', '=', 'request_action.request_id')
+        ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
+        ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
+        ->join('actions', 'actions.id', '=', 'request_action.action_id')
+        ->join('processes', 'processes.id', '=', 'actions.process')
+        ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+        ->where('requests.request_data_id', '=', $candidate->id)
+        ->where('request_action.is_complete', '=', 1)
+        ->where('action_types.status', '=', '1')
+        ->groupBy('request_action.request_id')
+        ->having(DB::raw("count(request_action.request_id)"), '>', 1)
+        ->first();
+    return isset($invoices) ||  isset($approval_sponsored)  ? true : false;
 }
+
+
+
+
 
 
 
@@ -74,63 +107,39 @@ function is_paid_sponsored($candidate_id)
         ->groupBy('request_action.request_id')
         ->having(DB::raw("count(request_action.request_id)"), '>', 1)
         ->first();
-    $invoices = DB::table('invoices')
-        ->where('client_id', '=', $center_candidate->candidate_no)
-        ->where('national_id', '=', $center_candidate->national_id)
-        ->where('level', '=', $center_candidate->level)
-        ->where('session', '=', $center_candidate->session)
-        ->where('financial_year', '=', $center_candidate->financial_year)
+
+
+
+    $invoices = DB::table('fee_candidate_histories')
+        ->where('fee_candidate_histories.candidate_id', '=', $candidate_id)
+        ->where('fee_candidate_histories.status', '=', 1)
         ->first();
 
     if (isset($approval_sponsored) || isset($invoices)) {
         if (isset($approval_sponsored)) {
             return (object) [
-                    'sponsors' =>  $center_candidate->sponser,
-                    'label' => 'Approved',
-                    'color' => '#ffc107',
-                    'status' => true,
-                ];
+                'sponsors' =>  $center_candidate->sponser,
+                'label' => 'Approved',
+                'color' => '#ffc107',
+                'status' => true,
+            ];
         }
         if (isset($invoices)) {
             return (object) [
-                    'sponsors' =>  $center_candidate->sponser,
-                    'label' => 'paid',
-                    'color' => '#28a745',
-                    'status' => true,
-                ];
+                'sponsors' =>  $center_candidate->sponser,
+                'label' => 'paid',
+                'color' => '#28a745',
+                'status' => true,
+            ];
         }
     }
     return (object) [
-            'sponsors' =>  $center_candidate->sponser,
-            'label' => 'unpaid',
-            'color' => '#dc3545',
-            'status' => false,
-        ];
+        'sponsors' =>  $center_candidate->sponser,
+        'label' => 'unpaid',
+        'color' => '#dc3545',
+        'status' => false,
+    ];
 }
-
-
-
-
-
-
-
-function is_sponsored($candidate_id, $sponsor)
-{
-    $sponsored = DB::table('request_action')
-        ->select('actions.action_type', 'actions.order_number', 'action_types.status', 'action_types.name', 'action_types.label_color')
-        ->join('requests', 'requests.id', '=', 'request_action.request_id')
-        ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
-        ->join('processes', 'processes.id', '=', 'transitions.process')
-        ->join('actions', 'actions.id', '=', 'request_action.action_id')
-        ->join('action_types', 'action_types.id', '=', 'actions.action_type')
-        ->where('requests.request_data_id', '=', $candidate_id)
-        ->where('requests.request_data', '=', CenterCandidate::class)
-        ->where('processes.process_key', '=',  $sponsor)
-        ->where('request_action.is_active', '=', 0)
-        ->where('request_action.is_complete', '=', 1);
-    return isset($sponsored) ? true : false;
-}
-
 
 
 function getNextCandidateNumber()
@@ -147,6 +156,68 @@ function getNextCandidateNumber()
     return sprintf('%s%0' . $length . 'd', $prefix, intval($current) + 1);
 }
 
+// function  getMarkers()
+// {
+
+//     $center = Center::with('subjects')->where('center_no', '=', auth()->user()->center_no)->first();
+//     $centerSessions = json_decode($center->sessions, true);
+
+//     $date = date('Y-m-d');
+//     $session = Session::where('financial_closing_date', '>=',  $date)
+//         ->whereIn('session', $centerSessions)->first();
+//     $center_no = $center->center_no;
+//     $invitation = Invitation::where('session', $session->session)
+//         ->where('financial_year', $session->financial_year)
+//         ->where('center_no', $center_no);
+// }
+
+
+
+
+
+
+
+
+
+
+
+function getPendingInvitations()
+{
+    // Get the center of the authenticated user
+    $center = Center::with('subjects')
+        ->where('center_no', auth()->user()->center_no)
+        ->first();
+
+
+    // Decode the sessions JSON to array
+    $centerSessions = json_decode($center->sessions, true);
+    // Current date
+    $date = date('Y-m-d');
+
+    // Find the first active session for this center
+    $session = Session::where('financial_closing_date', '>=', $date)
+        ->whereIn('session', $centerSessions)
+        ->first();
+
+
+    // Query invitations for this center and session
+    $invitationsQuery = Invitation::where('session', $session->session)
+        ->where('financial_year', $session->financial_year)
+        ->where('center_no', $center->center_no);
+
+    $totalInvitations = $invitationsQuery->count();
+    $pendingInvitations = (clone $invitationsQuery)
+        ->where('status', 'complete')
+        ->count();
+
+
+    return (object)[
+        'total' => $totalInvitations,
+        'pending' => $pendingInvitations,
+    ];;
+}
+
+
 function initials($full_names)
 {
     preg_match('/(?:\w+\. )?(\w+).*?(\w+)(?: \w+\.)?$/', $full_names, $result);
@@ -155,6 +226,32 @@ function initials($full_names)
 
 
 
+
+function banks()
+{
+    return [
+        'standard' => [
+            'label'   => 'Standard Lesotho Bank',
+            'pattern' => '/^\d{10}$/',
+        ],
+        'nedbank' => [
+            'label'   => 'Nedbank Lesotho',
+            'pattern' => '/^\d{12}$/',
+        ],
+        'fnb' => [
+            'label'   => 'First National Bank (FNB) Lesotho',
+            'pattern' => '/^\d{9,12}$/',
+        ],
+        'postbank' => [
+            'label'   => 'Lesotho PostBank',
+            'pattern' => '/^\d{6,16}$/',
+        ],
+        'generic' => [
+            'label'   => 'Other / Generic',
+            'pattern' => '/^\d{6,16}$/',
+        ],
+    ];
+}
 
 function getFormattedNumber(
     $value,
@@ -245,4 +342,73 @@ function sanitize($data)
 function generateToken()
 {
     return md5(rand(1, 10) . microtime());
+}
+
+function px2mm($px, $dpi = 96)
+{
+    return $px * 25.4 / $dpi;
+}
+
+function mm2px($mm, $dpi = 96)
+{
+    return $mm * $dpi / 25.4;
+}
+
+
+/**
+ * Check if current route matches menu route
+ */
+if (!function_exists('isActiveRoute')) {
+    function isActiveRoute($route)
+    {
+        if (!$route) {
+            return false;
+        }
+        
+        try {
+            // Check if current route name matches
+            if (Route::currentRouteName() == $route) {
+                return true;
+            }
+            
+            // Check if current URL contains the route
+            return request()->is($route . '*');
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
+/**
+ * Check if menu or its children are active
+ */
+if (!function_exists('isMenuActive')) {
+    function isMenuActive($menu)
+    {
+        // Check if current menu is active
+        if (isActiveRoute($menu->route)) {
+            return true;
+        }
+        
+        // Check if any children are active
+        if ($menu->children && $menu->children->isNotEmpty()) {
+            foreach ($menu->children as $child) {
+                if (isActiveRoute($child->route)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Generate unique collapse ID for menu
+ */
+if (!function_exists('getMenuCollapseId')) {
+    function getMenuCollapseId($menu)
+    {
+        return 'menu-' . $menu->id . '-collapse';
+    }
 }

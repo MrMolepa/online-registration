@@ -229,7 +229,7 @@
 @endsection
 @section('script')
     <script>
-        // TOASTER AND NOTIFICATION SETUP                                                               
+        // TOASTER AND NOTIFICATION SETUP
         toastr.options = {
             closeButton: true,
             newestOnTop: false,
@@ -324,7 +324,7 @@
                 url: actionUrl,
                 data: inputData,
                 success: function(data) {
-              
+
                     if ($.isEmptyObject(data.errors)) {
                         toastr.success("You have successfully Saved Changes");
                         $('#center-other-charges').DataTable().ajax.reload();

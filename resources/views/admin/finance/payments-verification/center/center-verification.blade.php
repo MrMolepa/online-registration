@@ -37,147 +37,260 @@
                                         </div>
 
                                     </div>
-                                    <div class="pull-left">
-                                        <button class="btn btn-primary" data-toggle="modal"
-                                            data-target="#add-balanceBD-modal" type="button">
-                                            + Balance b/d
-                                        </button>
+                                    <div class="pull-left  col-md-4">
+                                        <div class="input-group">
+                                            <span class="input-group-btn">
+                                                <button class="btn secondary" type="button">Session</button>
+                                            </span>
+                                            <select class="form-control status-dropdown" id="session">
+                                                @foreach ($sessions as $session)
+                                                    <option value="{{ $session }}">
+                                                        {{ $session }}</option>
+                                                @endforeach
+                                            </select>
+
+                                        </div>
                                     </div>
                                     <div class="clearfix"></div>
                                 </fieldset>
-                                <div class="table-responsive">
-                                    <table class="table display compact" id="center">
-                                        <thead>
-                                            <tr>
-                                                <th>Upload Date</th>
-                                                <th>Center No</th>
-                                                <th>confirmation Reciept</th>
-                                                <th>Amount Paid</th>
-                                                <th>Checked By</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-
-                                    </table>
-                                    @push('scripts')
-                                        <script>
-                                            toastr.options = {
-                                                "closeButton": true,
-                                                "debug": false,
-                                                "newestOnTop": false,
-                                                "progressBar": true,
-                                                "positionClass": "toast-top-right",
-                                                "preventDuplicates": false,
-                                                "onclick": null,
-                                                "showDuration": "300",
-                                                "hideDuration": "1000",
-                                                "timeOut": "5000",
-                                                "extendedTimeOut": "1000",
-                                                "showEasing": "swing",
-                                                "hideEasing": "linear",
-                                                "showMethod": "fadeIn",
-                                                "hideMethod": "fadeOut"
-                                            }
-                                            $(function() {
-                                                var center = $('#center').DataTable({
-                                                    processing: true,
-                                                    serverSide: true,
-
-                                                    deferRender: true,
-                                                    "lengthMenu": [
-                                                        [20, 50, 100, 200, 400, -1],
-                                                        [20, 50, 100, 200, 400, "All"]
-                                                    ],
-
-                                                    ajax: {
-                                                        url: "{{ route('admin.payments-verification.center', $center->center_no) }}",
-                                                        data: function(d) {
-                                                            d.year = $("#year").val()
-                                                        }
-                                                    },
-
-
-                                                    columns: [{
-                                                            data: 'status',
-                                                            name: 'status',
-                                                            searchable: true
-                                                        },
-                                                        {
-                                                            data: 'center_no',
-                                                            name: 'center_no',
-                                                            searchable: true
-                                                        },
-
-                                                        {
-                                                            data: 'confirmation_slip',
-                                                            name: 'confirmation_slip',
-                                                            orderable: false,
-                                                            searchable: false
-                                                        },
-                                                        {
-                                                            data: 'amount_paid',
-                                                            name: 'amount_paid',
-                                                            searchable: true
-
-                                                        },
-                                                        {
-                                                            data: 'email',
-                                                            name: 'email',
-                                                            searchable: true
-
-                                                        },
-                                                        {
-                                                            data: 'actions',
-                                                            name: 'actions',
-                                                            orderable: false,
-                                                            searchable: false
-                                                        },
-
-
-
-
-                                                    ]
-
-
-                                                });
-                                                $("#center").css("width", "99.5%");
-                                                getCenterCharges();
-
-
-                                            });
-
-                                            function getCenterCharges() {
-                                                $.ajaxSetup({
-                                                    headers: {
-                                                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                                                    }
-                                                });
-                                                $.ajax({
-                                                    url: "{{ route('admin.payments-verification.centercharges', $center->center_no) }}",
-                                                    method: "POST",
-                                                    data: {
-                                                        year: $("#year").val()
-                                                    },
-                                                    success: function(data) {
-                                                        console.log(data);
-
-                                                        $('#center-charges').html(data.html);
-                                                    }
-                                                });
-                                            }
-
-                                            $("#year").on("change", function(event) {
-                                                $('#center').DataTable().ajax.reload();
-                                                getCenterCharges();
-                                            });
-                                        </script>
-                                    @endpush
-
+                                <div class="custom-tabs-line tabs-line-bottom left-aligned">
+                                    <ul class="nav" role="tablist">
+                                        <li class="active"><a href="#payemnts" role="tab" data-toggle="tab">
+                                                Payments
+                                            </a></li>
+                                        <li><a href="#other-chargers" role="tab" data-toggle="tab">Other Charges</a>
+                                        </li>
+                                    </ul>
                                 </div>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade in active" id="payemnts">
+                                        <div class="pull-right">
+                                            <a href="" class="btn btn-info" data-toggle="modal"
+                                                data-target="#add-payment-modal">+ Create
+                                            </a>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                        <div class="table-responsive">
+                                            <table class="table display compact" id="payment-datatable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Upload Date</th>
+                                                        <th>Center No</th>
+                                                        <th>Attachment</th>
+                                                        <th>Amount</th>
+                                                        <th>Collected By</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+
+                                            </table>
+                                            @push('scripts')
+                                                <script>
+                                                    toastr.options = {
+                                                        "closeButton": true,
+                                                        "debug": false,
+                                                        "newestOnTop": false,
+                                                        "progressBar": true,
+                                                        "positionClass": "toast-top-right",
+                                                        "preventDuplicates": false,
+                                                        "onclick": null,
+                                                        "showDuration": "300",
+                                                        "hideDuration": "1000",
+                                                        "timeOut": "5000",
+                                                        "extendedTimeOut": "1000",
+                                                        "showEasing": "swing",
+                                                        "hideEasing": "linear",
+                                                        "showMethod": "fadeIn",
+                                                        "hideMethod": "fadeOut"
+                                                    }
+                                                    $(function() {
+                                                        var center = $('#payment-datatable').DataTable({
+                                                            processing: true,
+                                                            serverSide: true,
+                                                            deferRender: true,
+                                                            "lengthMenu": [
+                                                                [20, 50, 100, 200, 400, -1],
+                                                                [20, 50, 100, 200, 400, "All"]
+                                                            ],
+
+                                                            ajax: {
+                                                                url: "{{ route('admin.centre-collection.fees.center', $center->center_no) }}",
+                                                                data: function(d) {
+                                                                    d.year = $("#year").val()
+                                                                }
+                                                            },
+
+
+                                                            columns: [{
+                                                                    data: 'status',
+                                                                    name: 'status',
+                                                                    searchable: true
+                                                                },
+                                                                {
+                                                                    data: 'center_no',
+                                                                    name: 'center_no',
+                                                                    searchable: true
+                                                                },
+
+                                                                {
+                                                                    data: 'attachment',
+                                                                    name: 'attachment',
+                                                                    orderable: false,
+                                                                    searchable: false
+                                                                },
+                                                                {
+                                                                    data: 'amount',
+                                                                    name: 'amount',
+                                                                    searchable: true
+
+                                                                },
+                                                                {
+                                                                    data: 'collect_by',
+                                                                    name: 'collect_by',
+                                                                    searchable: true
+
+                                                                },
+                                                                {
+                                                                    data: 'actions',
+                                                                    name: 'actions',
+                                                                    orderable: false,
+                                                                    searchable: false
+                                                                },
 
 
 
 
+                                                            ]
+
+
+                                                        });
+                                                        $("#payment-datatable").css("width", "99.5%");
+                                                        getCenterCharges();
+
+
+                                                    });
+
+                                                    function getCenterCharges() {
+                                                        $.ajaxSetup({
+                                                            headers: {
+                                                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                                            }
+                                                        });
+                                                        $.ajax({
+                                                            url: "{{ route('admin.centre-collection.fees.center', $center->center_no) }}",
+                                                            method: "GET",
+                                                            data: {
+                                                                year: $("#year").val(),
+                                                                invoices: 'total'
+                                                            },
+                                                            success: function(data) {
+                                                                $('#center-charges').html(data.html);
+
+
+                                                            }
+                                                        });
+                                                    }
+
+                                                    $("#year").on("change", function(event) {
+                                                        $('#payment-datatable').DataTable().ajax.reload();
+                                                        $('#center-other-charges').DataTable().ajax.reload();
+                                                        getCenterCharges();
+                                                    });
+                                                </script>
+                                            @endpush
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="other-chargers">
+                                        <div class="pull-right">
+                                            <a href="" class="btn btn-info" data-toggle="modal"
+                                                data-target="#add-charge-modal">+ Create
+                                            </a>
+                                        </div>
+                                        <div class="clearfix"></div>
+                                        <div class="table-responsive">
+                                            <table class="table" name="tablename" id="center-other-charges">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Center No</th>
+                                                        <th>Centre Name</th>
+                                                        <th>Remarks</th>
+                                                        <th>Amount</th>
+                                                        <th>Collected By</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+
+
+                                            </table>
+                                            @push('scripts')
+                                                <script>
+                                                    $(function() {
+
+                                                        var center_other_charges = $('#center-other-charges').DataTable({
+                                                            processing: true,
+                                                            serverSide: true,
+
+                                                            deferRender: true,
+                                                            "lengthMenu": [
+                                                                [20, 50, 100, 200, 400, -1],
+                                                                [20, 50, 100, 200, 400, "All"]
+                                                            ],
+
+                                                            ajax: {
+                                                                url: "{{ route('admin.centre-collection.center-charges.index', ['center_no' => $center->center_no]) }}",
+                                                                data: function(d) {
+                                                                    d.year = $("#year").val()
+
+                                                                }
+                                                            },
+                                                            columns: [{
+                                                                    data: 'center_no',
+                                                                    name: 'center_no',
+                                                                    searchable: true
+                                                                },
+                                                                {
+                                                                    data: 'center.center_name',
+                                                                    name: 'center.center_name',
+                                                                    searchable: true
+                                                                },
+                                                                {
+                                                                    data: 'remarks',
+                                                                    name: 'remarks ',
+                                                                    searchable: true
+                                                                },
+                                                                {
+                                                                    data: 'amount',
+                                                                    name: 'amount',
+                                                                    searchable: true
+                                                                },
+                                                                {
+                                                                    data: 'collected_by',
+                                                                    name: 'collected_by',
+                                                                    searchable: true
+                                                                },
+
+                                                                {
+                                                                    data: 'actions',
+                                                                    name: 'actions',
+                                                                    searchable: false,
+                                                                    sortable: false
+
+                                                                }
+
+                                                            ]
+
+                                                        });
+                                                        $("#center-other-charges").css("width", "98.5%");
+
+
+
+                                                    });
+                                                </script>
+                                            @endpush
+                                        </div>
+
+                                    </div>
+                                </div>
                             </div>
                             <!-- END PANEL NO CONTROLS -->
                         </div>
@@ -193,6 +306,9 @@
                             <div class="panel-body">
                                 <div class="table-responsive" id="center-charges">
 
+
+
+
                                 </div>
                             </div>
                             <!-- END PANEL NO CONTROLS -->
@@ -204,20 +320,211 @@
                 </div>
             </div>
             <!-- END MAIN CONTENT -->
-
-            <!-- ADD Charge MODAL -->
-            <div class="modal fade bd-modal-md" id="add-balanceBD-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <!--ADD PAYMENT MODEL -->
+            <div class="modal fade bd-modal-md" id="add-payment-modal" tabindex="-1" role="dialog" aria-hidden="true">
                 <div class="modal-dialog ">
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            <h3 class="modal-title">Balance Brought Forward</h3>
+                            <h3 class="modal-title">Add payemnt</h3>
                         </div>
                         <div class="modal-body">
-                            <form action="{{ route('admin.payments-verification.balanceBroughtForward') }}"
-                                id="balanceBroughtForwardForm" method="post">
+                            <form action="{{ route('admin.centre-collection.fees.store') }}" id="addPaymentForm"
+                                method="post">
+                                <div>
+                                    @csrf
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="center_no">Center no</label>
+                                    <input type="text" class="form-control" name="center_no"
+                                        value="{{ $center->center_no }}" readonly id="center_no">
+
+                                </div>
+
+
+                                <div class="form-group  col-md-6">
+                                    <label for="financial_year">Financial year </label>
+                                    <select class="form-control status-dropdown" name="financial_year" id="financial_year">
+                                        <option value="">Select Financial year</option>
+                                        @foreach ($years as $year)
+                                            <option
+                                                value="{{ $year }}"@if ($year == date('Y')) selected @endif>
+                                                {{ $year }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label for="session">Session </label>
+                                    <select class="form-control status-dropdown" name="session" id="session">
+                                        <option value="">Select Session</option>
+                                        @foreach ($sessions as $session)
+                                            <option value="{{ $session }}">
+                                                {{ $session }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+
+                                <div class="form-group  col-md-6">
+                                    <label for="amount">Amount</label>
+                                    <input type="text" value="" class="form-control" name="amount"
+                                        id="amount">
+                                </div>
+
+                                <div class="form-group  col-md-6">
+                                    <label for="attachment" class="form-label">Proof Of
+                                        Payment</label>
+                                    <input type="file" name="attachment" class="form-control" id="attachment">
+                                </div>
+
+                                <div class="form-group  col-md-6">
+                                    <label for="reference_no" class="form-label">Reference number</label>
+                                    <input type="text" name="reference_no" class="form-control" id="reference_no">
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label for="status">Session </label>
+                                    <select class="form-control status-dropdown" name="status" id="status">
+                                        <option value="">Select status</option>
+                                        <option value="2">Approve</option>
+                                        <option value="1">Decline</option>
+                                    </select>
+                                </div>
+
+
+                                <div class="form-group col-md-12">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea name="remarks" id="remarks" class="form-control" cols="30" rows="3"></textarea>
+                                </div>
+                                <div class="clearfix"></div>
+                            </form>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" name="save-payment" class="btn btn-primary"
+                                id="save-payment">Save</button>
+                            <button type="button" class="btn btn-danger resetform" id="close"
+                                data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!--END ADD PAYMENT  MODEL -->
+
+            <!--UPDATE PAYMENT MODEL -->
+            <div class="modal fade bd-modal-md" id="edit-payment-modal" tabindex="-1" role="dialog"
+                aria-hidden="true">
+                <div class="modal-dialog ">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h3 class="modal-title">Edit payemnt</h3>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ route('admin.centre-collection.fees.store') }}" id="editPaymentForm"
+                                method="post">
+                                <div>
+                                    @csrf
+                                    @method('PUT')
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="center_no">Center no</label>
+                                    <input type="text" class="form-control" name="center_no"
+                                        value="{{ $center->center_no }}" readonly id="center_no">
+
+                                </div>
+
+
+                                <div class="form-group  col-md-6">
+                                    <label for="financial_year">Financial year </label>
+                                    <select class="form-control status-dropdown" name="financial_year"
+                                        id="financial_year">
+                                        <option value="">Select Financial year</option>
+                                        @foreach ($years as $year)
+                                            <option
+                                                value="{{ $year }}"@if ($year == date('Y')) selected @endif>
+                                                {{ $year }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label for="session">Session </label>
+                                    <select class="form-control status-dropdown" name="session" id="session">
+                                        <option value="">Select Session</option>
+                                        @foreach ($sessions as $session)
+                                            <option value="{{ $session }}">
+                                                {{ $session }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+
+                                <div class="form-group  col-md-6">
+                                    <label for="amount">Amount</label>
+                                    <input type="text" value="" class="form-control" name="amount"
+                                        id="amount">
+                                </div>
+
+                                <div class="form-group  col-md-6">
+                                    <label for="attachment" class="form-label">Proof Of
+                                        Payment</label>
+                                    <input type="file" name="attachment" class="form-control" id="attachment">
+                                </div>
+
+                                <div class="form-group  col-md-6">
+                                    <label for="reference_no" class="form-label">Reference number</label>
+                                    <input type="text" name="reference_no" class="form-control" id="reference_no">
+                                </div>
+
+                                <div class="form-group col-md-6">
+                                    <label for="status">Session </label>
+                                    <select class="form-control status-dropdown" name="status" id="status">
+                                        <option value="">Select status</option>
+                                        <option value="2">Approve</option>
+                                        <option value="1">Decline</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-12">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea name="remarks" id="remarks" class="form-control" cols="30" rows="3"></textarea>
+                                </div>
+                                <div class="clearfix"></div>
+                            </form>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" name="update-payment" class="btn btn-primary"
+                                id="update-payment">Save</button>
+                            <button type="button" class="btn btn-danger resetform" id="close"
+                                data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!--END UPDATE PAYMENT  MODEL -->
+
+
+            <!--ADD Charge MODEL -->
+            <div class="modal fade bd-modal-md" id="add-charge-modal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog ">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <h3 class="modal-title">Other Charges</h3>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ route('admin.centre-collection.center-charges.store') }}" id="addChargeForm"
+                                method="post">
                                 <div>
                                     @csrf
                                 </div>
@@ -227,38 +534,48 @@
                                         value="{{ $center->center_no }}" readonly id="center_no">
 
                                 </div>
+
+
                                 <div class="form-group ">
-                                    <label for="center_no">center_name</label>
-                                    <input type="text" class="form-control" name="center_name"
-                                        value="{{ $center->center_name }} " readonly id="center_name">
-                                </div>
-                                <div class="form-group ">
-                                    <label for="bank_reference">Bank_reference</label>
-                                    <input type="text" value="Bal b/f -{{ date('Y') }}-{{ $center->center_no }}"
-                                        readonly class="form-control" name="bank_reference" id="bank_reference">
-                                </div>
-                                <div class="form-group ">
-                                    <label class="control-label" for="financial_year">Financial Year</label>
-                                    <select class="form-control" name="financial_year" id="financial_year">
+                                    <label for="financial_year">Financial year </label>
+                                    <select class="form-control status-dropdown" name="financial_year"
+                                        id="financial_year">
+                                        <option value="">Select Financial year</option>
                                         @foreach ($years as $year)
-                                            <option value="{{ $year }}">{{ $year }}</option>
+                                            <option
+                                                value="{{ $year }}"@if ($year == date('Y')) selected @endif>
+                                                {{ $year }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+
                                 <div class="form-group ">
-                                    <label for="charge">Amount Paid</label>
-                                    <input type="text" value="" class="form-control" name="amount_paid"
-                                        id="amount_paid">
+                                    <label for="session">Session </label>
+                                    <select class="form-control status-dropdown" name="session" id="session">
+                                        <option value="">Select Session</option>
+                                        @foreach ($sessions as $session)
+                                            <option value="{{ $session }}">
+                                                {{ $session }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
 
-
+                                <div class="form-group ">
+                                    <label for="amount">Amount</label>
+                                    <input type="text" value="" class="form-control" name="amount"
+                                        id="amount">
+                                </div>
+                                <div class="form-group">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea name="remarks" id="remarks" class="form-control" cols="30" rows="3"></textarea>
+                                </div>
                             </form>
 
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" name="save-balance-brought-forward" class="btn btn-primary"
-                                id="save-balance-brought-forward">Save</button>
+                            <button type="submit" name="save-charge" class="btn btn-primary"
+                                id="save-charge">Save</button>
                             <button type="button" class="btn btn-danger resetform" id="close"
                                 data-dismiss="modal">Close</button>
                         </div>
@@ -266,79 +583,80 @@
                 </div>
 
             </div>
-            <!--END ADD Charge Charg e MODEL -->
-
-            <!-- UPDATE CONFIRMATION  MODAL -->
-            <div class="modal fade bd-modal-md" id="update-confirmation" tabindex="-1" role="dialog" aria-hidden="true">
+            <!--END ADD Charge MODEL -->
+            <!--UPDATE Charge MODEL -->
+            <div class="modal fade bd-modal-md" id="edit-charge-modal" tabindex="-1" role="dialog"
+                aria-hidden="true">
                 <div class="modal-dialog ">
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            <h3 class="modal-title"> Center Proof of Payments </h3>
+                            <h3 class="modal-title">Edit Other Charges</h3>
                         </div>
                         <div class="modal-body">
-                            <form action="" method="post" id="centerConfimationForm">
+                            <form action="" id="editChargeForm" method="post">
                                 <div>
                                     @csrf
                                 </div>
                                 <div class="form-group ">
-                                    <label class="control-label" for="center_no">Centre Number</label>
-                                    <input type="text" readonly class="form-control" name="center_no" id="center_no"
-                                        value=" ">
-                                </div>
-                                <div class="form-group ">
-                                    <label class="control-label" for="center_name">Centre Name</label>
-                                    <input type="text" readonly name="center_name" class="form-control"
-                                        id="center_name">
+                                    <label for="center_no">Center no</label>
+                                    <input type="text" class="form-control" name="center_no"
+                                        value="{{ $center->center_no }}" readonly id="center_no">
+
                                 </div>
 
-                                <div class="form-group ">
-                                    <label class="control-label" for="amount_paid">Amount paid </label>
-                                    <input type="text" name="amount_paid" class="form-control" id="amount_paid">
-                                </div>
 
                                 <div class="form-group ">
-                                    <label class="control-label" for="financial_year">Financial Year</label>
-                                    <select class="form-control" name="financial_year" id="financial_year">
+                                    <label for="financial_year">Financial year </label>
+                                    <select class="form-control status-dropdown" name="financial_year"
+                                        id="financial_year">
+                                        <option value="">Select financial year</option>
                                         @foreach ($years as $year)
-                                            <option value="{{ $year }}">{{ $year }}</option>
+                                            <option
+                                                value="{{ $year }}"@if ($year == date('Y')) selected @endif>
+                                                {{ $year }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+
                                 <div class="form-group ">
-                                    <label class="control-label" for="bank_ref">bank_ref</label>
-                                    <input type="text" name="bank_ref" class="form-control" id="bank_ref">
-                                </div>
-                                <div class="form-group">
-                                    <label class="control-label">Confirmation</label>
-                                    <label class="fancy-radio">
-                                        <input name="confirmation" value="0" type="radio">
-                                        <span><i></i>Not Checked</span>
-                                    </label>
-                                    <label class="fancy-radio">
-                                        <input name="confirmation" value="1" type="radio" />
-                                        <span><i></i>Not Valid</span>
-                                    </label>
-                                    <label class="fancy-radio">
-                                        <input name="confirmation" value="2" type="radio" />
-                                        <span><i></i>Valid</span>
-                                    </label>
+                                    <label for="session">Session </label>
+                                    <select class="form-control status-dropdown" name="session" id="session">
+                                        <option value="">Select Session</option>
+                                        @foreach ($sessions as $session)
+                                            <option value="{{ $session }}">
+                                                {{ $session }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
+
+                                <div class="form-group ">
+                                    <label for="amount">Amount</label>
+                                    <input type="text" value="" class="form-control" name="amount"
+                                        id="amount">
+                                </div>
+                                <div class="form-group">
+                                    <label for="remarks">Remarks</label>
+                                    <textarea name="remarks" id="remarks" class="form-control" cols="30" rows="3"></textarea>
+                                </div>
                             </form>
-                            <div class="clearfix"></div>
+
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary" id="save-confirmation">Save</button>
-                            <button type="button" class="btn btn-danger resetform" data-dismiss="modal">Close</button>
+                            <button type="submit" name="update-charge" class="btn btn-primary"
+                                id="update-charge">Save</button>
+                            <button type="button" class="btn btn-danger resetform" id="close"
+                                data-dismiss="modal">Close</button>
                         </div>
                     </div>
                 </div>
 
             </div>
-            <!--END UPDATE CONFIRMATION  MODAL -->
+            <!--END UPDATE Charge MODEL -->
+
         </div>
         <!-- END MAIN CONTENT -->
     </div>
@@ -367,125 +685,144 @@
             hideMethod: "fadeOut",
         };
 
-
-
-
-
-
-        $(document).on("click", "#save-balance-brought-forward", function() {
-            actionUrl = $('#balanceBroughtForwardForm').attr('action');
-            var inputData = $('#balanceBroughtForwardForm').serialize();
+        /****  PAYMENTS*******/
+        //  Add Payment
+        $(document).on('click', '#save-payment', function(ev) {
+            ev.preventDefault();
+            var url = $('#addPaymentForm').attr('action');
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-            $.ajax({
-                type: "POST",
-                url: actionUrl,
-                dataType: "json",
-                data: inputData,
-                success: function(data) {
 
+            //File data
+            var formData = new FormData($('#addPaymentForm')[0]);
+            // var caption = element.html();
+            $.ajax({
+                url: url,
+                method: "POST",
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                beforeSend: function() {
+                    // element.prop('disabled', true).html("Processing.....");
+                },
+                success: function(data) {
+                   
                     if ($.isEmptyObject(data.errors)) {
+                        $('#add-payment-modal').modal('hide');
                         toastr.success(data.success);
-                        $('#center').DataTable().ajax.reload();
-                        $("#add-balanceBD-modal").modal('hide');
+                        $('#payment-datatable').DataTable().ajax.reload();
                     } else {
-                        printErrorMsg(`#balanceBroughtForwardForm`, data.errors);
+                        printErrorMsg('#addPaymentForm', data.errors);
                     }
 
                 },
-            });
-        });
-        // edit candidate
-        $(document).on("click", "#center .editBtn", function(ev) {
-            ev.preventDefault()
-            var actionUrl = $(this).data('url');
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                error: function(error) {
+                    console.log(error);
+                    // element.prop('disabled', false).html(caption);
+                },
+                complete: function(data) {
+                    // element.prop('disabled', false).html(caption);
                 }
             });
+
+        });
+
+        // Edit Payment
+        $(document).on('click', '#payment-datatable .edit-payment', function() {
+
+            var url = $(this).data("url");
             $.ajax({
                 type: "GET",
-                url: actionUrl,
+                url: url,
                 success: function(data) {
-                    var object = data.confimation;
-                    for (const property in object) {
-                        console.log(`${property}: ${object[property]}`);
-                        $(`#centerConfimationForm [name='${property}']`).val(object[property]);
+                    $('#edit-payment-modal').modal('show');
+                    var payment = data.payment;
+                    console.log(payment)
+                    var url = data.url;
+                    var form = '#editPaymentForm';
+                    $(`${form} input:not([type=file]), ${form} select, ${form} textarea`).each(
+                        function(index) {
+                            var input = $(this);
 
-                        if (property == 'center') {
-                            console.log(object[property].center_no);
-                            $(`#centerConfimationForm [name='center_no']`).val(object[property]
-                                .center_no);
-                            $(`#centerConfimationForm [name='center_name']`).val(object[property]
-                                .center_name);
+                            var name = input.attr('name');
+
+
+                            if (input.attr('type') == "checkbox") {
+                                $(`${form} #${name}`).attr("checked", charge[
+                                    name] == 1 ? true : false);
+                            } else {
+                                $(`${form} #${name}`).val(payment[name]);
+                            }
+                            $(form).attr('action', url);
+
                         }
-                        if (property == 'checked_status') {
-                            $("input[name=confirmation][value=" + object[property] + "]").prop(
-                                'checked', true);
-                        }
-
-
-                    }
-                    $("#centerConfimationForm").attr('action', data.url);
-                    $("#update-confirmation").modal('show');
-
-
-
+                    );
                 },
+                error: function(data) {
+                    console.log('Error:', data);
+                }
             });
         });
-        // update changes candidate
-        $(document).on("click", "#save-confirmation", function() {
-            actionUrl = $('#centerConfimationForm').attr('action');
-            var inputData = $('#centerConfimationForm').serialize();
+
+        // Update Charge
+        $(document).on("click", "#update-payment", function() {
+            //File data
+            var formData = new FormData($('#editPaymentForm')[0]);
+
+            var form = '#editPaymentForm';
+            var url = $(form).attr('action');
+
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
             $.ajax({
-                type: "PUT",
-                url: actionUrl,
-                dataType: "json",
-                data: inputData,
+                url: url,
+                method: "POST",
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                beforeSend: function() {
+                    // element.prop('disabled', true).html("Processing.....");
+                },
                 success: function(data) {
                     console.log(data);
                     if ($.isEmptyObject(data.errors)) {
+                        $('#edit-payment-modal').modal('hide');
                         toastr.success(data.success);
-                        $('#center').DataTable().ajax.reload();
-                        $("#update-confirmation").modal('hide');
+                        $('#payment-datatable').DataTable().ajax.reload();
                     } else {
-
-                        printErrorMsg(`#centerConfimationForm`, data.errors);
+                        printErrorMsg(form, data.errors);
                     }
 
                 },
             });
         });
 
-
-
-        // delete confirmation
-        $(document).on('click', '#center  .deleteBtn', function(ev) {
+        // Delete payment
+        $(document).on('click', '#payment-datatable .delete-payment', function(ev) {
             ev.preventDefault();
             var url = $(this).data('url');
-            if (confirm("Are you sure you want to delete this!") == true) {
+            if (confirm("Are you sure you want to delete this records!") == true) {
                 $.ajaxSetup({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     }
                 });
+
                 $.ajax({
                     url: url,
                     method: "DELETE",
                     success: function(data) {
                         if (data.success) {
                             toastr.success(data.success);
-                            $('#center').DataTable().ajax.reload();
+                            $('#payment-datatable').DataTable().ajax.reload();
                         }
 
 
@@ -501,6 +838,143 @@
         });
 
 
+        /**** END PAYMENTS*******/
+
+        /****  OTHER CHARGE*******/
+        //  Add Charge
+        $(document).on('click', '#save-charge', function(ev) {
+            ev.preventDefault();
+            var url = $('#addChargeForm').attr('action');
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            $.ajax({
+                url: url,
+                method: "POST",
+                data: $("#addChargeForm").serialize(),
+                success: function(data) {
+                    if ($.isEmptyObject(data.errors)) {
+                        $('#add-charge-modal').modal('hide');
+                        $('#addChargeForm .help-block').remove();
+                        $('#addChargeForm .has-error').removeClass('has-error');
+                        toastr.success(data.success);
+                        $('#center-other-charges').DataTable().ajax.reload();
+                    } else {
+                        printErrorMsg('#addChargeForm', data.errors);
+                    }
+
+
+                }
+            });
+
+
+        });
+        // Edit charge
+        $(document).on('click', '#center-other-charges .edit-charge', function() {
+
+            var url = $(this).data("url");
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function(data) {
+                    $('#edit-charge-modal').modal('show');
+                    var charge = data.charge;
+                    var url = data.url;
+                    var form = '#editChargeForm';
+                    $(`${form} input, ${form} select, ${form} textarea`).each(
+                        function(index) {
+                            var input = $(this);
+                            console.log('Type: ' + input.attr('type') + 'Name: ' + input
+                                .attr(
+                                    'name') +
+                                'Value: ' + input.val());
+                            var name = input.attr('name');
+
+
+                            if (input.attr('type') == "checkbox") {
+                                $(`${form} #${name}`).attr("checked", charge[
+                                    name] == 1 ? true : false);
+                            } else {
+                                $(`${form} #${name}`).val(charge[name]);
+                            }
+                            $(form).attr('action', url);
+
+                        }
+                    );
+                },
+                error: function(data) {
+                    console.log('Error:', data);
+                }
+            });
+        });
+        // Update Charge
+        $(document).on("click", "#update-charge", function() {
+
+            var form = '#editChargeForm';
+            var url = $(form).attr('action');
+            console.log(url);
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            $.ajax({
+                type: "PUT",
+                url: url,
+                data: $('#editChargeForm').serialize(),
+                success: function(data) {
+                    if ($.isEmptyObject(data.errors)) {
+                        toastr.success("You have successfully Saved Changes");
+                        $('#center-other-charges').DataTable().ajax.reload();
+                        $('#edit-charge-modal').modal('hide');
+                    } else {
+                        printErrorMsg(form, data.errors);
+                    }
+
+                },
+            });
+        });
+        // Delete Charge
+        $(document).on('click', '#center-other-charges .delete-charge', function(ev) {
+            ev.preventDefault();
+            var url = $(this).data('url');
+            if (confirm("Are you sure you want to delete this records!") == true) {
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+
+                $.ajax({
+                    url: url,
+                    method: "DELETE",
+                    success: function(data) {
+                        if (data.success) {
+                            toastr.success(data.success);
+                            $('#center-other-charges').DataTable().ajax.reload();
+                        }
+
+
+
+                    }
+                });
+
+
+            } else {
+                return;
+            }
+
+        });
+        /****  EDD OTHER CHARGE*******/
+
+
+
+
+
+
+
         /****  Print errors*******/
         function printErrorMsg(parent, msg) {
             $(`${parent} input, ${parent} select, textarea`).each(function(index) {
@@ -514,15 +988,18 @@
 
                     $(`[name='${key}']`).parent().addClass('has-error');
                     if (key == "gender") {
-                        $(`${parent} [name='${key}']`).next().append(`<span class='help-block'>${value}</span>`);
+                        $(`${parent} [name='${key}']`).next().append(
+                            `<span class='help-block'>${value}</span>`);
                     } else {
-                        $(`<span class='help-block'>${value}</span>`).insertAfter(`${parent} [name='${key}']`)
+                        $(`<span class='help-block'>${value}</span>`).insertAfter(
+                            `${parent} [name='${key}']`)
                     }
 
 
                 }
             });
         }
+
         /****  Print errors End*******/
     </script>
 @endsection

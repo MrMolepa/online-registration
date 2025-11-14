@@ -24,6 +24,7 @@ class CandidateController extends Controller
         $user_type = get_class(Auth::user());
         $user_id = auth()->user()->id;
         $sponsor = auth()->user()->sponsor;
+
         $user_districts = auth()->user()->districts->pluck('district_code')->toArray();
         $level = auth()->user()->level;
         $approve_order = DB::table('transition_action')
@@ -38,7 +39,20 @@ class CandidateController extends Controller
             ->orderBy('actions.order_number', 'ASC')
             ->first();
 
+
         $actions = DB::table('actions')
+            ->select('action_user.process', 'action_user.user_id', 'action_user.user_type', 'actions.id as action_id', 'action_types.name', 'actions.description')
+            ->join('action_user', 'action_user.action_id', '=', 'actions.id')
+            ->join('processes', 'processes.id', '=', 'action_user.process')
+            ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+            ->where('user_type', '=', $user_type)
+            ->where('user_id', '=', $user_id)
+            ->where('processes.process_key', '=',  $sponsor)
+            ->orderBy('action_types.status', 'DESC')
+            ->get();
+
+
+        $process_actions = DB::table('actions')
             ->select('action_user.process', 'action_user.user_id', 'action_user.user_type', 'actions.id as action_id', 'action_types.name', 'actions.description')
             ->join('action_user', 'action_user.action_id', '=', 'actions.id')
             ->join('processes', 'processes.id', '=', 'action_user.process')
@@ -52,65 +66,125 @@ class CandidateController extends Controller
 
 
         $center_candidate =  CenterCandidate::select('session', 'financial_year')
-            ->where('sponser', '=', $sponsor)
             ->where('level', '=',  $level)
             ->orderBy('financial_year', 'DESC')
             ->distinct()
             ->first();
-
-
         $districts = Center::groupBy('district_code')
             ->where('level', '=',  $level)
             ->whereIn('district_code', $user_districts)
             ->get();
-        if ($request->ajax()) {
-            $fee_level = strtolower($level);
-            $schoolFees = DB::table('fees_stracture')->select(
-                [
-                    'fees_stracture.candidate_type',
-                    'fees_stracture.subject_fee',
-                    'fees_stracture.registration_fee',
-                    'fees_stracture.local_fee',
-                    'fees_stracture.practical_subject_fee',
-                    'fees_stracture.delf_fee',
-                    'fees_stracture.bank_charge',
-                    'fees_stracture.financial_year',
-                ]
-            )->join('sessions', function ($join) {
-                $join->on('fees_stracture.session', '=', 'sessions.id');
-                $join->on('fees_stracture.financial_year', '=', 'sessions.financial_year');
-            })
-                ->where('fees_stracture.candidate_type', '=', "$fee_level-school")
-                ->where('sessions.session', '=', $center_candidate->session)
-                ->where('fees_stracture.financial_year', '=', $center_candidate->financial_year)
-                ->first();
-            $schoolPrivate = DB::table('fees_stracture')->select(
-                [
-                    'fees_stracture.candidate_type',
-                    'fees_stracture.subject_fee',
-                    'fees_stracture.registration_fee',
-                    'fees_stracture.local_fee',
-                    'fees_stracture.practical_subject_fee',
-                    'fees_stracture.delf_fee',
-                    'fees_stracture.bank_charge',
-                    'fees_stracture.financial_year'
-                ]
-            )->join('sessions', function ($join) {
-                $join->on('fees_stracture.session', '=', 'sessions.id');
-                $join->on('fees_stracture.financial_year', '=', 'sessions.financial_year');
-            })->where('fees_stracture.candidate_type', '=', "$fee_level-private")
-                ->where('sessions.session', '=', $center_candidate->session)
-                ->where('fees_stracture.financial_year', '=', $center_candidate->financial_year)
-                ->first();
-            $practicalSubjects = ['0179', '0189', '0191', '0192', '0194', '0417', '0190'];
 
-            $delf = Subject::whereHas('selectedDiscipline', function ($q) {
-                $q->where('name', '=', 'LGCSE7');
-            })->get()->pluck('subject_code')->toArray();
+
+        $approved_candidate_id = DB::table('request_action')
+            ->select([DB::raw("center_candidate.id")])
+            ->join('requests', 'requests.id', '=', 'request_action.request_id')
+            ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
+            ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
+            ->join('actions', 'actions.id', '=', 'request_action.action_id')
+            ->join('processes', 'processes.id', '=', 'actions.process')
+            ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+            ->where('requests.request_data', '=', CenterCandidate::class)
+            ->where('processes.process_key', '=',  $sponsor)
+            ->where('center_candidate.financial_year', '=',  $center_candidate->financial_year)
+            ->where('request_action.is_complete', '=', 1)
+            ->where('action_types.name', '=', 'Approve')
+            ->groupBy('request_action.request_id')
+            ->having(DB::raw("count(request_action.request_id)"), '>', 1)
+            ->get()
+            ->pluck('id')->toArray();
+
+
+        $declined_candidate_id = DB::table('request_action')
+            ->select([DB::raw("center_candidate.id")])
+            ->join('requests', 'requests.id', '=', 'request_action.request_id')
+            ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
+            ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
+            ->join('actions', 'actions.id', '=', 'request_action.action_id')
+            ->join('processes', 'processes.id', '=', 'actions.process')
+            ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+            ->where('requests.request_data', '=', CenterCandidate::class)
+            ->where('request_action.is_active', '=', 0)
+            ->where('processes.process_key', '=',  $sponsor)
+            ->where('center_candidate.financial_year', '=',  $center_candidate->financial_year)
+            ->where('request_action.is_complete', '=', 1)
+            ->where('action_types.name', '=', 'Decline')
+            ->get()
+            ->pluck('id')->toArray();
+
+
+
+
+
+        $all_sponsored_candidates = DB::table('center_candidate')
+            ->select('center_candidate.id')
+            ->where('center_candidate.sponser', '=',  $sponsor)
+            ->where('center_candidate.level', '=',  $level)
+            ->where('center_candidate.financial_year', '=', $center_candidate->financial_year)
+            ->whereNotIn('center_candidate.id', $approved_candidate_id)
+            // ->whereIn('center_candidate.id', $declined_candidate_id)
+            ->groupBy('center_candidate.id')
+            ->get()->pluck('id')->toArray();
+
+
+
+
+
+
+
+        if ($request->ajax()) {
 
             $district = $request->district;
             $centre = $request->centre;
-            $candidates =  DB::table('candidate_subject')
+
+
+
+
+
+
+
+            $candidates =  DB::table('centers')
+                ->select(
+                    'centers.center_no',
+                    'centers.center_name',
+                    'candidates.candidate_no',
+                    'center_candidate.national_id',
+                    'candidates.candidate_other_name',
+                    'candidates.candidate_surname',
+                    'candidates.gender',
+                    'candidates.date_of_birth',
+                    'center_candidate.id',
+                    'center_candidate.level',
+                    'center_candidate.financial_year',
+                    'center_candidate.session',
+                    DB::raw("COALESCE((Select sum(fee_group_details.amount) from fee_groups
+                     inner join fee_group_details on  fee_group_details.fee_group_id=fee_groups.id
+                     inner join fee_types on  fee_types.id=fee_group_details.fee_type_id
+                     inner join sessions on  sessions.id=fee_groups.session_id
+                     inner join levels on  levels.id=fee_groups.level_id
+                     where fee_groups.candidate_type=CASE center_candidate.type
+                                                 WHEN 1 THEN 1
+                                                 WHEN 2 THEN 3
+                                                 ELSE 3
+                                                 END
+                     and sessions.session=center_candidate.session and
+                      levels.level=center_candidate.level and
+                      sessions.financial_year=center_candidate.financial_year
+                     and  fee_group_details.subject_code in (
+                     (SELECT  candidate_subject.subject_code  FROM `candidate_subject`
+                     WHERE `candidate_subject`.`candidate_no`=`center_candidate`.`candidate_no` AND
+                         `candidate_subject`.`level`=`center_candidate`.`level` AND
+                         `candidate_subject`.`session`=`center_candidate`.`session` AND
+                         `candidate_subject`.`financial_year`=`center_candidate`.`financial_year`
+                         union SELECT '-' as subject_code)
+                     )),0) as price")
+                )
+                ->join('center_candidate', 'center_candidate.center_no', '=', 'centers.center_no')
+                ->join('candidates', 'candidates.candidate_no', '=', 'center_candidate.candidate_no');
+
+
+
+            $declined_candidates = DB::table('request_action')
                 ->select(
                     'centers.center_no',
                     'centers.center_name',
@@ -122,32 +196,8 @@ class CandidateController extends Controller
                     'candidates.candidate_surname',
                     'candidates.candidate_other_name',
                     'candidates.date_of_birth',
-                    'candidates.gender',
-                    'center_candidate.sponser',
-                    DB::raw("group_concat(DISTINCT concat(candidate_subject.subject_code,' ',candidate_subject.subject_option)
-                                order by candidate_subject.subject_code separator ',') as subjects")
+                    'candidates.gender'
                 )
-                ->join('candidates', 'candidates.candidate_no', '=', 'candidate_subject.candidate_no')
-                ->join('center_candidate', function ($join) {
-                    $join->on('candidate_subject.candidate_no', '=', 'center_candidate.candidate_no');
-                    $join->on('candidate_subject.level', '=', 'center_candidate.level');
-                    $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
-                    $join->on('candidate_subject.session', '=', 'center_candidate.session');
-                });
-
-
-            $declined_candidates = DB::table('request_action')
-                ->select('centers.center_no',
-                    'centers.center_name',
-                    'center_candidate.id',
-                    'center_candidate.candidate_no',
-                    'center_candidate.national_id',
-                    'center_candidate.type',
-                    'center_candidate.subject_number',
-                    'candidates.candidate_surname',
-                    'candidates.candidate_other_name',
-                    'candidates.date_of_birth',
-                    'candidates.gender')
                 ->join('requests', 'requests.id', '=', 'request_action.request_id')
                 ->join('center_candidate', 'center_candidate.id', '=', 'requests.request_data_id')
                 ->join('centers', 'centers.center_no', '=', 'center_candidate.center_no')
@@ -158,6 +208,12 @@ class CandidateController extends Controller
                 ->join('action_types', 'action_types.id', '=', 'actions.action_type');
 
 
+
+
+
+
+
+
             if ($approve_order->order_number > 1) {
                 $candidates = $candidates->join('requests', 'requests.request_data_id', '=', 'center_candidate.id')
                     ->join('request_action', 'request_action.request_id', '=', 'requests.id')
@@ -166,17 +222,15 @@ class CandidateController extends Controller
                     ->join('actions', 'actions.id', '=', 'request_action.action_id')
                     ->join('action_types', 'action_types.id', '=', 'actions.action_type');
             }
-            $candidates = $candidates->join('centers', 'centers.center_no', '=', 'center_candidate.center_no')
+            $candidates = $candidates
                 ->groupBy('center_candidate.candidate_no')
                 ->where('center_candidate.level', '=', $level)
                 ->where('center_candidate.sponser', '=', $sponsor);
             if (!empty($district)) {
                 $candidates =   $candidates->where('centers.district_code', '=',  $district);
-                // $declined_candidates =    $declined_candidates->where('centers.district_code', '=',  $district);
             }
             if (!empty($centre)) {
                 $candidates =   $candidates->where('centers.center_no', '=',  $centre);
-                // $declined_candidates =   $declined_candidates->where('centers.center_no', '=',  $centre);
             }
 
             $candidates =  $candidates->where('center_candidate.financial_year', '=', $center_candidate->financial_year)
@@ -189,10 +243,10 @@ class CandidateController extends Controller
                     ->where('request_action.is_active', '=', 0)
                     ->where('processes.process_key', '=',  $sponsor)
                     ->where('request_action.is_complete', '=', 1)
-                    ->where('action_types.name', '=', 'Decline')
+                    ->where('action_types.status', '=', 0)
+                    ->where('center_candidate.financial_year', '=', $center_candidate->financial_year)
                     ->orderBy('centers.center_no', 'ASC')
-                     ->orderBy('candidates.candidate_surname', "ASC");;
-
+                    ->orderBy('candidates.candidate_surname', "ASC");
                 return DataTables::of($declined_candidates)
                     ->setRowId('candidate_no')
                     ->editColumn('candidate_no', function ($row) {
@@ -204,7 +258,75 @@ class CandidateController extends Controller
                     ->editColumn('date_of_birth', function ($row) {
                         return $row->date_of_birth;
                     })
-                    ->rawColumns(['actions', 'candidate_no', 'national_id', 'status'])
+                    ->rawColumns(['candidate_no', 'national_id', 'status'])
+                    ->make(true);
+            }
+
+            if ($request->pending_candidates) {
+                $pending_candidates = DB::table('center_candidate')
+                    ->select(
+                        'centers.center_no',
+                        'centers.center_name',
+                        'center_candidate.id',
+                        'center_candidate.candidate_no',
+                        'center_candidate.national_id',
+                        'center_candidate.type',
+                        'center_candidate.subject_number',
+                        'candidates.candidate_surname',
+                        'candidates.candidate_other_name',
+                        'candidates.date_of_birth',
+                        'candidates.gender'
+                    )
+                    ->join('centers', 'centers.center_no', '=', 'center_candidate.center_no')
+                    ->join('candidates', 'candidates.candidate_no', '=', 'center_candidate.candidate_no')
+                    ->whereIn('center_candidate.id', $all_sponsored_candidates)
+                    ->orderBy('centers.center_no', 'ASC')
+                    ->orderBy('candidates.candidate_surname', "ASC");
+                return DataTables::of($pending_candidates)
+                    ->setRowId('candidate_no')
+                    ->editColumn('candidate_no', function ($row) {
+                        return   str_pad($row->candidate_no, 9, '0', STR_PAD_LEFT);
+                    })
+                    ->editColumn('national_id', function ($row) {
+                        return   str_pad($row->national_id, 12, '0', STR_PAD_LEFT);
+                    })
+                    ->editColumn('date_of_birth', function ($row) {
+                        return $row->date_of_birth;
+                    })
+                    ->editColumn('status', function ($row) use ($sponsor) {
+                        $request_action = DB::table('request_action')
+                            ->select('actions.action_type', 'actions.order_number', 'action_types.status', 'action_types.name', 'action_types.label_color')
+                            ->join('requests', 'requests.id', '=', 'request_action.request_id')
+                            ->join('transitions', 'transitions.id', '=', 'request_action.transition_id')
+                            ->join('processes', 'processes.id', '=', 'transitions.process')
+                            ->join('actions', 'actions.id', '=', 'request_action.action_id')
+                            ->join('action_types', 'action_types.id', '=', 'actions.action_type')
+                            ->where('requests.request_data_id', '=', $row->id)
+                            ->where('requests.request_data', '=', CenterCandidate::class)
+                            ->where('processes.process_key', '=',  $sponsor)
+                            ->where('request_action.is_active', '=', 0)
+                            ->where('request_action.is_complete', '=', 1);
+                        $all_appovals = $this->getTotalApprovals($sponsor)->count();
+                        $candidate_appovals = $request_action->get()->count();
+                        $percentage =  ($candidate_appovals / $all_appovals) * 100;
+                        if ($percentage == 0) {
+                            return "<span class='right badge badge-warning'>$percentage%</span>";
+                        } elseif ($percentage > 0 & $percentage < 100) {
+                            if ($request_action->first()->status == 0) {
+                                $candidate_appovals = $request_action->get()->count();
+                                $percentage =  ($candidate_appovals / $all_appovals) * 100;
+                                $label = $request_action->first()->label_color;
+                                return "<span class='right badge $label'>0%</span>";
+                            } else {
+                                $label = $request_action->first()->label_color;
+                                return "<span class='right badge $label'>$percentage%</span>";
+                            }
+                        } else {
+                            $label = $request_action->first()->label_color;
+                            return "<span class='right badge $label'>$percentage%</span>";
+                        }
+                    })
+                    ->rawColumns(['candidate_no', 'national_id', 'status'])
                     ->make(true);
             }
 
@@ -220,36 +342,8 @@ class CandidateController extends Controller
                     $url = route('sponsor.candidate.edit', $row->id);
                     return  "<a class='btn  bg-gradient-primary btn-sm approval_btn' data-action='$url' href='javascript:void(0)'>Action</a>";
                 })
-                ->editColumn('price', function ($row) use ($schoolFees, $schoolPrivate, $practicalSubjects, $delf) {
-                    $total_amount = 0;
-                    $subjects = explode(",", $row->subjects);
-                    if (in_array($row->type, [2, 3])) {
-                        foreach ($subjects as $subject) {
-                            $subject_code = explode(" ", $subject);
-                            if (in_array($subject_code[0], $practicalSubjects)) {
-                                $total_amount += ($schoolPrivate->subject_fee) + $schoolPrivate->practical_subject_fee;
-                            } else if (in_array($subject, $delf)) {
-                                $total_amount += ($schoolPrivate->delf_fee);
-                            } else {
-                                $total_amount += ($schoolPrivate->subject_fee);
-                            }
-                        }
-                        $total_amount  += ($schoolPrivate->local_fee + $schoolPrivate->registration_fee);
-                    } else {
-                        foreach ($subjects as $subject) {
-                            $subject_code = explode(" ", $subject);
-                            if (in_array($subject_code[0], $practicalSubjects)) {
-                                $total_amount += ($schoolFees->subject_fee) + $schoolFees->practical_subject_fee;
-                            } else if (in_array($subject_code[0], $delf)) {
-                                $total_amount += ($schoolFees->delf_fee);
-                            } else {
-                                $total_amount += ($schoolFees->subject_fee);
-                            }
-                        }
-                        $total_amount  +=  $schoolFees->local_fee + $schoolFees->registration_fee;
-                    }
-
-                    return   "LSL " . number_format($total_amount, 2, '.', '');
+                ->editColumn('price', function ($row) {
+                    return   "LSL " . number_format($row->price, 2, '.', '');
                 })
                 ->editColumn('date_of_birth', function ($row) {
                     return $row->date_of_birth;
@@ -347,6 +441,7 @@ class CandidateController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
+        $sponsor = auth()->user()->sponsor;
         $user_type = get_class(Auth::user());
         $user_id = auth()->user()->id;
         $request_id = $id;
@@ -354,9 +449,11 @@ class CandidateController extends Controller
         $action = DB::table('actions')
             ->select('action_user.process', 'action_types.status', 'action_user.user_id', 'action_user.user_type', 'actions.id as action_id', 'action_types.name')
             ->join('action_user', 'action_user.action_id', '=', 'actions.id')
+            ->join('processes', 'processes.id', '=', 'action_user.process')
             ->join('action_types', 'action_types.id', '=', 'actions.action_type')
             ->where('user_type', '=', $user_type)
             ->where('user_id', '=', $user_id)
+            ->where('processes.process_key', '=', $sponsor)
             ->where('actions.id', '=', $request->action)
             ->first();
         // Request Data load data
@@ -381,126 +478,148 @@ class CandidateController extends Controller
         }
 
 
-
         // Current State
-        $current_state = $requests->current_state;
+        $current_requests = DB::table('transition_action')
+            ->select('transitions.currentState', 'transitions.nextState')
+            ->join('transitions', 'transitions.id', '=', 'transition_action.transition_id')
+            ->join('actions', 'actions.id', '=', 'transition_action.action_id')
+            ->join('action_user', 'action_user.action_id', '=', 'actions.id')
+            ->join('processes', 'processes.id', '=', 'action_user.process')
+            ->where('processes.process_key', '=', $sponsor)
+            ->where('action_user.user_id', '=', $user_id)
+            ->where('actions.id', '=', $request->action)
+            ->first();
+
+
+
+
+        // DB::table('requests')
+        //     ->where('request_data_id', '=', $request_id)
+        //     ->where('request_data', '=',  CenterCandidate::class)
+        //     ->where('process', '=', $action->process)
+        //     ->first();
+
+
+        $current_state = $current_requests->currentState;
         // At this point, the system looks for all outgoing transitions from State A and finds two of them,
         // Transitions.It then loads the following data into RequestActions
-
-        // return response()->json(['error' => 'Not authorized.'],403);
-
         $transitions = DB::table('transition_action')
             ->select('action_user.user_id', 'actions.name', 'transition_action.id as transition_action_id', 'transition_action.transition_id', 'transition_action.action_id', 'transitions.currentState', 'transitions.nextState')
             ->join('transitions', 'transitions.id', '=', 'transition_action.transition_id')
             ->join('actions', 'actions.id', '=', 'transition_action.action_id')
             ->join('action_user', 'action_user.action_id', '=', 'actions.id')
-            //->where('transitions.currentState', '=', $current_state)
+            ->join('processes', 'processes.id', '=', 'action_user.process')
+            ->where('transitions.currentState', '=', $current_state)
+            ->where('processes.process_key', '=', $sponsor)
             ->where('action_user.user_id', '=', $user_id)
             ->get();
-        $isauthorized = $transitions->first() !== null ? true : false;
-        if ($isauthorized) {
-            $is_action = DB::table('request_action')
-                ->where('action_id', '=', $request->action)
-                ->where('transition_id', '=', $transitions->first()->transition_id)
-                ->where('request_id', '=', $requests->id)
-                ->orWhere(function ($query) {
-                    $query->where('is_complete', '=', 1)
-                        ->where('is_complete', '=', 0);
-                })
-                ->first();
-            if ($is_action == null) {
-                foreach ($transitions as $transition) {
-                    $request_action = DB::table('request_action')
-                        ->where('action_id', '=', $transition->action_id)
-                        ->where('transition_id', '=', $transition->transition_id)
-                        ->where('request_id', '=', $requests->id)
-                        ->first();
-                    if ($request_action == null) {
-                        DB::table('request_action')->insert([
-                            'action_id' => $transition->action_id,
-                            'request_id' => $requests->id,
-                            'transition_id' => $transition->transition_id,
-                            'is_active' => 1,
-                            'is_complete' => 0,
-                        ]);
-                    }
-                }
-                // submits this action:
-                // ACTION:
-                // User ID: 1
-                // ActionType: Approve
-                // Request ID: 1
-                // (We read that as "User 1 approves Request 1")
-                DB::table('request_action')
-                    ->where('request_id', '=', $requests->id)
-                    ->where('is_active', '=', 1)
-                    ->where('is_complete', '=', 0)
-                    ->where('action_id', '=', $request->action)
-                    ->update([
-                        'is_active' => 0,
-                        'is_complete' => 1,
-                    ]);
+
+
+
+
+        $check_user = DB::table('request_action')
+            ->join('actions', 'actions.id', '=', 'request_action.action_id')
+            ->join('action_user', 'action_user.action_id', '=', 'actions.id')
+            ->join('processes', 'processes.id', '=', 'action_user.process')
+            ->where('request_action.request_id', '=', $requests->id)
+            ->where('processes.process_key', '=', $sponsor)
+            ->where('action_user.user_id', '=', $user_id)
+            ->where('is_complete', '=', 1)
+            ->first();
+
+
+        $authorizetion = DB::table('request_action')
+            ->where('action_id', '=', $request->action)
+            ->where('request_id', '=', $requests->id)
+            ->where('is_complete', '=', 1)
+            ->first();
+
+
+        if ( $check_user == null && $authorizetion==null ) {
+            foreach ($transitions as $transition) {
                 $request_action = DB::table('request_action')
+                    ->where('action_id', '=', $transition->action_id)
+                    ->where('transition_id', '=', $transition->transition_id)
                     ->where('request_id', '=', $requests->id)
-                    ->where('is_active', '=', 0)
-                    ->where('is_complete', '=', 1)
-                    ->where('action_id', '=', $request->action)
                     ->first();
-                if ($request_action !== null) {
-                    $state = DB::table('transition_action')
-                        ->select(
-                            'request_action.request_id',
-                            'action_user.user_id',
-                            'actions.name',
-                            'transition_action.id as transition_action_id',
-                            'transition_action.transition_id',
-                            'transition_action.action_id',
-                            'transitions.currentState',
-                            'transitions.nextState'
-                        )
-                        ->leftJoin('transitions', 'transitions.id', '=', 'transition_action.transition_id')
-                        ->leftJoin('actions', 'actions.id', '=', 'transition_action.action_id')
-                        ->leftJoin('request_action', 'request_action.action_id', '=', 'actions.id')
-                        ->leftJoin('action_user', 'action_user.action_id', '=', 'actions.id')
-                        ->where('actions.id', '=', $request->action)
-                        ->where('action_user.user_id', '=', $user_id)
-                        ->where('request_action.request_id', '=', $requests->id)
-                        ->first();
-
-
-
-                    // Move to the next state
-                    if ($state->nextState != $current_state) {
-                        DB::table('request_action')
-                            ->join('requests', 'requests.id', '=', 'request_action.request_id')
-                            ->where('request_action.request_id', '=', $requests->id)
-                            ->where('requests.request_data_id', '=', $request_id)
-                            ->where('requests.request_data', '=', CenterCandidate::class)
-                            ->where('request_action.is_active', '=', 1)
-                            ->where('request_action.is_complete', '=', 0)
-                            ->update([
-                                'request_action.is_active' => 0,
-                                'request_action.is_complete' => 0,
-                                'requests.current_state' => $state->nextState,
-                            ]);
-                        //comments
-                        DB::table('request_notes')->insert([
-                            'user_id' =>  $user_id,
-                            'request_id' => $requests->id,
-                            'notes' => $request->comments,
-                        ]);
-                        if ($action->status == 0) {
-                            $candidate = CenterCandidate::find($request_id);
-                            $candidate->sponser = "O";
-                            $candidate->save();
-                        }
-                        //send email
-                    }
+                if ($request_action == null) {
+                    DB::table('request_action')->insert([
+                        'action_id' => $transition->action_id,
+                        'request_id' => $requests->id,
+                        'transition_id' => $transition->transition_id,
+                        'is_active' => 1,
+                        'is_complete' => 0,
+                    ]);
                 }
-                return response()->json(['success' => 'Record has been saved successfully']);
-            } else {
-                return response()->json(['error' => 'Action already performed waiting for next approver']);
             }
+            // submits this action:
+            // ACTION:
+            // User ID: 1
+            // ActionType: Approve
+            // Request ID: 1
+            // (We read that as "User 1 approves Request 1")
+            DB::table('request_action')
+                ->where('request_id', '=', $requests->id)
+                ->where('is_active', '=', 1)
+                ->where('is_complete', '=', 0)
+                ->where('action_id', '=', $request->action)
+                ->update([
+                    'is_active' => 0,
+                    'is_complete' => 1,
+                ]);
+            $request_action = DB::table('request_action')
+                ->where('request_id', '=', $requests->id)
+                ->where('is_active', '=', 0)
+                ->where('is_complete', '=', 1)
+                ->where('action_id', '=', $request->action)
+                ->first();
+            if ($request_action !== null) {
+                $state = DB::table('transition_action')
+                    ->select(
+                        'request_action.request_id',
+                        'action_user.user_id',
+                        'actions.name',
+                        'transition_action.id as transition_action_id',
+                        'transition_action.transition_id',
+                        'transition_action.action_id',
+                        'transitions.currentState',
+                        'transitions.nextState'
+                    )
+                    ->leftJoin('transitions', 'transitions.id', '=', 'transition_action.transition_id')
+                    ->leftJoin('actions', 'actions.id', '=', 'transition_action.action_id')
+                    ->leftJoin('request_action', 'request_action.action_id', '=', 'actions.id')
+                    ->leftJoin('action_user', 'action_user.action_id', '=', 'actions.id')
+                    ->where('actions.id', '=', $request->action)
+                    ->where('action_user.user_id', '=', $user_id)
+                    ->where('request_action.request_id', '=', $requests->id)
+                    ->first();
+                // Move to the next state
+                if ($state->nextState != $current_state) {
+                    DB::table('request_action')
+                        ->join('requests', 'requests.id', '=', 'request_action.request_id')
+                        ->where('request_action.request_id', '=', $requests->id)
+                        ->where('requests.request_data_id', '=', $request_id)
+                        ->where('requests.request_data', '=', CenterCandidate::class)
+                        ->where('request_action.is_active', '=', 1)
+                        ->where('request_action.is_complete', '=', 0)
+                        ->update([
+                            'requests.current_state' => $state->nextState,
+                        ]);
+                    //comments
+                    DB::table('request_notes')->insert([
+                        'user_id' =>  $user_id,
+                        'request_id' => $requests->id,
+                        'notes' => $request->comments,
+                    ]);
+                    if ($action->status == 0) {
+                        $candidate = CenterCandidate::find($request_id);
+                        $candidate->sponser = "O";
+                        $candidate->save();
+                    }
+                    //send email
+                }
+            }
+            return response()->json(['success' => 'Record has been saved successfully']);
         } else {
             return response()->json(['error' => 'Action already performed waiting for next approver']);
         }

@@ -161,7 +161,7 @@ class ProcessController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'description' => 'required',
-            'process_key' => ['unique:processes,process_key','min:1','max:1'],
+            'process_key' => ['unique:processes,process_key','min:5','max:5'],
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);

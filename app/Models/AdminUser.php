@@ -84,7 +84,7 @@ class AdminUser  extends Authenticatable
 
     public function document_user_profile()
     {
-        return $this->morphMany(DocumentUser::class, 'document_user');
+        return $this->morphOne(DocumentUser::class, 'document_user');
     }
 
 

@@ -15,6 +15,19 @@
             @endpermission
 
 
+
+            @if (getPendingInvitations()->total > 0)
+                <li>
+                    <a href="{{ route('center.invitations.index','markers') }}"
+                        class="{{ request()->is('center/invitations') ? 'active-menu' : '' }}"><i
+                            class="fas  fa-list"></i>
+                        Markers  <span class="badge"> {{getPendingInvitations()->pending}}</span></a>
+                </li>
+            @endif
+
+
+
+
             @permission('users-read')
                 <li>
                     <a href="{{ route('center.users.index') }}"
@@ -37,10 +50,17 @@
                         Payments</a>
                 </li>
             @endpermission
+
+            <li>
+                <a href="{{ route('center.documents.index') }}"
+                    class="{{ request()->is('center/documents') ? 'active-menu' : '' }}"><i
+                        class="fa fa-fw fa-book"></i>
+                    Documents</a>
+            </li>
             <li>
                 <a href="{{ route('center.invigilators.index') }}"
                     class="{{ request()->is('center/invigilators') ? 'active-menu' : '' }}"><i
-                        class="fa fa-fw fa-file"></i>
+                        class="fa fa-fw fa-external-link"></i>
                     Invigilators</a>
             </li>
             <li>

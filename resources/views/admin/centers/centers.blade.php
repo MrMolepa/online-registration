@@ -264,34 +264,59 @@
                             <label class="control-label" for="center_no">Centre Number</label>
                             <input type="text" class="form-control" name="center_no" id="center_no" value=" ">
                         </div>
-
                         <div class="form-group col-md-6">
                             <label class="control-label" for="center_name">Centre Name</label>
                             <input type="text" name="center_name" class="form-control" id="center_name">
                         </div>
-
-                        <div class="form-group col-md-6">
-                            <label class="control-label" for="district">District</label>
-                            <input type="text" name="district" class="form-control" id="district">
-
+                        <div class="form-group col-md-12">
+                            <label class="control-label" for="center_full_name">Center full name</label>
+                            <input type="text" name="center_full_name" class="form-control" id="center_full_name">
                         </div>
-
-                        <div class="form-group col-md-6 ">
+                        <div class="form-group col-md-12">
                             <label class="control-label" for="district_code">District Code</label>
-                            <input type="text" name="district_code" class="form-control" id="district_code">
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label class="control-label" for="address">Address</label>
-                            <input type="text" name="address" class="form-control" id="address">
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label class="control-label" for="level">Level</label>
-                            <input type="text" name="level" class="form-control" id="level">
-
+                            <select class="form-select form-control" name="district_code" id="district_code">
+                                <option value=""> Select District </option>
+                                @foreach ($districts as $district)
+                                    <option value="{{ $district->district_code }}">{{ $district->district }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="form-group col-md-12">
                             <label class="control-label" for="email">Email</label>
                             <input type="text" name="email" class="form-control" id="email">
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label class="control-label" for="address">Address</label>
+                            <textarea name="address" class="form-control" id="address" cols="30" rows="5"></textarea>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="level">Level</label>
+                            <select class="form-select form-control" name="level" id="level">
+                                <option value="">Select Level</option>
+                                @foreach ($levels as $level)
+                                    <option value="{{ $level->level }}">{{ $level->level }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="level">Category</label>
+                            <select class="form-select form-control" name="category_id" id="category_id">
+                                <option value=""> Select Category </option>
+                                @foreach ($catergories as $catergory)
+                                    <option value="{{ $catergory->id }}">{{ $catergory->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-12">
+                            <label for="">Sessions</label>
+                            @foreach ($sessions as $session)
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="sessions[]"
+                                        value="{{ $session }}" id=" ">
+                                    <label for=""> {{ $session }}</label>
+                                </div>
+                            @endforeach
                         </div>
                     </form>
                     <div class="clearfix"></div>
@@ -325,38 +350,51 @@
                         </div>
                         <div class="form-group col-md-6">
                             <label class="control-label" for="center_no">Centre Number</label>
-                            <input type="text" readonly class="form-control" name="center_no" id="center_no"
-                                value=" ">
+                            <input type="text" class="form-control" name="center_no" id="center_no" value=" ">
                         </div>
                         <div class="form-group col-md-6">
                             <label class="control-label" for="center_name">Centre Name</label>
                             <input type="text" name="center_name" class="form-control" id="center_name">
                         </div>
-
-                        <div class="form-group col-md-6">
-                            <label class="control-label" for="district">District</label>
-                            <input type="text" name="district" class="form-control" id="district">
-
+                        <div class="form-group col-md-12">
+                            <label class="control-label" for="center_full_name">Center full name</label>
+                            <input type="text" name="center_full_name" class="form-control" id="center_full_name">
                         </div>
-
-                        <div class="form-group col-md-6 ">
+                        <div class="form-group col-md-12">
                             <label class="control-label" for="district_code">District Code</label>
-                            <input type="text" name="district_code" class="form-control" id="district_code">
+                            <select class="form-select form-control" name="district_code" id="district_code">
+                                <option value=""> Select District </option>
+                                @foreach ($districts as $district)
+                                    <option value="{{ $district->district_code }}">{{ $district->district }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="form-group col-md-12">
-                            <label class="control-label" for="address">Address</label>
-                            <input type="text" name="address" class="form-control" id="address">
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label class="control-label" for="level">Level</label>
-                            <input type="text" name="level" class="form-control" id="level">
-
-                        </div>
-                        <div class="form-group col-md-12 ">
                             <label class="control-label" for="email">Email</label>
                             <input type="text" name="email" class="form-control" id="email">
                         </div>
-                    </form>
+                        <div class="form-group col-md-12">
+                            <label class="control-label" for="address">Address</label>
+                            <textarea name="address" class="form-control" id="address" cols="30" rows="5"></textarea>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="level">Level</label>
+                            <select class="form-select form-control" name="level" id="level">
+                                <option value="">Select Level</option>
+                                @foreach ($levels as $level)
+                                    <option value="{{ $level->level }}">{{ $level->level }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="control-label" for="level">Category</label>
+                            <select class="form-select form-control" name="category_id" id="category_id">
+                                <option value=""> Select Category </option>
+                                @foreach ($catergories as $catergory)
+                                    <option value="{{ $catergory->id }}">{{ $catergory->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>                  </form>
                     <div class="clearfix"></div>
                 </div>
                 <div class="modal-footer">
@@ -417,12 +455,9 @@
                 data: inputData,
                 success: function(data) {
                     console.log(data);
-                    resetErrorMsg('#centerForm');
                     if ($.isEmptyObject(data.errors)) {
                         $('#add-center').modal('hide');
-                        $('#centerForm .help-block').remove();
                         $('#centers').DataTable().ajax.reload();
-                        $('#centerForm .has-error').removeClass('has-error');
                         toastr.success(data.success);
                     } else {
                         printErrorMsg('#centerForm', data.errors);
@@ -657,25 +692,31 @@
             });
         });
         /****  Print errors*******/
-        function printErrorMsg(parent, msg = null) {
-            resetErrorMsg(parent);
-            if (msg) {
+        //textarea
+
+
+
+         /****  Print errors*******/
+         function printErrorMsg(parent, msg) {
+                $(`${parent} input, ${parent} select, ${parent} textarea`).each(function(index) {
+                    $(`${parent} .help-block`).remove();
+                    $(`${parent} .has-error`).removeClass('has-error');
+                    // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
+                });
                 $.each(msg, function(key, errors) {
                     for (const error in errors) {
                         const value = errors[error];
-                        $(`[name='${key}']`).parent().addClass('has-error');
+                        $(`${parent} [name='${key}']`).parent().addClass('has-error');
                         $(`<span class='help-block'>${value}</span>`).insertAfter(
                             `${parent} [name='${key}']`)
 
                     }
                 });
             }
-
-        }
         /****  Print errors End*******/
 
         function resetErrorMsg(parent) {
-            $(`${parent} input, ${parent} select, textarea`).each(function(index) {
+            $(`${parent} input, ${parent} select, ${parent} textarea`).each(function(index) {
                 $(`${parent} .help-block`).remove();
                 $(`${parent} .has-error`).removeClass('has-error');
                 // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());

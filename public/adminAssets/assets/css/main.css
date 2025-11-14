@@ -1125,6 +1125,7 @@ ul.list-justify>li span {
     -moz-box-shadow: 0px 1px 2px 0 rgba(0, 0, 0, 0.1);
     -webkit-box-shadow: 0px 1px 2px 0 rgba(0, 0, 0, 0.1);
     box-shadow: 0px 1px 2px 0 rgba(0, 0, 0, 0.1);
+    display:  flex;
 }
 
 .input-group .form-control,
@@ -1273,12 +1274,12 @@ ul.list-justify>li span {
 
 .btn-group-lg>.btn,
 .btn-lg {
-    padding: 10px 28px;
+    padding: 10px 15px;
 }
 
 .btn-group-sm>.btn,
 .btn-sm {
-    padding: 5px 18px;
+    padding: 5px 5px;
 }
 
 .btn-group-xs>.btn,
@@ -3395,6 +3396,396 @@ ul.activity-timeline>li:last-child:after {
     width: 200rem !important;
 }
 
+
+
+/* Invilation Progress Status */
+
+.status-tag {
+    position: relative;
+    width: auto;
+    display: inline-flex;
+    height: 24px;
+    padding: 0 10px 0 5px;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
+    border-top-right-radius: 13px;
+    border-bottom-right-radius: 13px;
+}
+
+.highlight {
+    position: relative;
+    display: inline-flex;
+    width: 12px;
+    height: 12px;
+}
+
+.highlight.auxiliar-low::after {
+    /* background: RGBA(179, 62, 150, 1); */
+    border: 1px solid #fff;
+    -webkit-animation: pulse_auxiliar-low 1s ease infinite;
+    animation: pulse_auxiliar-low 1s ease infinite;
+}
+
+.highlight::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    border: none;
+    -webkit-transition: all 0.3s;
+    -moz-transition: all 0.3s;
+    transition: all 0.3s;
+    z-index: 2;
+    border-radius: 50%;
+}
+
+/* .status-tag.auxiliar-low .status-tag__txt {
+    color: RGBA(179, 62, 150, 1);
+} */
+
+.status-tag__txt {
+    font-family: Graphik, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 12px;
+    font-weight: 500;
+}
+
+.status-tag__icon,
+.status-tag__txt {
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.bac-l-stack-xs {
+    margin-left: 5px !important;
+}
+/* Status */
+.pending{
+    background-color: rgb(245,136,31, .7);
+    color: #fff;
+}
+.accepted{
+    background-color: rgb(42,148,70,.7);
+    color: #fff;
+}
+.declined{
+    background-color: rgb(200,16,47,.7);
+    color: #fff;
+}
+.formstyler{
+    background-color: #e7e6e6;
+    font-weight: bold;
+}
+
+@keyframes pulse_auxiliar-low {
+    0% {
+        -webkit-box-shadow: 0px 0px 0px 0px #fff;
+        box-shadow: 0px 0px 0px 0px #fff;
+    }
+
+    100% {
+        -webkit-box-shadow: 0px 0px 0px 5px transparent;
+        box-shadow: 0px 0px 0px 5px transparent;
+    }
+}
+
+
+
+/* DOCUMENTS */
+.list-icons {
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+.list-icons-item {
+    display: inline-block;
+    line-height: 1;
+}
+
+
+a.list-icons-item:not([class*="text-"]) {
+    color: inherit;
+}
+a.list-icons-item {
+    transition: all ease-in-out 0.15s;
+}
+.list-icons-item {
+    display: inline-block;
+    line-height: 1;
+    height: 20px;
+    width: 20px;
+    margin: 0em 2em;
+}
+
+
+.dropdown-menu[x-placement^=bottom], .dropdown-menu[x-placement^=left], .dropdown-menu[x-placement^=right], .dropdown-menu[x-placement^=top] {
+    right: auto;
+    bottom: auto;
+}
+
+.dropdown-header > i, .dropdown-header > img, .dropdown-item > i, .dropdown-item > img {
+    margin-right: 1rem;
+}
+
+
+
+
+.dropdown-item {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+    justify-content: flex-start;
+    align-items: center;
+    position: relative;
+    outline: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    margin-bottom: 0;
+    transition: background-color ease-in-out 0.15s, color ease-in-out 0.15s;
+
+    overflow: hidden;
+    padding: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+
+
+
+    width: 100%;
+    text-align: left;
+    box-sizing: border-box;
+    color: inherit;
+    font-size: inherit;
+
+    text-decoration: none;
+    margin: 0;
+    min-height: 32px;
+}
+
+
+.dropdown-item i{
+    text-transform: none;
+    line-height: 1;
+    min-width: 1em;
+    display: inline-block;
+    text-align: center;
+    font-size: 14px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.specify-period{
+    display:none;
+    justify-content: space-between;
+    margin: 0.5em 0;
+
+}
+
+.date-inserted{
+    width: 48%;
+}
+
+/* Comments */
+
+p {
+    line-height: 1.3125rem;
+  }
+
+  .comments {
+    margin: 2.5rem auto 0;
+    max-width: 60.75rem;
+    padding: 0 1.25rem;
+  }
+
+  .comment-wrap {
+    margin-bottom: 1.25rem;
+    display: table;
+    width: 100%;
+    min-height: 5.3125rem;
+  }
+
+  .photo {
+    padding-top: 0.625rem;
+    display: table-cell;
+    width: 3.5rem;
+  }
+  .photo .avatar {
+    height: 2.25rem;
+    width: 2.25rem;
+    border-radius: 50%;
+    background-size: contain;
+  }
+
+  .comment-block {
+    padding: 1rem;
+    background-color: #fff;
+    display: table-cell;
+    vertical-align: top;
+    border-radius: 0.1875rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  }
+  .comment-block textarea {
+    width: 100%;
+    resize: none;
+  }
+
+  .comment-text {
+    margin-bottom: 1.25rem;
+  }
+
+  .bottom-comment {
+    color: #acb4c2;
+    font-size: 0.875rem;
+  }
+
+  .comment-date {
+    float: left;
+  }
+
+  .comment-actions {
+    float: right;
+  }
+  .comment-actions li {
+    display: inline;
+    margin: -2px;
+    cursor: pointer;
+  }
+  .comment-actions li.complain {
+    padding-right: 0.75rem;
+    border-right: 1px solid #e1e5eb;
+  }
+  .comment-actions li.reply {
+    padding-left: 0.75rem;
+    padding-right: 0.125rem;
+  }
+  .comment-actions li:hover {
+    color: #0095ff;
+  }
+
+
+  /*  */
+
+.sortable {
+    --pad: 1rem;
+    --border-color: lightgrey;
+    --marker-color: green;
+    --focus-color: rgba(200, 200, 200, 0.3);
+    --helper-color: rgba(200, 200, 200, 0.3);
+    --placeholder-color: lightgreen;
+    border: 1px solid var(--border-color);
+}
+
+.sortable li {
+    position: relative;
+    padding: 0;
+    cursor: pointer;
+    background: white;
+    border-top: 1px solid var(--border-color);
+    border-left: 5px solid var(--marker-color);
+    box-sizing: border-box;
+    list-style-type: none;
+}
+
+.sortable li:before {
+    content: "▸";
+    position: absolute;
+    left: -1.5em;
+    top: calc(var(--pad));
+}
+
+.sortable li:focus,
+.sortable li div:hover {
+    background: var(--focus-color);
+}
+
+.sortable li div {
+    padding: var(--pad);
+    box-sizing: border-box;
+}
+
+.sortable .ui-sortable-helper {
+    background: var(--helper-color) !important;
+    color: black;
+    text-shadow: -1px -1px white, 0 -1px white, 1px -1px white, -1px 0 white, 1px 0 white, -1px 1px white, 0 1px white, 1px 1px white, 0 0 10px white;
+}
+
+.sortable .ui-sortable-placeholder {
+    visibility: visible !important;
+    border-left: none;
+    background: var(--placeholder-color);
+    opacity: 0.75;
+}
+
+
+/* SMS */
+
+    .message-box {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .recipient-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border-radius: 16px;
+            padding: 4px 12px;
+            margin: 0 5px 5px 0;
+            font-size: 0.85rem;
+        }
+        .recipient-tag-remove {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #bbdefb;
+            color: #0d47a1;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .recipient-tag-remove:hover {
+            background-color: #90caf9;
+        }
+        .character-count {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .sms-card {
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        #recipientTagsContainer {
+            min-height: 40px;
+            border: 1px dashed #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .empty-tags-message {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        #loadingSpinner {
+            display: none;
+        }
 
 
 

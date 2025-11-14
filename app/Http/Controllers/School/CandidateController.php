@@ -45,14 +45,30 @@ class CandidateController extends Controller
     {
         $center = Center::with('subjects')->where('center_no', '=', auth()->user()->center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $levels = Level::where('level', '=', $center->level)->get();
-        $sessions = Session::where('is_active', '=', 1)->whereIn('session', $centerSessions)->get();
+        $levels = Level::where('level', '=', $center->level)
+            ->where('is_active', '=', 1)
+            ->get();
+        $date = date('Y-m-d');
+        $sessions = Session::where('is_active', '=', 1)
+            ->where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->get();
         $subjects =  $center->subjects;
         $specialNeeds = SpecialNeed::get();
         $guardian_types =  GuardianType::get();
         $districts = Center::groupBy('district_code')
             ->whereNotNull('district_code')->get();
-        return view('school.amendments', compact('center', 'levels', 'subjects', 'sessions', 'districts', 'specialNeeds', 'guardian_types'));
+
+
+       $sponsors = DB::table('funders')
+                    ->select(
+                        'sponsor',
+                        'name',
+                        'description'
+                    )->where('status','=',1)->get();
+
+
+
+        return view('school.amendments', compact('center', 'levels', 'subjects', 'sessions', 'districts', 'specialNeeds','sponsors', 'guardian_types'));
     }
 
 
@@ -427,6 +443,13 @@ class CandidateController extends Controller
 
     public function store(Request $request)
     {
+
+        $sponsors = DB::table('funders')
+                    ->select(
+                        'sponsor',
+                        'name',
+                        'description'
+                    )->where('status','=',1)->pluck('sponsor')->toArray();
         $validation_rules = [
             'candidate_no' => ['required'],
             'national_id' => ['required', 'numeric', 'regex:/^(\d{11}|\d{12}|\d{13})$/'],
@@ -434,7 +457,7 @@ class CandidateController extends Controller
             'candidate_other_name' => ['required'],
             'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-8 years'],
             'gender' => ['required', 'in:M,F'],
-            'sponsor' => ['required', 'in:M,O,K'],
+            'sponsor' => ['required',  Rule::in($sponsors )],
             'type' => ['required', 'in:1,2,3'],
             'level' => ['required'],
             'type' => ['required'],
@@ -446,6 +469,12 @@ class CandidateController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
+
+        $date = date('Y-m-d');
+        $session = Session::where('is_active', '=', 1)
+            ->where('financial_closing_date', '>=',  $date)
+            ->where('session', '=',$request->session)->first();
+
         switch ($request->level) {
             case 'G7ELT':
                 $validation_rules = [
@@ -507,6 +536,8 @@ class CandidateController extends Controller
                                     ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
                             });
                     }
+
+                    $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
 
                     $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
                     if ($validator->fails()) {
@@ -684,6 +715,7 @@ class CandidateController extends Controller
                                     ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
                             });
                     }
+                    $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
                     $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
                     if ($validator->fails()) {
                         return response()->json(['errors' => $validator->errors()]);
@@ -735,8 +767,8 @@ class CandidateController extends Controller
                     'username' => $request->candidate_surname . " " . $request->candidate_other_name,
                     'password' =>  Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
                     'candidate_password' => str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth))),
-                    'session' => 'November',
-                    'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                    'session' => $session->session,
+                    'financial_year' =>   $session->financial_year,
                     'created_at' => date("Y-m-d H:i:s"),
                     'updated_at' => date("Y-m-d H:i:s")
                 ];
@@ -750,6 +782,14 @@ class CandidateController extends Controller
 
     private function register($request)
     {
+
+
+
+        $date = date('Y-m-d');
+        $session = Session::where('is_active', '=', 1)
+        ->where('financial_closing_date', '>=',  $date)
+        ->where('session', '=',$request->session)->first();
+
         $subject_number = count($request->subjects);
         $center = auth()->user()->center_no;
         $candidate = new CenterCandidate();
@@ -760,7 +800,7 @@ class CandidateController extends Controller
         $candidate->type = $request->type;
         $candidate->session = $request->session;
         $candidate->sponser = $request->sponsor;
-        $candidate->financial_year  = date('Y') . '-' . (date('Y') + 1);
+        $candidate->financial_year  =   $session->financial_year;
         $candidate->level = $request->level;
         $candidate->save();
         foreach ($request->subjects as  $value) {
@@ -771,7 +811,7 @@ class CandidateController extends Controller
                     'subject_code' => $value['subject_code'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' =>   $session->financial_year,
                 ],
                 [
                     'candidate_no' => $request->candidate_no,
@@ -780,7 +820,7 @@ class CandidateController extends Controller
                     'subject_option' => $value['subject_option'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' =>  $session->financial_year,
                 ]
             );
         }
@@ -944,6 +984,12 @@ class CandidateController extends Controller
     {
         // 'numeric',
         //'regex:/^(\d{8}|\d{13})$/',
+        $sponsors = DB::table('funders')
+        ->select(
+            'sponsor',
+            'name',
+            'description'
+        )->where('status','=',1)->pluck('sponsor')->toArray();
         $validation_rules = [
             'candidate_no' => ['required'],
             'national_id' => ['required', 'numeric', 'regex:/^(\d{11}|\d{12}|\d{13})$/'],
@@ -951,7 +997,7 @@ class CandidateController extends Controller
             'candidate_other_name' => ['required'],
             'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-10 years'],
             'gender' => ['required', 'in:M,F'],
-            'sponser' => ['required', 'in:M,O,K'],
+            'sponser' => ['required',  Rule::in($sponsors )],
             'type' => ['required', 'in:1,2,3'],
             'level' => ['required'],
             'type' => ['required'],
@@ -959,6 +1005,7 @@ class CandidateController extends Controller
             'subject' => ['required'],
         ];
         $validation_messages = [];
+        $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($request->candidate_no,'candidate_no');
         $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
@@ -1054,7 +1101,7 @@ class CandidateController extends Controller
         $not_registered_subjects = array_values(array_diff($subject_registered_codes, $subject_codes));
         SubjectCandidate::where('candidate_no', '=', $candidate->candidate_no)
             ->whereIn('subject_code', $not_registered_subjects)
-            ->where('session', '=', 'November')
+            ->where('session', '=', $candidate->session)
             ->where('level', '=', $candidate->level)
             ->where('financial_year', '=', $candidate->financial_year)
             ->delete();
@@ -1065,7 +1112,7 @@ class CandidateController extends Controller
                     'subject_code' => $value['subject_code'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' => $candidate->financial_year,
                 ],
                 [
                     'candidate_no' => $request->candidate_no,
@@ -1074,7 +1121,7 @@ class CandidateController extends Controller
                     'subject_option' => $value['subject_option'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  date('Y') . '-' . (date('Y') + 1),
+                    'financial_year' =>  $candidate->financial_year,
                 ]
             );
         }
@@ -1115,7 +1162,10 @@ class CandidateController extends Controller
                     'candidates.date_of_birth',
                     'candidates.gender',
                     'center_candidate.sponser',
-                    'invoices.amount',
+                    DB::raw("COALESCE( (SELECT SUM(fee_candidate_histories.amount) FROM fee_candidate_histories  WHERE
+                    fee_candidate_histories.candidate_id = center_candidate.id AND
+                    fee_candidate_histories.status=1
+                    ),0) AS  amount"),
                     'candidate_subject.subject_code',
                     'subjects.subject_name',
                     'option_heads.description',
@@ -1133,12 +1183,6 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.level', '=', 'center_candidate.level');
                 $join->on('candidate_subject.session', '=', 'center_candidate.session');
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
-            })
-            ->leftJoin('invoices', function ($join) {
-                $join->on('candidate_subject.candidate_no', '=', 'invoices.client_id');
-                $join->on('candidate_subject.level', '=', 'invoices.level');
-                $join->on('candidate_subject.session', '=', 'invoices.session');
-                $join->on('candidate_subject.financial_year', '=', 'invoices.financial_year');
             })
             ->leftJoin('addresses', function ($join) {
                 $join->on('candidate_subject.national_id', '=', 'addresses.user_id');
@@ -1186,10 +1230,16 @@ class CandidateController extends Controller
         $center_no = auth()->user()->center_no;
         $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $session = Session::whereIn('session', $centerSessions)->where('financial_year', '=', $financial_year)->first();
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
 
-
+            $sponsors = DB::table('funders')
+        ->select(
+            'sponsor',
+            'name',
+            'description'
+        )->pluck('sponsor')->toArray();
         $candidates = DB::table('candidate_subject')
             ->select(
                 [
@@ -1217,9 +1267,9 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.session', '=', 'center_candidate.session');
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->where('center_candidate.financial_year', '=',  $financial_year)
+            ->where('center_candidate.financial_year', '=',   $session->financial_year)
             ->where('center_candidate.session', '=',  $session->session)
-            ->whereIn('center_candidate.sponser', ['O', 'N', 'M', 'K']);
+            ->whereIn('center_candidate.sponser',  $sponsors);
         if (!empty($request->level_filter)) {
             $candidates = $candidates->where('center_candidate.level', '=', $request->level_filter);
         }
@@ -1255,8 +1305,6 @@ class CandidateController extends Controller
                                   <i class="fas fa-eye"></i>
                             </a>';
 
-
-
                 if ($user->isAbleTo('amendments-delete')) {
                     $actions .= is_paid($model->candidate_no, $model->national_id, $model->level, $model->session, $model->financial_year) ? "" : '<a class="delete-candidate" data-id="' . $model->id . '" type="button" rel="tooltip" title="Delete">
                                     <i class="far fa-trash-alt"></i>
@@ -1283,6 +1331,13 @@ class CandidateController extends Controller
     {
 
         /******  Some Default Values Start   ******/
+
+        $sponsors = DB::table('funders')
+        ->select(
+            'sponsor',
+            'name',
+            'description'
+        )->pluck('sponsor')->toArray();
         $candidates_filter = $request->candidates_filter;
         $search = "";
         $candidates_sort = $request->candidates_sort;
@@ -1303,8 +1358,10 @@ class CandidateController extends Controller
         $center_no = auth()->user()->center_no;
         $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
         $centerSessions = json_decode($center->sessions, true);
-        $financial_year = (date('m') <= 2) ? (date('Y') - 1) . '-' . date('Y') : date('Y') . '-' . (date('Y') + 1);
-        $session = Session::whereIn('session', $centerSessions)->where('financial_year', '=', $financial_year)->first();
+
+        $date = date('Y-m-d');
+        $session = Session::where('financial_closing_date', '>=',  $date)
+            ->whereIn('session', $centerSessions)->first();
         $level = $center->level;
         $candidates = DB::table('candidate_subject')
             ->select(
@@ -1331,9 +1388,9 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->whereIn('center_candidate.sponser', ['O', 'N', 'M', 'K'])
+            ->whereIn('center_candidate.sponser',   $sponsors)
             ->where('center_candidate.center_no', '=', $center_no)
-            ->where('center_candidate.financial_year', '=', $financial_year)
+            ->where('center_candidate.financial_year', '=',  $session->financial_year)
             ->where('center_candidate.session', '=', $session->session)
             ->where('center_candidate.level', '=', $level);
 
@@ -1362,11 +1419,11 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->whereIn('center_candidate.sponser', ['O', 'N', 'M', 'K'])
+            ->whereIn('center_candidate.sponser',  $sponsors)
             ->where('center_candidate.center_no', '=',   $center_no)
             ->where('center_candidate.level', '=', $level)
             ->where('center_candidate.session', '=', $session->session)
-            ->where('center_candidate.financial_year', '=', $financial_year);
+            ->where('center_candidate.financial_year', '=', $session->financial_year);
 
         $privateCandidates = DB::table('candidate_subject')
             ->select(
@@ -1389,11 +1446,11 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->whereNotIn('center_candidate.sponser', ['O', 'N', 'M', 'K'])
+            ->whereNotIn('center_candidate.sponser', $sponsors)
             ->where('center_candidate.center_no', '=',   $center_no)
             ->where('center_candidate.level', '=', $level)
             ->where('center_candidate.session', '=', $session->session)
-            ->where('center_candidate.financial_year', '=', $financial_year);
+            ->where('center_candidate.financial_year', '=',  $session->financial_year);
         if (!is_null($search)) {
             if ($candidates_sort == 1) {
 
@@ -1543,6 +1600,7 @@ class CandidateController extends Controller
 
                 //fee-indicator
                 $indicator_color = is_paid_sponsored($result->id)->color;
+
                 $indicator = "<span class='fee-indicator' style='border-left: 6px solid $indicator_color'></span>";
                 $output .= "<tr id='delete" . (int)$result->candidate_no . "'>
                            <td> $indicator" . str_pad($result->candidate_no, 9, '0', STR_PAD_LEFT) . "</td>
@@ -1665,7 +1723,12 @@ class CandidateController extends Controller
 
         $auth_center_no = auth()->user()->center_no;
         $level = $request->level;
-        $session = $request->session;
+
+
+        $date = date('Y-m-d');
+        $session = Session::where('is_active', '=', 1)
+            ->where('financial_closing_date', '>=',  $date)
+            ->where('session','=' , $request->session)->first();
         // Subject Center
         $center = Center::with('subjects')->where('center_no', '=', $auth_center_no)->first();
         $subjects = $center->subjects()->get();
@@ -1717,7 +1780,7 @@ class CandidateController extends Controller
                         $candidate_surname  = strtoupper($candidates[$j][3]);
                         $candidate_other_name  = strtoupper($candidates[$j][4]);
                         $gender  = strtoupper($candidates[$j][7]);
-                        $dateOfBirth = date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year));
+                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth)? date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year)) :"";
                         $sponser = $candidates[$j][$sponsor_col];
                         $type = $candidates[$j][6];
                         $data = [
@@ -1770,16 +1833,19 @@ class CandidateController extends Controller
                                     ->where(function ($query) use ($national_id, $level, $session) {
                                         return $query->where('national_id', $national_id)
                                             ->where('level', '=', $level)
-                                            ->where('session', '=', $session)
-                                            ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                            ->where('session', '=', $session->session)
+                                            ->where('financial_year', '=', $session->financial_year);
                                     });
+                                $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
+
+
                                 if ($new_candidate) {
                                     $validation_rules['candidate_no'][] = Rule::unique('center_candidate')
                                         ->where(function ($query) use ($candidate_no, $level, $session) {
                                             return $query->where('candidate_no', $candidate_no)
                                                 ->where('level', '=', $level)
-                                                ->where('session', '=', $session)
-                                                ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                                ->where('session', '=', $session->session)
+                                                ->where('financial_year', '=', $session->financial_year);
                                         });
                                 }
                                 $validator = Validator::make($data, $validation_rules, $validation_messages);
@@ -1913,8 +1979,8 @@ class CandidateController extends Controller
                                     ->where(function ($query) use ($level, $candidate_no, $session) {
                                         return $query->where('candidate_no', $candidate_no)
                                             ->where('level', '=', $level)
-                                            ->where('session', '=', $session)
-                                            ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                            ->where('session', '=', $session->session)
+                                            ->where('financial_year', '=', $session->financial_year);
                                     });
                                 $validation_rules['candidate_surname'][] = Rule::exists('candidates', 'candidate_surname')
                                     ->where('candidate_no', $candidate_no);
@@ -2048,9 +2114,9 @@ class CandidateController extends Controller
                                 'center_no' => $center_no,
                                 'type' => $type,
                                 'level' => $level,
-                                'session' => $session,
+                                'session' => $session->session,
                                 'sponser' => $sponser,
-                                'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                                'financial_year' => $session->financial_year,
                                 'subject_number' => $subject_number,
                                 'created_at' => date("Y-m-d H:i:s"),
                                 'updated_at' => date("Y-m-d H:i:s")
@@ -2062,8 +2128,8 @@ class CandidateController extends Controller
                                 'username' => $candidate_surname . " " . $candidate_other_name,
                                 'password' =>  Hash::make(str_replace('-', '', $dateOfBirth)),
                                 'candidate_password' => str_replace('-', '', $dateOfBirth),
-                                'session' => $session,
-                                'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                                'session' => $session->session,
+                                'financial_year' => $session->financial_year,
                                 'created_at' => date("Y-m-d H:i:s"),
                                 'updated_at' => date("Y-m-d H:i:s")
                             ];
@@ -2074,8 +2140,8 @@ class CandidateController extends Controller
                                     'subject_code' => $value['subject_code'],
                                     'subject_option' => $value['subject_option'],
                                     'level' => $level,
-                                    'session' => $session,
-                                    'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                                    'session' => $session->session,
+                                    'financial_year' => $session->financial_year,
                                     'created_at' => date("Y-m-d H:i:s"),
                                     'updated_at' => date("Y-m-d H:i:s")
                                 ];
@@ -2117,7 +2183,7 @@ class CandidateController extends Controller
                         $candidate_surname  = strtoupper($candidates[$j][3]);
                         $candidate_other_name  = strtoupper($candidates[$j][4]);
                         $gender  = strtoupper($candidates[$j][6]);
-                        $dateOfBirth = date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year));
+                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth)? date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year)) :"";
 
                         // Guardian
                         $guardian_national_id = time();
@@ -2178,6 +2244,7 @@ class CandidateController extends Controller
                             'candidate_no.unique' => "The candidate is already registered",
                             'candidate_surname.exists' => "The candidate number is invalid",
                             'national_id.unique' => "The national ID is already registered",
+                            'date_of_birth.date_format' => "The date of birth  format is invalid eg.20022006 DDMMYYYY",
                         ];
                         $validator = Validator::make($data, $validation_rules, $validation_messages);
                         if ($validator->fails()) {
@@ -2199,18 +2266,19 @@ class CandidateController extends Controller
                                     ->where(function ($query) use ($national_id, $level, $session) {
                                         return $query->where('national_id', $national_id)
                                             ->where('level', '=', $level)
-                                            ->where('session', '=', $session)
-                                            ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                            ->where('session', '=', $session->session)
+                                            ->where('financial_year', '=', $session->financial_year);
                                     });
                                 if ($new_candidate) {
                                     $validation_rules['candiddate_no'][] = Rule::unique('center_candidate')
                                         ->where(function ($query) use ($candidate_no, $level, $session) {
                                             return $query->where('candiddate_no', $candidate_no)
                                                 ->where('level', '=', $level)
-                                                ->where('session', '=', $session)
-                                                ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                                ->where('session', '=', $session->session)
+                                                ->where('financial_year', '=', $session->financial_year);
                                         });
                                 }
+                                $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
                                 $validator = Validator::make($data, $validation_rules, $validation_messages);
                                 if ($validator->fails()) {
                                     $failed = true;
@@ -2246,8 +2314,8 @@ class CandidateController extends Controller
                                     ->where(function ($query) use ($level, $candidate_no, $session) {
                                         return $query->where('candidate_no', $candidate_no)
                                             ->where('level', '=', $level)
-                                            ->where('session', '=', $session)
-                                            ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
+                                            ->where('session', '=', $session->session)
+                                            ->where('financial_year', '=', $session->financial_year);
                                     });
                                 $validation_rules['candidate_surname'][] = Rule::exists('candidates', 'candidate_surname')
                                     ->where('candidate_no', $candidate_no);
@@ -2283,9 +2351,9 @@ class CandidateController extends Controller
                                 'center_no' => $center_no,
                                 'type' => $type,
                                 'level' => $level,
-                                'session' => $session,
+                                'session' => $session->session,
                                 'sponser' => $sponser,
-                                'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                                'financial_year' => $session->financial_year,
                                 'subject_number' => $subject_number,
                                 'created_at' => date("Y-m-d H:i:s"),
                                 'updated_at' => date("Y-m-d H:i:s")
@@ -2297,8 +2365,8 @@ class CandidateController extends Controller
                                     'subject_code' => $value['subject_code'],
                                     'subject_option' => $value['subject_option'],
                                     'level' => $level,
-                                    'session' => $session,
-                                    'financial_year' => date('Y') . '-' . (date('Y') + 1),
+                                    'session' => $session->session,
+                                    'financial_year' => $session->financial_year,
                                     'created_at' => date("Y-m-d H:i:s"),
                                     'updated_at' => date("Y-m-d H:i:s")
                                 ];
@@ -2373,10 +2441,17 @@ class CandidateController extends Controller
             return response()->json(['errors' => $errors, 'candidatesNumbers' => $candidatesNumbers]);
         } catch (\Exception $e) {
 
-            $error = [
+
+
+
+
+           $error = [
                 'messages' => ['format' => ['invalid format']],
                 'row' =>  $rownumber + 1,
             ];
+
+
+
             array_push($errors, $error);
             $candidatesNumbers = [
                 'registerCandidate' => $registerCandidate,

@@ -97,10 +97,10 @@
                                             <th>Candidate No</th>
                                             <th>Candidate Surname</th>
                                             <th>Candidate Other Name</th>
-                                            <th>Date Of Birth</th>
-                                            <th>Gender</th>
                                             <th>Total Fee</th>
+                                            <th>Total FIne</th>
                                             <th>Paid Fee</th>
+
 
                                         </tr>
                                     </thead>
@@ -111,40 +111,43 @@
                                             var candidates = $('#candidates').DataTable({
                                                 processing: true,
                                                 serverSide: true,
+                                                scrollY: 500,
+                                                scrollX: true,
+                                                scrollCollapse: true,
                                                 deferRender: true,
                                                 "lengthMenu": [
                                                     [20, 50, 100, 200, 400, -1],
                                                     [20, 50, 100, 200, 400, "All"]
                                                 ],
                                                 ajax: {
-                                                    url: "{{ route('admin.finantial-report.report') }}",
+                                                    url: "{{ route('admin.finantial-report.index') }}",
                                                     data: function(d) {
-                                                        d.center = $("#center").val();
-                                                        d.level = $("#level").val();
-                                                        d.session = $("#session").val();
-                                                        d.year = $("#year").val();
-                                                        d.sponsor = $("#sponsor").val();
+                                                        d.center = $("#report-form #center").val();
+                                                        d.level = $("#report-form  #level").val();
+                                                        d.session = $("#report-form  #session").val();
+                                                        d.year = $("#report-form  #year").val();
+                                                        d.sponsor = $("#report-form  #sponsor").val();
                                                     }
                                                 },
                                                 columns: [{
                                                         data: 'center_no',
                                                         name: 'center_candidate.center_no',
-                                                        searchable: true
+
                                                     },
 
                                                     {
                                                         data: 'national_id',
                                                         name: 'center_candidate.national_id',
-                                                        searchable: true
+
                                                     }, {
                                                         data: 'candidate_no',
                                                         name: 'candidates.candidate_no',
-                                                        searchable: true
+
                                                     },
                                                     {
                                                         data: 'candidate_surname',
                                                         name: 'candidates.candidate_surname',
-                                                        searchable: true
+
                                                     },
                                                     {
                                                         data: 'candidate_other_name',
@@ -152,19 +155,13 @@
                                                         searchable: true
                                                     },
                                                     {
-                                                        data: 'date_of_birth',
-                                                        name: 'candidates.date_of_birth',
-                                                        searchable: true
-                                                    },
-                                                    {
-                                                        data: 'gender',
-                                                        name: 'candidates.gender',
-                                                        searchable: true
-                                                    },
-
-                                                    {
                                                         data: 'price',
                                                         name: 'price',
+                                                        searchable: false
+                                                    },
+                                                    {
+                                                        data: 'fine',
+                                                        name: 'fine',
                                                         searchable: false
                                                     },
 
@@ -175,39 +172,50 @@
                                                     },
 
 
-
-
                                                 ]
-
                                             });
                                             $("#candidates").css("width", "100%");
+                                            $("#year").trigger("change");
                                         });
-                                        $(".dropdown-selected").each(function(index) {
-                                            $(this).on("change", function(event) {
-                                                var name = $(this).attr("name");
-                                                var value = $(this).val();
-                                                console.log(name);
-                                                var inputData = $("#report-form").serialize();
-                                                $.ajax({
-                                                    type: "GET",
-                                                    url: "{{ route('admin.finantial-report.index') }}",
-                                                    data: inputData,
-                                                    success: function(response) {
-                                                        if (response) {
 
-                                                            for (const key of Object.keys(response)) {
 
-                                                                var formElement = key.slice(0, -1);
-                                                                var selectOptions = response[key];
-                                                                if (name == 'year') {
-                                                                    $(`#${formElement}`).empty();
-                                                                    $(`#${formElement}`).append(
-                                                                        `<option value=''>Please Select ${formElement}</option>`
-                                                                    );
-                                                                }
-                                                                if (!$.isEmptyObject(response[key])) {
-                                                                    var selectOption = $(`#${formElement}`).val()
-                                                                    if (selectOption == "") {
+
+
+                                        $('.dropdown-selected').on("change", function(event) {
+                                            var name = $(this).attr("name");
+                                            var value = $(this).val();
+                                            var inputData = $("#report-form").serialize();
+                                            $.ajax({
+                                                type: "GET",
+                                                url: "{{ route('admin.finantial-report.index') }}",
+                                                data: `${inputData}&filters=1`,
+                                                success: function(response) {
+                                                    if (response) {
+                                                        for (const key of Object.keys(response)) {
+                                                            var formElement = key.slice(0, -1);
+                                                            var selectOptions = response[key];
+                                                            if (name == 'year') {
+                                                                $(`#${formElement}`).empty();
+                                                                $(`#${formElement}`).append(
+                                                                    `<option value=''>Please Select ${formElement}</option>`
+                                                                );
+                                                            }
+                                                            if (!$.isEmptyObject(response[key])) {
+                                                                var selectOption = $(`#${formElement}`).val()
+                                                                if (selectOption == "") {
+                                                                    if (formElement == 'center') {
+                                                                        $(`#${formElement}`).empty();
+                                                                        $(`#${formElement}`).append(
+                                                                            `<option value=''>Please Select ${formElement}</option>`
+                                                                        );
+                                                                        $.each(selectOptions, function(key, option) {
+                                                                            $(`#${formElement}`).append(
+                                                                                `<option value='${key}'>  ${key}  ${option}</option>`
+                                                                            );
+                                                                        });
+
+                                                                    } else {
+
                                                                         $(`#${formElement}`).empty();
                                                                         $(`#${formElement}`).append(
                                                                             `<option value=''>Please Select ${formElement}</option>`
@@ -219,19 +227,21 @@
                                                                                 '">' + option +
                                                                                 '</option>');
                                                                         });
+
                                                                     }
 
-
                                                                 }
+
 
                                                             }
 
                                                         }
-                                                        $('#candidates').DataTable().ajax.reload();
-                                                    }
-                                                });
 
+                                                    }
+                                                    $('#candidates').DataTable().ajax.reload();
+                                                }
                                             });
+
                                         });
                                     </script>
                                 @endpush

@@ -105,7 +105,7 @@
                             <input type="text" name="email" value="" class="form-control">
 
                         </div>
-                      
+
                         <div class="form-group">
                             <label for="inputAddress">Occupation</label>
                             <input type="text" name="occupation" value=" " class="form-control">
@@ -149,7 +149,7 @@
                 <div class="modal-body">
                     <div class="errors">
                     </div>
-                    <form id="addUserSponsorForm" action="{{ route('admin.sponsors.store') }}" method="POST"
+                    <form id="addUserSponsorForm" action="{{ route('admin.sponsor-users.store') }}" method="POST"
                         enctype="multipart/form-data">
                         <div class="form-group text-center">
                             @csrf
@@ -802,7 +802,7 @@
                 }
             });
             $.ajax({
-                url: "{{ route('admin.sponsors.index') }}",
+                url: "{{ route('admin.sponsor-users.index') }}",
                 method: "GET",
                 success: function(data) {
                     console.log(data);

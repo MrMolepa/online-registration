@@ -17,7 +17,8 @@ class DocumentMetaDatas extends Model
     const UPDATED_AT = 'modified_date';
 
     protected $fillable = [
-        'document_id', 'metatag', 'created_by',
+        'document_id', 'metatag',
+        'created_by',
         'modified_by', 'is_deleted'
     ];
 
@@ -35,13 +36,13 @@ class DocumentMetaDatas extends Model
     {
         parent::boot();
         static::creating(function (Model $model) {
-            $userId = Auth::user()->id;;
+            $userId =Auth::user()->document_user_profile->id;
             $model->created_by= $userId;
             $model->modified_by =$userId;
 
         });
         static::updating(function (Model $model) {
-            $userId =Auth::user()->id;
+            $userId =Auth::user()->document_user_profile->id;
             $model->modified_by =$userId;
         });
 

@@ -37,12 +37,10 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-5   col-lg-4 col-xl-3">
-                    <div class="logo">
-                        <a href="">
+                    <div class="logo"><a href="/">
                             <img src="assets/images/logo.png"
                                 alt=""style="position: static; top: 0px; width: 3.3rem; padding: 0px;"
                                 class="logo">
-                        </a>
 
                     </div>
                 </div>
@@ -135,56 +133,80 @@
             </div>
         </div>
     </div>
-    <main>
-        <div class="container">
-            <div class="registration_choice">
-                <div class="grid-wrapper grid-col-auto">
-                    <label for="private-candidate" class="radio-card">
-                        <input type="radio" name="registration" value="3" id="private-candidate" />
-                        <div class="card-content-wrapper">
-                            <span class="check-icon"></span>
-                            <div class="card-content">
-                                <h4>Private Candidate</h4>
-                            </div>
-                        </div>
-                    </label>
-                    <label for="school-candidate" class="radio-card">
-                        <input type="radio" name="registration" value="2" id="school-candidate" />
-                        <div class="card-content-wrapper">
-                            <span class="check-icon"></span>
-                            <div class="card-content">
-                                <h4>School Candidate</h4>
-                            </div>
-                        </div>
-                    </label>
-                    <!-- /.radio-card -->
 
-                    <label for="school-admin" class="radio-card">
-                        <input type="radio" name="registration" value="1" id="school-admin" />
-                        <div class="card-content-wrapper">
-                            <span class="check-icon"></span>
-                            <div class="card-content">
-                                <h4>School Admin</h4>
-                            </div>
+    <div class="container" id="home-container">
+        <div class="registration_choice">
+            <div class="grid-wrapper grid-col-auto">
+                <label for="private-candidate" class="radio-card">
+                    <input type="radio" name="registration" value="3" id="private-candidate" />
+                    <div class="card-content-wrapper">
+                        <span class="check-icon"></span>
+                        <div class="card-content">
+                            <h4>Private Candidate</h4>
                         </div>
-                    </label>
-                    <!-- /.radio-card -->
-                </div>
+                    </div>
+                </label>
+                <label for="school-candidate" class="radio-card">
+                    <input type="radio" name="registration" value="2" id="school-candidate" />
+                    <div class="card-content-wrapper">
+                        <span class="check-icon"></span>
+                        <div class="card-content">
+                            <h4>School Candidate</h4>
+                        </div>
+                    </div>
+                </label>
+                <!-- /.radio-card -->
+                <label for="school-admin" class="radio-card">
+                    <input type="radio" name="registration" value="1" id="school-admin" />
+                    <div class="card-content-wrapper">
+                        <span class="check-icon"></span>
+                        <div class="card-content">
+                            <h4>School Admin</h4>
+                        </div>
+                    </div>
+                </label>
+                <!-- /.radio-card -->
+                <label for="sponsor-admin" class="radio-card">
+                    <input type="radio" name="registration" value="4" id="sponsor-admin" />
+                    <div class="card-content-wrapper">
+                        <span class="check-icon"></span>
+                        <div class="card-content">
+                            <h4>Sponsor Admin</h4>
+                        </div>
+                    </div>
+                </label>
+                <!-- /.radio-card -->
+            </div>
+        </div>
+    </div>
+    <footer class="footer" role="contentinfo" itemscope itemtype="http://schema.org/WPFooter">
+
+        <div class="footer-social-links">
+            <ul class="footer-links" role="navigation" aria-labelledby="footer-links-heading">
+                <h3 id="footer-links-heading" class="sr-only">Footer Links</h3>
+                <li><a href="https://www.examscouncil.org.ls">Web: Home</a></li>
+                <li><a href="https://www.examscouncil.org.ls/services">Services</a></li>
+                <li><a href="https://www.examscouncil.org.ls/about-us">About</a></li>
+                <li><a href="https://www.examscouncil.org.ls/contact-us">Contact Us</a></li>
+            </ul>
+            <div class="social" role="navigation" aria-labelledby="social-heading">
+                <h3 id="social-heading" class="sr-only">Follow us on social media</h3>
+                <a href="https://www.facebook.com/examslesotho/?_rdc=2&_rdr#" aria-label="Facebook"><i
+                        class="fab fa-facebook"></i></a>
+                <a href="https://twitter.com/examslesotho" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                <a href="https://www.instagram.com/examscouncil_lesotho/" aria-label="Instagram"><i
+                        class="fab  fa-instagram"></i></a>
             </div>
         </div>
 
-    </main>
 
-    <section class="about">
-        <p class="about-links">
-            <a href="http://control-webpanel.com" target="_parent">Visit Website</a>
-            <a href="http://control-webpanel.com/installation-instructions" target="_parent">How to Install</a>
-        </p>
-        <p class="about-author">
-            © 2024 <a href="https://control-webpanel.com" target="_blank">Control Web Panel</a>
-            control panel for linux
-        </p>
-    </section>
+        <p class="copyright">
+            &copy; <span class="copyright-year"></span> | <a style='color:inherit'
+                href="https://www.sdavidprince.space"> Examinations Council of Lesotho. All
+            </a> rights reserved</p>
+    </footer>
+
+
 
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
@@ -196,7 +218,14 @@
     <script src="{{ asset('assets/js/additional-methods.js') }}"></script>
     <script src="{{ asset('assets/js/popper.min.js') }}"></script>
     <script src="{{ asset('assets/js/toastr.min.js') }}"></script>
+    <script>
+        (function() {
+            $(".copyright-year").html(new Date().getFullYear());
+
+        })();
+    </script>
     @stack('scripts')
+
     <script src="{{ asset('assets/js/main.js') }}"></script>
 </body>
 

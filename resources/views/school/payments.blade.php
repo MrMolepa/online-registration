@@ -137,12 +137,12 @@
                                                                                                                         @switch($center->level)
                                                                                                                             @case('G7ELT')
                                                                                                                                 30th
-                                                                                                                                May
+                                                                                                                                 April
                                                                                                                                 {{ date('Y') }}
                                                                                                                             @break
 
                                                                                                                             @case('LGCSE')
-                                                                                                                                29th
+                                                                                                                                30th
                                                                                                                                 April
                                                                                                                                 {{ date('Y') }}
                                                                                                                             @break
@@ -896,11 +896,11 @@
                                                                         console.log(data)
                                                                         var sponsors = data.sponsors;
                                                                         var total_candidates = data.total_candidates;
-                                                                        var total_amount = data.total_overdue
-                                                                        var balance = data.balance
-                                                                        var total_paid=data.total_paid;
+                                                                        var total_amount =  data.sponsors['O'].sponsor_overdue;
+                                                                        var balance = data.sponsors['O'].balance;
+                                                                        var total_paid= data.sponsors['O'].total_amount_paid;
                                                                         $(".expectedFee").html(total_amount.toFixed(2));
-                                                                        $(".balanceFee").html(parseFloat(balance).toFixed(2));
+                                                                        $(".balanceFee").html(parseFloat(total_amount-total_paid).toFixed(2));
                                                                         $(".paidFee").html(parseFloat(total_paid).toFixed(2));
                                                                     }
                                                                 });
@@ -1039,11 +1039,7 @@
 
 
         $(document).ready(function() {
-
-
-
             $("[data-toggle='tab']").click(function() {
-
                 $('.nav-pills').find('input').removeAttr('checked');
                 $(event.target).find('input').attr('checked', 'checked');
             });
@@ -1052,14 +1048,8 @@
 
             var candidateState = {};
             var added = 0;
-
-
-
             var count = 1;
-
             dynamic_field(count);
-
-
             $(document).on('click', '#add-candidate', function() {
                 count++;
                 dynamic_field(count);
@@ -1261,10 +1251,10 @@
                     data: inputData,
                     beforeSend: function() {
                         element.prop('disabled', true).html("Processing....");
-
                     },
                 }).done(function(data) {
                     var data = isJsonString(data) ? $.parseJSON(data) : data;
+                    console.log(data);
 
                     element.prop('disabled', false).html(caption);
                     if ($.isEmptyObject(data.errors)) {
@@ -1335,7 +1325,7 @@
                     method: "GET",
                     cache: false,
                     success: function(data) {
-
+                        console.log(data);
                         var candidates = data.candidates;
                         var grand_total = data.grand_total;
                         var candidate_profile = data.candidate_profile;

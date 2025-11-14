@@ -20,7 +20,7 @@ class Session extends Model
     ];
     public function subjects()
     {
-        return $this->belongsToMany(Subject::class, 'session_subject','subject_code','session_id',);
+        return $this->belongsToMany(Subject::class, 'session_subject','session_id','subject_code');
     }
 
 

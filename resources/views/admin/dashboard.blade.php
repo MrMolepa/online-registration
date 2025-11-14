@@ -9,7 +9,6 @@
                 <h3 class="page-title">{{ ucfirst(Request::segment(1)) }} / Dashboard</h3>
                 <!-- OVERVIEW -->
                 <div class="panel panel-headline">
-
                     <div class="panel-body">
                         <div class="row">
                             <div class="col-md-3">
@@ -151,7 +150,6 @@
 
 
                             </div>
-
                         </div>
 
 

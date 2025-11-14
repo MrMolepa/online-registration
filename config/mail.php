@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => env('MAIL_MAILER', 'oauth'),
 
     /*
     |--------------------------------------------------------------------------
@@ -32,7 +32,7 @@ return [
     |            "postmark", "log", "array"
     |
     */
-  
+
 
     'mailers' => [
         'smtp' => [
@@ -44,6 +44,25 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'auth_mode' => null,
+           // Add this stream configuration:
+          'stream' => [
+              'ssl' => [
+                  'allow_self_signed' => true,
+                  'verify_peer' => false,
+                  'verify_peer_name' => false,
+              ],
+          ],
+        ],
+
+         'oauth' => [
+            'transport' => 'oauth',
+            'email' => env('MAIL_USERNAME'),
+            'client_id' => env('GOOGLE_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+            'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+            'port' => env('MAIL_PORT', 587),
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
         ],
 
         'ses' => [

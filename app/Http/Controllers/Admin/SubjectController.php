@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Center;
+use App\Models\Component;
 use App\Models\Discipline;
 use App\Models\FeeStracture;
 use App\Models\Level;
 use App\Models\OptionHeader;
 use App\Models\Session;
 use App\Models\Subject;
+use App\Models\Timetable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -29,7 +31,7 @@ class SubjectController extends Controller
         $levels = Level::get();
         $disciplines = Discipline::get();
         $options = OptionHeader::get();
-        $SubjectCode = DB::table('lgcsetimetable')->groupBy('subject_code')->get()->pluck('subject_code');
+        $SubjectCode = DB::table('timetable')->groupBy('subject_code')->get()->pluck('subject_code');
         if ($request->ajax()) {
             $subjects  =  Subject::with('sessions', 'selectedLevel');
             if ($request->level) {
@@ -193,13 +195,19 @@ class SubjectController extends Controller
                     </div>";
                     return     $html;
                 })
+                ->editColumn('sync_timetable', function ($row) {
+
+                    $html = "<button type='button' class='btn btn-sm btn-success sync-timetable' data-url='" . route('admin.subjects.syncToTimetable', ['subject_code' => $row->subject_code]) . "'>Timetable</button>";
+                    return     $html;
+                })
                 ->editColumn('action', function ($row) {
-                    $html = "<button type='button' class='btn btn-sm btn-primary editBtn'> Edit</button>
+
+                    $html = "<button type='button' class='btn btn-sm btn-primary editBtn'> Edit  </button>
                               <button type='button' class='btn btn-sm btn-success saveBtn' data-url='" . route('admin.subjects.update', $row->subject_code) . "'> Save</button>
                               <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='" . route('admin.subjects.destroy', $row->subject_code) . "'> Delete</button>";
                     return     $html;
                 })
-                ->rawColumns(['subject_name', 'options', 'components', 'short_name', 'level', 'discipline', 'is_practical', 'is_delf', 'session', 'action'])
+                ->rawColumns(['subject_name', 'options', 'components', 'short_name', 'level', 'discipline', 'is_practical', 'is_delf', 'session', 'sync_timetable', 'action'])
                 ->make(true);
         }
         return view('admin.subjects.subjects', compact('sessions', 'levels', 'disciplines', 'options',));
@@ -256,6 +264,41 @@ class SubjectController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show($id) {}
+
+    public function syncToTimetable(Request $request)
+    {
+        $subject_code = $request->subject_code;
+        $components = Component::where('subject_code', '=', $subject_code)->get();
+        $subject = Subject::with('sessions','selectedLevel')->findOrFail($subject_code);
+        $level = $subject->selectedLevel->level;
+        $sessions =  $subject->sessions->groupBy('session')->keys();
+        foreach ($components as $component) {
+            foreach ($sessions as $session) {
+                $timetable = Timetable::where('subject_code', $subject_code)
+                    ->where('paper_no', $component->component_code)
+                    ->where('level', $level)
+                    ->where('session',  $session)
+                    ->first();
+                if ($timetable !== null) {
+                    $timetable->update(['pape_desc' => $component->component_name]);
+                } else {
+                    $date_time = date("Y-m-d\TH:i:s");
+                    $endTime = date("H:i:s");
+                    $timetable = Timetable::create([
+                        'subject_code' => $subject_code,
+                        'subject_name' => $subject->subject_name,
+                        'paper_no' => $component->component_code,
+                        'pape_desc' => $component->component_name,
+                        'date_time' => $date_time,
+                        'endTime' => $endTime,
+                        'level' => $level,
+                        'session' => $session,
+                    ]);
+                }
+            }
+        }
+        return response()->json(['success' =>  'You have successfully sync to timetable']);
+    }
 
     /**
      * Show the form for editing the specified resource.

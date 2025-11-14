@@ -83,6 +83,7 @@
                                                         <th>Discipline</th>
                                                         <th>Practical Fee </th>
                                                         <th>Delf Fee </th>
+                                                        <th>Sync to  </th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>
@@ -148,6 +149,12 @@
                                                                     data: 'is_delf',
                                                                     name: 'is_delf',
                                                                 },
+                                                                {
+                                                                    data: 'sync_timetable',
+                                                                    name: 'sync_timetable',
+                                                                },
+
+
                                                                 {
                                                                     data: 'action',
                                                                     name: 'action',
@@ -1488,17 +1495,13 @@
                                     </select>
                                 </div>
                             </div>
+
                             <div class="form-group">
-                                <label class="control-label" for="level">Level</label>
-                                <div>
-                                    <select class='form-control' name='level' id="level">
-                                        <option value=''>Please Select level</option>
-                                        @foreach ($levels as $level)
-                                            <option value='{{ $level->level }}'>{{ $level->level }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <label for="financial_year">Financial Year </label>
+                                <input type="text" class="form-control" name="financial_year" id="financial_year"
+                                    readonly value="{{ date('Y') . '-' . (date('Y') + 1) }}" />
                             </div>
+
                             <div class="form-group">
                                 <label for="financial_closing">Financial Closing Date</label>
                                 <input type="date" class="form-control" name="financial_closing"
@@ -1510,7 +1513,7 @@
                                 <label class="form-check-label" for="is_active">Activate</label>
                             </div>
                             <fieldset class="form-group">
-                                <legend>Copy Previous</legend>
+                                <span>Copy Previous</span>
                                 <div class="form-check">
                                     <input class="form-check-input" checked type="checkbox" name="previous-copy[]"
                                         id="previous-subjects" value="1">
@@ -1649,10 +1652,6 @@
             var ID = $(this).closest("tr").attr("id");
             var inputData = $(this).closest("tr").find(".editInput").serialize();
             var sessionsData = $(this).closest("tr").next('table tr').find(".editInput").serialize();
-
-
-
-
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1677,6 +1676,24 @@
                         printErrorMsg(`#${ID}`, data.errors);
                     }
 
+                },
+            });
+        });
+
+
+        // Sync To Timetable
+        $(document).on("click", "#subjects .sync-timetable", function() {
+            actionUrl = $(this).data('url');
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            $.ajax({
+                type: "GET",
+                url:  actionUrl ,
+                success: function(data) {
+                    toastr.success(data.success);
                 },
             });
         });

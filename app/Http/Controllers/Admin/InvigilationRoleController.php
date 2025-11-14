@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\InvigilationCandidate;
+use App\Models\InvigilationCatergories;
 use App\Models\InvigilationRole;
 use App\Models\InvigilationType;
+use App\Models\InvigilatorPaymentAmount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\DataTables;
@@ -17,27 +19,36 @@ class InvigilationRoleController
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $invigilations = InvigilationRole::with('invigilation_type', 'invigilation_candidate');
+            $invigilations = InvigilationRole::with('invigilation_type.invigilation_catergories', 'invigilation_candidate', 'invigilator_paymentamount');
             return DataTables::of($invigilations)
                 ->addIndexColumn()
                 ->addColumn('action', function ($row) {
 
-                    $btn = '<a href="javascript:void(0)" data-toggle="tooltip"  data-url="' . route('admin.invigilations.roles.edit', $row->id)  . '" data-original-title="Edit" class="edit-role btn btn-primary btn-sm fa fa-edit"></a>';
+                    $btn = '<a href="javascript:void(0)" data-toggle="tooltip"  data-url="' . route('admin.invigilations.roles.edit', $row->id)  . '" data-original-title="Edit" class="edit-role btn-primary  btn-sm fa fa-edit"></a>';
 
                     $btn = $btn . ' <a href="javascript:void(0)" data-toggle="tooltip"  data-url="' . route('admin.invigilations.roles.destroy', $row->id)   . '" data-original-title="Delete" class="delete-role btn btn-danger btn-sm fa fa-trash"></a>';
 
                     return $btn;
                 })
+
+                ->addColumn('invigilation_type', function ($row) {
+                    return $row->invigilation_type->name ."-".$row->invigilation_type->invigilation_catergories->name;
+                })
+                ->addColumn('is_sessions', function ($row) {
+                    return ($row->is_sessions == '1') ? 'Yes' : 'No';
+                })
                 ->addColumn('candidate_range', function ($row) {
-                    return $row->invigilation_candidate->range_start . " - " . $row->invigilation_candidate->range_end;
+                    return isset($row->invigilation_candidate->range_start) ? $row->invigilation_candidate->range_start . " - " . $row->invigilation_candidate->range_end : 'session_based';
                 })
                 ->rawColumns(['action', 'candidate_range'])
                 ->make(true);
         }
-        $invigilatortypes = InvigilationType::get();
-        $invigilatorCandidates = InvigilationCandidate::get();
 
-        return view('admin.invigilation.roles.index', compact('invigilatortypes', 'invigilatorCandidates'));
+        $invigilatortypes = InvigilationType::with("invigilation_catergories")->get();
+        $invigilatorCandidates = InvigilationCandidate::get();
+        $invigilatorPaymentamounts = InvigilatorPaymentAmount::get();
+
+        return view('admin.invigilation.roles.index', compact('invigilatortypes', 'invigilatorCandidates', 'invigilatorPaymentamounts'));
     }
 
     /**
@@ -58,10 +69,7 @@ class InvigilationRoleController
             'invigilation_type_id' => 'required|string',
             'invigilation_candidate_id' => 'required|string',
             'invigilator_number' => 'required|string',
-            'amount' => 'required|string',
-
-
-
+            'invigilator_paymentamount_id' => 'required|string',
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
@@ -71,7 +79,9 @@ class InvigilationRoleController
             'invigilation_type_id' => $request->invigilation_type_id,
             'invigilation_candidate_id' => $request->invigilation_candidate_id,
             'invigilator_number' => $request->invigilator_number,
-            'amount' => $request->amount,
+            'invigilator_paymentamount_id' => $request->invigilator_paymentamount_id,
+
+            'is_sessions' => $request->has('is_sessions') ? 1 : 0,
 
         ]);
 
@@ -103,7 +113,13 @@ class InvigilationRoleController
      */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), []);
+
+        $validator = Validator::make($request->all(), [
+            'invigilation_type_id' => 'required|string',
+            'invigilation_candidate_id' => 'required|string',
+            'invigilator_number' => 'required|string',
+            'invigilator_paymentamount_id' => 'required|string',
+        ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->getMessageBag()->toArray()]);
@@ -113,7 +129,8 @@ class InvigilationRoleController
             $invigilation->invigilation_type_id = $request->invigilation_type_id;
             $invigilation->invigilation_candidate_id = $request->invigilation_candidate_id;
             $invigilation->invigilator_number = $request->invigilator_number;
-            $invigilation->amount = $request->amount;
+            $invigilation->invigilator_paymentamount_id = $request->invigilator_paymentamount_id;
+            $invigilation->is_sessions = $request->has('is_sessions') ? 1 : 0;
             $invigilation->save();
         }
 

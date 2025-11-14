@@ -277,6 +277,7 @@ class ActionController extends Controller
                 ->whereHas('actionType', function ($q) {
                     $q->where('status', '=', 1);
                 })->whereHas('transitions')->where('process', $process_id)->get();
+                
             return DataTables::of($actions)
                 ->setRowAttr([
                     'data-id' => function ($row) {

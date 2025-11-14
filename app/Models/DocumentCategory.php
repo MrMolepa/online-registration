@@ -42,12 +42,12 @@ class DocumentCategory extends Model
     {
         parent::boot();
         static::creating(function (Model $model) {
-            $userId = Auth::user()->id;
+            $userId =Auth::user()->document_user_profile->id;
             $model->created_by= $userId;
             $model->modified_by =$userId;
         });
         static::updating(function (Model $model) {
-            $userId=Auth::user()->id;
+            $userId=Auth::user()->document_user_profile->id;
             $model->modified_by =$userId;
         });
     }

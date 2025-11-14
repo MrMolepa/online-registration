@@ -15,7 +15,7 @@
                             </div>
                             <div class="panel-body">
                                 <div class="pull-right">
-                                    <a href="" class="btn btn-info" data-toggle="modal" data-target="#add-category">+
+                                    <a href="" class="btn btn-info category-btn" data-id="">+
                                         Create
                                     </a>
                                 </div>
@@ -74,10 +74,13 @@
                                                 });
 
                                                 function format(d) {
-                                                    var subcategories = JSON.parse(d.subcategories) ;
+                                                    console.log(d);
+
+
+                                                    var subcategories = JSON.parse(d.subcategories);
                                                     var category = "";
 
-                                                    $.each(subcategories, function(i,  subcategory) {
+                                                    $.each(subcategories, function(i, subcategory) {
                                                         category += `<tr>
                                                                         <td>${subcategory.actions}</td>
                                                                         <td>${subcategory.name}</td>
@@ -88,7 +91,7 @@
 
                                                     return (
                                                         ` <div class='pull-right mt-5'>
-                                                                <a href='' class='btn btn-info' data-toggle='modal' data-target='#add-category'>+
+                                                                <a href='' class='btn btn-info category-btn' data-id='${d.id}'>+
                                                                      Child Category
                                                                 </a>
                                                             </div>
@@ -148,6 +151,7 @@
                         <form action="{{ route('admin.document-categories.store') }}" method="post" id="addCategoryForm">
                             <div>
                                 @csrf
+                                <input type="hidden" id="parent_id" name="parent_id" value="">
                             </div>
                             <div class="form-group">
                                 <label for="name">Name</label>
@@ -170,6 +174,44 @@
 
         </div>
         <!--END ADD Category MODEL -->
+        <!-- UPDATE Category -->
+        <div class="modal fade bd-modal-md" id="update-category-model" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h3 class="modal-title">New Category</h3>
+                    </div>
+                    <div class="modal-body">
+                        <form action="" method="post" id="updateCategoryForm">
+                            <div>
+                                @csrf
+                                @method('PUT')
+                            </div>
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" class="form-control" name="name" id="name" value="" />
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea name="description" class="form-control" id="description" cols="30" rows="2"></textarea>
+                            </div>
+                        </form>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" name="update-category" class="btn btn-primary"
+                            id="update-category">Save</button>
+                        <button type="button" class="btn btn-danger resetform" id="close"
+                            data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!--END UPDATE Category MODEL -->
     </div>
     <!-- END MAIN CONTENT -->
     <!-- END MAIN -->
@@ -198,6 +240,15 @@
             hideMethod: "fadeOut",
         };
 
+
+        $(document).on('click', '.category-btn', function(ev) {
+            ev.preventDefault();
+            var parent_id = $(this).data('id');
+            var parent = '#addCategoryForm';
+            $(`${parent} [name='parent_id']`).val(parent_id);
+            $('#add-category').modal('show');
+        });
+
         //  Add Category
         $(document).on('click', '#save-category', function(ev) {
             ev.preventDefault();
@@ -207,10 +258,7 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
-
-
             var inputData = $("#addCategoryForm").serialize();
-
             $.ajax({
                 url: url,
                 method: "POST",
@@ -221,7 +269,7 @@
                         $('#addCategoryForm .help-block').remove();
                         $('#addCategoryForm .has-error').removeClass('has-error');
                         toastr.success(data.success);
-                        // $('#candidates').DataTable().ajax.reload();
+                        $('#categories').DataTable().ajax.reload();
                     } else {
                         printErrorMsg('#addCategoryForm', data.errors);
                     }
@@ -234,48 +282,102 @@
         });
 
 
+        //edit
+        $(document).on('click', '.edit-category', function() {
+            var url = $(this).data("url");
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function(data) {
+                    $('#update-category-model').modal('show');
+                    var category = data.category;
+                    var url = data.url;
+                    var form = '#updateCategoryForm';
+                    $('#updateCategoryForm').attr('action', url);
+                    $(`${form} :input:not([type=hidden]), ${form} select,${form} textarea`).each(
+                        function(index) {
+                            var input = $(this);
+                            console.log('Type: ' + input.attr('type') + 'Name: ' + input.attr(
+                                    'name') +
+                                'Value: ' + input.val());
+                            var name = input.attr('name');
+                            console.log()
+
+                            $(`${form} #${name}`).val(category[name]);
 
 
+                        }
+                    );
+                },
+                error: function(data) {
+                    console.log('Error:', data);
+                }
+            });
+        });
+
+          // Update
+          $(document).on('click', '#update-category', function(e) {
+            var editForm = $("#updateCategoryForm");
+            var url = editForm.attr('action');
+            $.ajax({
+                type: "POST",
+                data: editForm.serializeArray(),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: url,
+                success: function(data) {
+                    if ($.isEmptyObject(data.errors)) {
+                        $('#update-category-model').modal('hide');
+                        toastr.success(data.success);
+                        $('#categories').DataTable().ajax.reload();
+                    } else {
+                        printErrorMsg('#updateCategoryForm', data.errors);
+                    }
 
 
-
-
-
-
+                }
+            });
+        });
 
 
 
         // delete Candidate
-        // $(document).on('click', '#candidates .deleteBtn', function(ev) {
-        //     ev.preventDefault();
-        //     var url = $(this).data('url');
-        //     if (confirm("Are you sure you want to delete this candidates!") == true) {
-        //         $.ajaxSetup({
-        //             headers: {
-        //                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        //             }
-        //         });
+        $(document).on('click', '.delete-category', function(ev) {
+            ev.preventDefault();
+            var url = $(this).data('url');
+            if (confirm("Are you sure you want to delete thiscategory!") == true) {
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
 
-        //         $.ajax({
-        //             url: url,
-        //             method: "DELETE",
-        //             success: function(data) {
-        //                 if (data.success) {
-        //                     toastr.success(data.success);
-        //                     $('#candidates').DataTable().ajax.reload();
-        //                 }
-
-
-
-        //             }
-        //         });
+                $.ajax({
+                    url: url,
+                    method: "DELETE",
+                    success: function(data) {
+                        if (data.success) {
+                            toastr.success(data.success);
+                            $('#categories').DataTable().ajax.reload();
+                        } else {
+                            toastr.error(data.error);
+                        }
 
 
-        //     } else {
-        //         return;
-        //     }
 
-        // });
+                    }
+                });
+
+
+            } else {
+                return;
+            }
+
+        });
+
+
+
 
 
         /****  Print errors*******/

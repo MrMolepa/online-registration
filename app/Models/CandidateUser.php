@@ -14,14 +14,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class CandidateUser extends Authenticatable
 {
-    use HasFactory;
-    use HasApiTokens,
+
+
+    use LaratrustUserTrait,
+        HasApiTokens,
         HasFactory,
         Notifiable,
         CausesActivity,
-        LogsActivity;
+        LogsActivity,
+        Notifiable;
     protected $table = 'candidate_users';
-    protected $guarded=[];
+    protected $guarded = [];
     protected $fillable = [
         'username',
         'national_id',

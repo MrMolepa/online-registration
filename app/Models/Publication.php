@@ -14,7 +14,9 @@ class Publication extends Model
     protected $fillable = [
         'title',
         'display_name',
+        'level',
+        'session',
         'publish',
-        'published_at'
+        'published_at',
     ];
 }

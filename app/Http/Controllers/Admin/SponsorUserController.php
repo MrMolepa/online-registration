@@ -36,7 +36,7 @@ class SponsorUserController extends Controller
             // `sponsor`, `level`,
             $users = SponsorUser::get();
             foreach ($users as $user) {
-                $editurl=route('admin.sponsors.edit',$user->id);
+                $editurl=route('admin.sponsor-users.edit',$user->id);
                 $status = "unable ";
                 $font_color = "deactivate";
                 $profile = asset('adminAssets/assets/img/profile.png');
@@ -135,7 +135,7 @@ class SponsorUserController extends Controller
                     ]
                 );
 
-            $user->notify(new SendResetPassword(route('sponsor.password.reset', $token)));
+            //$user->notify(new SendResetPassword(route('sponsor.password.reset', $token)));
         }
         return response()->json(['success' => 'Successfully add the records.']);
 
@@ -161,7 +161,7 @@ class SponsorUserController extends Controller
     public function edit($id)
     {
         $user =  SponsorUser::with('districts')->find($id);
-        $url = route('admin.sponsors.update',$id );
+        $url = route('admin.sponsor-users.update',$id );
         return response()->json(['user' => $user,'action'=>$url]);
     }
 
