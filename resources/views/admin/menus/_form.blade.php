@@ -77,10 +77,11 @@
 $(document).ready(function() {
     // Load menus and guards when modal opens
     $('#menuModal').on('show.bs.modal', function() {
-        loadParentMenus();
-        loadGuards();
+       
         console.log('Menu modal opened, loading parent menus and guards.');
     });
+        loadParentMenus();
+        loadGuards();
 
     // Load parent menus
     function loadParentMenus() {
