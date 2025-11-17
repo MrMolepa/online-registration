@@ -82,7 +82,7 @@ $(document).ready(function() {
     });
         loadParentMenus();
         loadGuards();
-
+    
     // Load parent menus
     function loadParentMenus() {
         $.ajax({

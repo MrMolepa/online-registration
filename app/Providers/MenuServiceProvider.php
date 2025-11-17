@@ -24,39 +24,34 @@ class MenuServiceProvider extends ServiceProvider
     {
         // Share menu data with sidebar view
         View::composer('admin.partials.sidebar', function ($view) {
-            $menus = $this->getAuthorizedMenus();// get menus authorized for the current user
-            $view->with('dynamicMenus', $menus);// share menus with the view   
+            $menus = $this->getAuthorizedMenus();
+            $view->with('dynamicMenus', $menus);
         });
     }
 
     /**
      * Get menus authorized for the current user
      */
-    private function getAuthorizedMenus()//get menus based on user roles and permissions
+    private function getAuthorizedMenus()
     {
         if (!Auth::check()) {
-            return collect([]);// return empty collection if user is not authorized
+            return collect([]);
         }
 
         $user = Auth::user();
+        $guardName = Auth::getDefaultDriver();
 
-        $guardName = Auth::getDefaultDriver();// get current guard name
-
-        
-
-        // Get all active parent menus
-        $menus = Menu::where('is_active', true)// only active menus
-            ->where('guard_name', $guardName)// currrent gaurd menus
+        // Get all active parent menus with their children
+        $menus = Menu::where('is_active', true)
+            ->where('guard_name', $guardName)
             ->whereNull('parent_id')
             ->with(['children' => function ($query) use ($guardName) {
-                $query->where('is_active', true)// only active child menus
-                    ->where('guard_name', $guardName)// current gaurd menus 
+                $query->where('is_active', true)
+                    ->where('guard_name', $guardName)
                     ->orderBy('order');
             }])
             ->orderBy('order')
             ->get();
-
-           
 
         // Filter menus based on user permissions
         return $menus->filter(function ($menu) use ($user) {
@@ -64,11 +59,18 @@ class MenuServiceProvider extends ServiceProvider
         })->map(function ($menu) use ($user) {
             // Filter children as well
             if ($menu->children->isNotEmpty()) {
-                $menu->setRelation('children', $menu->children->filter(function ($child) use ($user) {
+                $filteredChildren = $menu->children->filter(function ($child) use ($user) {
                     return $this->userCanAccessMenu($child, $user);
-                }));
+                });
+                $menu->setRelation('children', $filteredChildren);
             }
-            return $menu; 
+            return $menu;
+        })->filter(function ($menu) {
+            // Remove parent menus that have no accessible children
+            if ($menu->children->isNotEmpty()) {
+                return $menu->children->count() > 0;
+            }
+            return true;
         });
     }
 
@@ -87,10 +89,26 @@ class MenuServiceProvider extends ServiceProvider
             return true;
         }
 
+        // Get user's roles
+        $userRoles = $user->roles->pluck('id')->toArray();
+        
+        // Get user's permissions (both direct and through roles)
+        $userPermissions = $user->permissions->pluck('id')->toArray();
+        
+        // Also get permissions through roles
+        $rolePermissions = $user->roles->flatMap(function ($role) {
+            return $role->permissions->pluck('id');
+        })->toArray();
+        
+        // Merge all permissions
+        $allUserPermissions = array_unique(array_merge($userPermissions, $rolePermissions));
+
         // Check if user has any of the required role + permission combinations
         foreach ($menuPermissions as $menuPermission) {
-            if ($user->hasRole($menuPermission->role->name) && 
-                $user->hasPermission($menuPermission->permission->name)) {
+            $hasRole = in_array($menuPermission->role_id, $userRoles);
+            $hasPermission = in_array($menuPermission->permission_id, $allUserPermissions);
+            
+            if ($hasRole && $hasPermission) {
                 return true;
             }
         }
