@@ -62,7 +62,7 @@ class MenuServiceProvider extends ServiceProvider
                 $filteredChildren = $menu->children->filter(function ($child) use ($user) {
                     return $this->userCanAccessMenu($child, $user);
                 });
-                $menu->setRelation('children', $filteredChildren);
+                $menu->setRelation('children', $filteredChildren);// Update children relation
             }
             return $menu;
         })->filter(function ($menu) {
@@ -77,11 +77,11 @@ class MenuServiceProvider extends ServiceProvider
     /**
      * Check if user can access a menu item
      */
-    private function userCanAccessMenu($menu, $user)
+    private function userCanAccessMenu($menu, $user)// this method checks if the user has access to the menu based on permissions
     {
         // Get menu permissions for this menu
-        $menuPermissions = $menu->permissions()
-            ->with(['role', 'permission'])
+        $menuPermissions = $menu->permissions()// Fetch permissions
+            ->with(['role', 'permission'])// 
             ->get();
 
         // If no permissions assigned, menu is accessible to all
@@ -93,20 +93,20 @@ class MenuServiceProvider extends ServiceProvider
         $userRoles = $user->roles->pluck('id')->toArray();
         
         // Get user's permissions (both direct and through roles)
-        $userPermissions = $user->permissions->pluck('id')->toArray();
+        $userPermissions = $user->permissions->pluck('id')->toArray();// Direct permissions
         
         // Also get permissions through roles
         $rolePermissions = $user->roles->flatMap(function ($role) {
-            return $role->permissions->pluck('id');
+            return $role->permissions->pluck('id');// Permissions from each role 
         })->toArray();
         
         // Merge all permissions
-        $allUserPermissions = array_unique(array_merge($userPermissions, $rolePermissions));
+        $allUserPermissions = array_unique(array_merge($userPermissions, $rolePermissions));// Merged permissions array 
 
         // Check if user has any of the required role + permission combinations
         foreach ($menuPermissions as $menuPermission) {
-            $hasRole = in_array($menuPermission->role_id, $userRoles);
-            $hasPermission = in_array($menuPermission->permission_id, $allUserPermissions);
+            $hasRole = in_array($menuPermission->role_id, $userRoles);// Check role
+            $hasPermission = in_array($menuPermission->permission_id, $allUserPermissions);// Check in merged permissions
             
             if ($hasRole && $hasPermission) {
                 return true;
