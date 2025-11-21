@@ -22,9 +22,24 @@
                                             <i class="fa fa-sitemap"></i> Tree View (Drag & Drop)
                                         </button>
                                     </div>
-                                        <button type="button" class="btn btn-primary" id="addMenuBtn">
-                                                <i class="fa fa-plus"></i> Add Menu
-                                        </button>
+                                    <button type="button" class="btn btn-primary" id="addMenuBtn">
+                                        <i class="fa fa-plus"></i> Add Menu
+                                    </button>
+                                    
+                                    <!-- Guard Filter -->
+                                    <div class="pull-right" style="width: 200px;">
+                                        <label for="guardFilterSelect" style="font-size: 12px;">Filter by Guard:</label>
+                                        <select class="form-control input-sm" id="guardFilterSelect">
+                                            <option value="">All Guards</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="candidate">Candidate</option>
+                                            <option value="sponsor">Sponsor</option>
+                                            <option value="center">Center</option>
+                                            <option value="web">Web</option>
+                                        </select>
+                                    </div>
+                                    <div class="clearfix" style="margin-bottom: 15px;"></div>
+                                    
                                     <div class="tab-content">
                                         <!-- TABLE VIEW -->
                                         <div id="table-view">
@@ -82,6 +97,14 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+    .menu-item {
+        transition: opacity 0.3s ease;
+    }
+    .menu-item.filtered-out {
+        display: none;
+    }
+</style>
 @endpush
 
 @push('scripts')
@@ -134,6 +157,41 @@
             ]
         });
 
+        // Guard filter for table view
+        $('#guardFilterSelect').on('change', function() {
+            let selectedGuard = $(this).val();
+            
+            // Add search to guard_name column  
+            table.column(6).search(selectedGuard).draw();
+            // Filter tree view if visible
+            if ($('#tree-view').is(':visible')) {
+                filterTreeView(selectedGuard);
+            }
+        });
+
+        // Filter tree view by guard
+        function filterTreeView(guardName) {
+            if (guardName === '') {
+                // Show all menu items
+                $('.menu-item').removeClass('filtered-out').show();
+            } else {
+                // Hide all first
+                $('.menu-item').addClass('filtered-out').hide();
+                
+                // Show only matching guard items
+                $('.menu-item[data-guard="' + guardName + '"]').removeClass('filtered-out').show();
+                
+                // Handle parent-child relationships
+                $('.menu-item[data-guard="' + guardName + '"]').each(function() {
+                    // Show parent if it has visible children
+                    let $parent = $(this).closest('.menu-children').closest('.menu-item');
+                    if ($parent.length > 0) {
+                        $parent.removeClass('filtered-out').show();
+                    }
+                });
+            }
+        }
+
         // View toggle functionality
         $('#table-view-btn').click(function() {
             $('#table-view').show();
@@ -156,6 +214,12 @@
                 if (response.success) {
                     renderMenuTree(response.menus);
                     initSortable();
+                    
+                    // Apply current filter if any
+                    let currentFilter = $('#guardFilterSelect').val();
+                    if (currentFilter) {
+                        filterTreeView(currentFilter);// Apply filter to tree view
+                    }
                 } else {
                     $('#menu-tree').html('<div class="alert alert-warning">No menus found</div>');
                 }
@@ -179,7 +243,7 @@
         // Render single menu item
         function renderMenuItem(menu) {
             let html = `
-                <li class="menu-item list-group-item" data-id="${menu.id}" data-parent="${menu.parent_id || ''}">
+                <li class="menu-item list-group-item" data-id="${menu.id}" data-parent="${menu.parent_id || ''}" data-guard="${menu.guard_name}">
                     <div class="menu-item-header">
 
                         <div class="menu-item-actions pull-right">
@@ -201,8 +265,9 @@
                             <span class="drag-handle">
                                 <i class="fa fa-bars"></i>
                             </span>
-                            <i class="${menu.icon || 'fa fa-circle-o'} menu-item-icon" class="menu-item-name">${menu.name}</i>
-
+                            <i class="${menu.icon || 'fa fa-circle-o'} menu-item-icon"></i>
+                            <span class="menu-item-name">${menu.name}</span>
+                            <span class="badge" style="margin-left: 10px;">${menu.guard_name}</span>
                         </div>
 
                     </div>

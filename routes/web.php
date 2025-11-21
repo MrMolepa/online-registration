@@ -273,6 +273,7 @@ Route::group([
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
     Route::middleware(['guest:web', 'PreventBackHistory'])->group(function () {
         Route::get('login', [
             'as' => 'login',
@@ -314,8 +315,7 @@ Route::prefix('menus')->name('menus.')->group(function () {
     Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
     Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
     Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-   // Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
-   Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
+    Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
 
 });
 // Route::prefix('visitors')->name('visitors.')->group(function () {
@@ -370,17 +370,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
 
     });
-
-    
-    
-    
-    
-
-
-
-
-
-
         
         //'middleware' => 'admin'
 

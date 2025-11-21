@@ -64,8 +64,6 @@ class StockItemController extends Controller
             'unit' => 'required|string|max:50',
             'stock_qty' => 'required|numeric|min:0',
             'supplier_info' => 'nullable|string|max:255',
-            'sku' => 'nullable|string|max:255',
-            'internal_code' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean'
         ]);
 
@@ -107,8 +105,6 @@ class StockItemController extends Controller
             'unit' => 'required|string|max:50',
             'stock_qty' => 'required|numeric|min:0',
             'supplier_info' => 'nullable|string|max:255',
-            'sku' => 'nullable|string|max:255',
-            'internal_code' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean'
         ]);
 
@@ -130,14 +126,14 @@ class StockItemController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete stock item that is linked to components'
-            ], 422);
+            ],);
         }
 
         if ($stockItem->centerStocks()->count() > 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete stock item with existing allocations'
-            ], 422);
+            ],);
         }
 
         $stockItem->delete();
@@ -157,16 +153,16 @@ class StockItemController extends Controller
             'notes' => 'nullable|string'
         ]);
 
-        $oldQty = $stockItem->stock_qty;
+        $oldQty = $stockItem->stock_qty;// store old quantity for reference
 
         switch ($validated['adjustment_type']) {
             case 'add':
-                $stockItem->stock_qty += $validated['quantity'];
+                $stockItem->stock_qty += $validated['quantity'];// this adds the quantity
                 break;
             case 'subtract':
-                $stockItem->stock_qty -= $validated['quantity'];
+                $stockItem->stock_qty -= $validated['quantity'];// this subtracts the quantity
                 if ($stockItem->stock_qty < 0) {
-                    $stockItem->stock_qty = 0;
+                    $stockItem->stock_qty = 0;// prevent negative stock
                 }
                 break;
             case 'set':
@@ -176,7 +172,7 @@ class StockItemController extends Controller
 
         $stockItem->save();
 
-        return response()->json([
+        return response()->json([ 
             'success' => true,
             'message' => 'Stock quantity adjusted successfully',
             'old_qty' => $oldQty,

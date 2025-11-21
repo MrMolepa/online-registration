@@ -77,7 +77,8 @@
 $(document).ready(function() {
     // Load menus and guards when modal opens
     $('#menuModal').on('show.bs.modal', function() {
-       console.log('Menu modal opened, loading parent menus and guards.');
+       
+console.log('Menu modal opened, loading parent menus and guards.');
     });
         loadParentMenus();
         loadGuards();

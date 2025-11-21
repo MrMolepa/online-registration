@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StockType;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 
 class StockTypeController extends Controller
 {
@@ -22,7 +23,7 @@ class StockTypeController extends Controller
                     return '<span class="label label-'.$class.'">'.$text.'</span>';
                 })
                 ->addColumn('items_count', function($stockType) {
-                    return $stockType->stock_items_count . ' items';
+                    return $stockType->stock_items_count . ' items'; // Display count of related stock items
                 })
                 ->addColumn('actions', function($stockType) {
                     return '
@@ -68,7 +69,7 @@ class StockTypeController extends Controller
         
         return response()->json([
             'success' => true,
-            'data' => $stockType
+            'data' => $stockType // Include related stock items 
         ]);
     }
 
@@ -96,7 +97,7 @@ class StockTypeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Stock type updated successfully',
-            'data' => $stockType->fresh()
+            'data' => $stockType->fresh() // Return the updated model
         ]);
     }
 
@@ -106,8 +107,8 @@ class StockTypeController extends Controller
         if ($stockType->stockItems()->count() > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete stock type with existing stock items'
-            ], 422);
+                'message' => 'Cannot delete stock type with existing stock items' 
+            ],);
         }
 
         $stockType->delete();

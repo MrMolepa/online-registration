@@ -43,11 +43,11 @@ class MenuServiceProvider extends ServiceProvider
 
         // Get all active parent menus with their children
         $menus = Menu::where('is_active', true)
-            ->where('guard_name', $guardName)
+            ->where('guard_name', $guardName)// Fetch only menus for the current guard
             ->whereNull('parent_id')
             ->with(['children' => function ($query) use ($guardName) {
                 $query->where('is_active', true)
-                    ->where('guard_name', $guardName)
+                    ->where('guard_name', $guardName)// Fetch only active children for the same guard
                     ->orderBy('order');
             }])
             ->orderBy('order')
@@ -68,7 +68,7 @@ class MenuServiceProvider extends ServiceProvider
         })->filter(function ($menu) {
             // Remove parent menus that have no accessible children
             if ($menu->children->isNotEmpty()) {
-                return $menu->children->count() > 0;
+                return $menu->children->count() > 0;// Keep parent if it has accessible children
             }
             return true;
         });
@@ -81,8 +81,8 @@ class MenuServiceProvider extends ServiceProvider
     {
         // Get menu permissions for this menu
         $menuPermissions = $menu->permissions()// Fetch permissions
-            ->with(['role', 'permission'])// 
-            ->get();
+            ->with(['role', 'permission'])
+            ->get();// this gets all permissions associated with the menu
 
         // If no permissions assigned, menu is accessible to all
         if ($menuPermissions->isEmpty()) {
