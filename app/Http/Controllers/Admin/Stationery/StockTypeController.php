@@ -14,7 +14,7 @@ class StockTypeController extends Controller
     {
         if ($request->ajax()) {
             $stockTypes = StockType::withCount('stockItems')
-                ->select(['id', 'name', 'description', 'is_active', 'created_at']);
+                ->select(['id', 'name', 'description', 'is_active']);
             
             return DataTables::of($stockTypes)
                 ->addColumn('status_badge', function($stockType) {
@@ -27,9 +27,6 @@ class StockTypeController extends Controller
                 })
                 ->addColumn('actions', function($stockType) {
                     return '
-                        <button class="btn btn-info btn-sm view-btn" data-url="' . route('admin.stationery.stock-types.show', $stockType->id) . '" title="View">
-                            <i class="fa fa-eye"></i>
-                        </button>
                         <button class="btn btn-primary btn-sm edit-btn" data-url="' . route('admin.stationery.stock-types.edit', $stockType->id) . '" title="Edit">
                             <i class="fa fa-edit"></i>
                         </button>
