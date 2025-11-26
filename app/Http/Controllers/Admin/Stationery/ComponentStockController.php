@@ -204,7 +204,7 @@ class ComponentStockController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'An allocation rule already exists for this stock item.'
-                ], 422);
+                ]);
             }
         }
 
