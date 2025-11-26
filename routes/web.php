@@ -55,6 +55,9 @@ use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowInstanceController;
 use App\Http\Controllers\Admin\ApprovalController;
 
+use App\Http\Controllers\Admin\Stationery\StockTypeController;
+use App\Http\Controllers\Admin\Stationery\StockItemController;
+
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
 use App\Http\Controllers\Admin\CandidateRegistrationController;
@@ -273,6 +276,7 @@ Route::group([
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
     Route::middleware(['guest:web', 'PreventBackHistory'])->group(function () {
         Route::get('login', [
             'as' => 'login',
@@ -295,6 +299,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('password/reset', 'App\Http\Controllers\Admin\Auth\ResetPasswordController@reset')->name('password.update');
     });
     Route::middleware(['auth:admin', 'PreventBackHistory'])->group(function () {
+
+
+        
         // Menu Permission Routes
     Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
     Route::get('/guards', [MenuPermissionController::class, 'getGuards'])->name('guards');    
@@ -314,10 +321,36 @@ Route::prefix('menus')->name('menus.')->group(function () {
     Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
     Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
     Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-   // Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
-   Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
+    Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
 
 });
+
+
+ Route::prefix('stationery')->name('stationery.')->group(function () {
+        
+        // ==================== Stock Types ====================
+        Route::resource('stock-types', StockTypeController::class)
+            ->parameters(['stock-types' => 'stockType'])
+            ->except(['create']);
+        Route::get('stock-types/{stockType}/edit', [StockTypeController::class, 'edit'])
+            ->name('stock-types.edit');
+        Route::get('stock-types/{stockType}', [StockTypeController::class, 'show'])
+            ->name('stock-types.show');
+        Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
+            ->name('stock-types.options');
+        
+        // ==================== Stock Items ====================
+        Route::resource('stock-items', StockItemController::class)
+            ->parameters(['stock-items' => 'stockItem'])
+            ->except(['create']);
+        Route::get('stock-items/{stockItem}/edit', [StockItemController::class, 'edit'])
+            ->name('stock-items.edit');
+        Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
+            ->name('stock-items.show');
+        Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
+            ->name('stock-items.options');
+        });
+
 // Route::prefix('visitors')->name('visitors.')->group(function () {
     
 // });
@@ -370,17 +403,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
 
     });
-
-    
-    
-    
-    
-
-
-
-
-
-
         
         //'middleware' => 'admin'
 
