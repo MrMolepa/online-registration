@@ -14,7 +14,7 @@ class StockItemController extends Controller
     {
         if ($request->ajax()) {
             $stockItems = StockItem::with('stockType')
-                ->select(['id', 'stock_type_id', 'name', 'unit', 'stock_qty','is_active', 'created_at']);
+                ->select(['id', 'stock_type_id', 'name', 'unit', 'stock_qty', 'is_active', 'created_at']);
             
             return DataTables::of($stockItems)
                 ->addColumn('stock_type_name', function($stockItem) {
@@ -25,17 +25,17 @@ class StockItemController extends Controller
                     $text = $stockItem->is_active ? 'Active' : 'Inactive';
                     return '<span class="label label-'.$class.'">'.$text.'</span>';
                 })
-                ->addColumn('stock_status', function($stockItem) {
+                ->addColumn('stock_display', function($stockItem) {
                     if ($stockItem->stock_qty <= 0) {
                         return '<span class="label label-danger">Out of Stock</span>';
                     } elseif ($stockItem->stock_qty < 50) {
-                        return '<span class="label label-warning">Low Stock</span>';
+                        return '<span class="label label-warning">Low Stock (' . number_format($stockItem->stock_qty, 0) . ' ' . $stockItem->unit . ')</span>';
                     } else {
-                        return '<span class="label label-success">In Stock</span>';
+                        return '<span class="label label-success">' . number_format($stockItem->stock_qty, 0) . ' ' . $stockItem->unit . '</span>';
                     }
                 })
-                ->editColumn('stock_qty', function($stockItem) {
-                    return number_format($stockItem->stock_qty, 0) . ' ' . $stockItem->unit;
+                ->editColumn('created_at', function($stockItem) {
+                    return $stockItem->created_at ? $stockItem->created_at->format('Y-m-d H:i') : '-';
                 })
                 ->addColumn('actions', function($stockItem) {
                     return '
@@ -49,7 +49,7 @@ class StockItemController extends Controller
                             <i class="fa fa-trash"></i>
                         </button>';
                 })
-                ->rawColumns(['status_badge', 'stock_status', 'actions'])
+                ->rawColumns(['status_badge', 'stock_display', 'actions'])
                 ->make(true);
         }
 
@@ -80,7 +80,7 @@ class StockItemController extends Controller
 
     public function show(StockItem $stockItem)
     {
-        $stockItem->load('stockType', 'componentStocks.component', 'centerStocks.center');
+        $stockItem->load(['stockType', 'componentStocks.component', 'centerStocks.center']);
         
         return response()->json([
             'success' => true,
@@ -115,32 +115,77 @@ class StockItemController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Stock item updated successfully',
-            'data' => $stockItem->fresh('stockType')
+            'data' => $stockItem->fresh()->load('stockType')
         ]);
     }
 
     public function destroy(StockItem $stockItem)
     {
-        // Check if stock item is used in allocations
-        if ($stockItem->componentStocks()->count() > 0) {
+        try {
+            // Check if stock item is linked to components
+            $rulesCount = $stockItem->componentStocks()->count();
+            
+            if ($rulesCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete stock item "' . $stockItem->name . '". It is linked to ' . $rulesCount . ' allocation rule(s). Please delete the rules first.'
+                ], 422);
+            }
+
+            // Check if stock item has center allocations
+            $allocationsCount = $stockItem->centerStocks()->count();
+            
+            if ($allocationsCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete stock item "' . $stockItem->name . '". It has ' . $allocationsCount . ' center allocation(s).'
+                ], 422);
+            }
+
+            // Store name for success message
+            $name = $stockItem->name;
+            
+            // Delete the stock item
+            $stockItem->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Stock item "' . $name . '" deleted successfully'
+            ]);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Database error deleting stock item: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete stock item that is linked to components'
-            ],);
-        }
-
-        if ($stockItem->centerStocks()->count() > 0) {
+                'message' => 'Cannot delete stock item due to database constraints. It may be in use.'
+            ], 500);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error deleting stock item: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete stock item with existing allocations'
-            ],);
+                'message' => 'Error deleting stock item: ' . $e->getMessage()
+            ], 500);
         }
+    }
 
-        $stockItem->delete();
+    // Get stock items for dropdowns
+    public function getOptions(Request $request)
+    {
+        $query = StockItem::where('is_active', true)->with('stockType');
         
+        // Filter by stock type if provided
+        if ($request->has('stock_type_id') && $request->stock_type_id) {
+            $query->where('stock_type_id', $request->stock_type_id);
+        }
+        
+        $stockItems = $query->orderBy('name')->get(['id', 'name', 'unit', 'stock_type_id']);
+
         return response()->json([
             'success' => true,
-            'message' => 'Stock item deleted successfully'
+            'data' => $stockItems
         ]);
     }
 
@@ -153,16 +198,16 @@ class StockItemController extends Controller
             'notes' => 'nullable|string'
         ]);
 
-        $oldQty = $stockItem->stock_qty;// store old quantity for reference
+        $oldQty = $stockItem->stock_qty;
 
         switch ($validated['adjustment_type']) {
             case 'add':
-                $stockItem->stock_qty += $validated['quantity'];// this adds the quantity
+                $stockItem->stock_qty += $validated['quantity'];
                 break;
             case 'subtract':
-                $stockItem->stock_qty -= $validated['quantity'];// this subtracts the quantity
+                $stockItem->stock_qty -= $validated['quantity'];
                 if ($stockItem->stock_qty < 0) {
-                    $stockItem->stock_qty = 0;// prevent negative stock
+                    $stockItem->stock_qty = 0;
                 }
                 break;
             case 'set':
@@ -181,3 +226,5 @@ class StockItemController extends Controller
         ]);
     }
 }
+
+
