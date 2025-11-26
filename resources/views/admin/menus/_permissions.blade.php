@@ -67,8 +67,7 @@
                                     <tr>
                                         <th style="width: 35%;">Permission</th>
                                         <th style="width: 30%;">Role</th>
-                                        <th style="width: 25%;">Guard</th>
-                                        <th style="width: 10%;">Actions</th>
+                                        <th style="width: 35%;">Actions</th>
                                      </tr>
                                 </thead>
                                 <tbody>

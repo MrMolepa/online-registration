@@ -1,52 +1,71 @@
-<div id="sidebar-nav" class="sidebar">
-    <div class="sidebar-scroll">
-        <nav>
-            <ul class="nav">
+<nav class="navbar-default navbar-side" role="navigation">
+    <div class="sidebar-collapse">
+        <ul class="nav" id="main-menu">
+            <li>
+                <a href="{{ route('center.home') }}" class="{{ request()->is('center') ? 'active-menu' : '' }}"><i
+                        class='bx bx-home'></i>Dashboard</a>
+            </li>
+            @permission('amendments-read')
+                <li>
+                    <a href="{{ route('center.candidates.index') }}"
+                        class="{{ request()->is('center/candidates') ? 'active-menu' : '' }}"><i class='bx bx-pencil'></i>
+                        Amend
+                        Candidates</a>
+                </li>
+            @endpermission
 
-                {{-- Dynamic Menu Items --}}
-                @if(isset($dynamicMenus) && $dynamicMenus->isNotEmpty())
-                    @foreach($dynamicMenus as $menu)
-                        <li>
-                            @if($menu->children && $menu->children->isNotEmpty())
-                                {{-- Parent Menu with Children --}}
-                                <a href="#{{ getMenuCollapseId($menu) }}" 
-                                   data-toggle="collapse" 
-                                   class="{{ isMenuActive($menu) ? '' : 'collapsed' }}">
-                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
-                                    <span>{{ $menu->name }}</span>
-                                    <i class="icon-submenu lnr lnr-chevron-left"></i>
-                                </a>
-                                <div id="{{ getMenuCollapseId($menu) }}" 
-                                     class="collapse {{ isMenuActive($menu) ? 'in' : '' }}">
-                                    <ul class="nav">
-                                        @foreach($menu->children as $child)
-                                            <li>
-                                                <a href="{{ $child->route ? route($child->route) : '#' }}" 
-                                                   class="{{ isActiveRoute($child->route) ? 'active' : '' }}">
-                                                    @if($child->icon)
-                                                        <i class="{{ $child->icon }}"></i>
-                                                    @endif
-                                                    {{ $child->name }}
-                                                </a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @else
-                                {{-- Single Menu Item --}}
-                                <a href="{{ $menu->route ? route($menu->route) : '#' }}" 
-                                   class="{{ isActiveRoute($menu->route) ? 'active' : '' }}">
-                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
-                                    <span>{{ $menu->name }}</span>
-                                </a>
-                            @endif
-                        </li>
-                    @endforeach
-                @endif
 
-              
-            </ul>
-        </nav>
+
+
+            @permission('users-read')
+                <li>
+                    <a href="{{ route('center.users.index') }}"
+                        class="{{ request()->is('center/users') ? 'active-menu' : '' }}"><i
+                            class="fas fa-users"></i>Users</a>
+                </li>
+            @endpermission
+            @permission('reports-read')
+                <li>
+                    <a href="{{ route('center.reports.index') }}"
+                        class="{{ request()->is('center/reports') ? 'active-menu' : '' }}"><i class="fa fa-fw fa-file"></i>
+                        Reports</a>
+                </li>
+            @endpermission
+
+
+            @permission('payments-read')
+                <li>
+                    <a href="{{ route('center.payments.index') }}"
+                        class="{{ request()->is('center/payments') ? 'active-menu' : '' }}"><i class='bx bx-money'></i>
+                        Payments</a>
+                </li>
+            @endpermission
+
+
+            <li>
+                <a href="{{ route('center.documents.index') }}"
+                    class="{{ request()->is('center/documents') ? 'active-menu' : '' }}"><i
+                        class="fa fa-fw fa-book"></i>
+                        Documents</a>
+            </li>
+            <li>
+                <a href="{{ route('center.invigilators.index') }}"
+                    class="{{ request()->is('center/invigilators') ? 'active-menu' : '' }}"><i
+                        class="fa fa-fw fa-external-link"></i>
+                    Invigilators</a>
+            </li>
+            <li>
+                <a href="{{ route('center.help.index') }}"
+                    class="{{ request()->is('center/help') ? 'active-menu' : '' }}"><i class='fas fa-question'></i>
+                    Help</a>
+            </li>
+
+
+        </ul>
+
+
     </div>
-</div>
+</nav>
+
+
 
