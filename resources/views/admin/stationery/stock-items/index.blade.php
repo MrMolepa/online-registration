@@ -203,8 +203,7 @@
                         $('#view_stock_type').text(stockItem.stock_type ? stockItem.stock_type.name : 'N/A');
                         $('#view_unit').text(stockItem.unit || 'N/A');
                         $('#view_stock_qty').text(Number(stockItem.stock_qty).toFixed(2) + ' ' + stockItem.unit);
-                        $('#view_sku').text(stockItem.sku || 'N/A');
-                        $('#view_internal_code').text(stockItem.internal_code || 'N/A');
+
                         $('#view_supplier_info').text(stockItem.supplier_info || 'N/A');
                         $('#view_status').html(stockItem.is_active 
                             ? '<span class="label label-success">Active</span>' 
