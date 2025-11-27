@@ -46,7 +46,7 @@
                                     
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="subject_code">Subject (Optional)</label>
+                                            <label for="subject_code">Subject</label>
                                             <select class="form-control" id="subject_code" name="subject_code">
                                                 <option value="">All Subjects</option>
                                                 @foreach($subjects as $subject)
@@ -57,7 +57,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                </div>
+                                </div>   
                                 
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fa fa-calculator"></i> Generate Allocation Report
