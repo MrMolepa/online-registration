@@ -60,6 +60,7 @@ use App\Http\Controllers\Admin\ApprovalController;
 use App\Http\Controllers\Admin\Stationery\StockTypeController;
 use App\Http\Controllers\Admin\Stationery\StockItemController;
 use App\Http\Controllers\Admin\Stationery\ComponentStockController;
+use App\Http\Controllers\Admin\Stationery\CenterAllocationController;
 
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
@@ -366,6 +367,30 @@ Route::prefix('menus')->name('menus.')->group(function () {
                 ->name('component-stock.destroy');
             Route::post('components/{component}/stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
+
+                // Add these routes inside your admin->stationery group in web.php
+            Route::prefix('allocation')->name('allocation.')->group(function () {
+            // Main allocation page
+            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+    
+            // Generate allocation report
+            Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
+    
+            // Save allocation
+            Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
+    
+           // View allocations
+            Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
+    
+            // Get breakdown details
+            Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
+    
+            // Mark as dispatched
+            Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
+    
+            // Cancel allocation
+            Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
+});
             });
 
 // Route::prefix('visitors')->name('visitors.')->group(function () {
