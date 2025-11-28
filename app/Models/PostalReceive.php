@@ -16,7 +16,8 @@ class PostalReceive extends Model
         'from_title',
         'to_title',
         'reference_number',
-        'date_received'
+        'date_received',
+        'created_by'
     ];
 
     protected $casts = [
