@@ -368,7 +368,7 @@ Route::prefix('menus')->name('menus.')->group(function () {
             Route::post('components/{component}/stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
 
-                // Add these routes inside your admin->stationery group in web.php
+        
             Route::prefix('allocation')->name('allocation.')->group(function () {
             // Main allocation page
             Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
