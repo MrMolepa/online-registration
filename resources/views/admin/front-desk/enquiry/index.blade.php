@@ -16,7 +16,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button type="button" class="btn btn-primary" id="addEnquiryBtn">
-                                        <i class="fa fa-plus"></i> Add Enquiry
+                                        <i class="fa fa-plus"></i> Enquiry
                                     </button>
                                     
                                     <div class="mt-3">
@@ -55,34 +55,11 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-<style>
-    .label { padding: .3em .6em; border-radius: .25em; }
-    .label-success { background-color: #5cb85c; color: #fff; }
-    .label-danger { background-color: #d9534f; color: #fff; }
-    .mt-3 { margin-top: 20px; }
-</style>
 @endpush
 
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 <script>
-    // TOASTER AND NOTIFICATION SETUP
-    toastr.options = {
-        closeButton: true,
-        newestOnTop: false,
-        progressBar: true,
-        positionClass: "toast-top-center",
-        preventDuplicates: false,
-        onclick: null,
-        showDuration: "3000",
-        hideDuration: "8000",
-        timeOut: "10000",
-        extendedTimeOut: "8000",
-        showEasing: "swing",
-        hideEasing: "linear",
-        showMethod: "fadeIn",
-        hideMethod: "fadeOut",
-    };
 
     $(document).ready(function() {
         $.ajaxSetup({
