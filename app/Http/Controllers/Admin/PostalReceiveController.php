@@ -41,6 +41,11 @@ class PostalReceiveController extends Controller
             'date_received' => 'required|date'
         ]);
 
+        // Add the logged-in user's name
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->user()->name ?? auth()->user()->username ?? auth()->user()->email ?? 'Unknown User';
+        }
+
         $postal = PostalReceive::create($validated);
 
         return response()->json([
