@@ -16,7 +16,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button type="button" class="btn btn-primary" id="addVisitorsBtn">
-                                        <i class="fa fa-plus"></i> Add Visitor
+                                        <i class="fa fa-plus"></i> Visitor
                                     </button>
                                     
                                     <div class="mt-3">

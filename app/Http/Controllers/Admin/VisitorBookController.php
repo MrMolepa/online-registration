@@ -43,6 +43,11 @@ class VisitorBookController extends Controller
             'out_time' => 'nullable|date_format:H:i',
         ]);
 
+        // Add the logged-in user's name
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->user()->name ?? auth()->user()->username ?? auth()->user()->email ?? 'Unknown User';
+        }
+
         $log = Visitor::create($validated);
 
         return response()->json([

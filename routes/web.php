@@ -55,8 +55,12 @@ use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowInstanceController;
 use App\Http\Controllers\Admin\ApprovalController;
 
+
+//stationery
 use App\Http\Controllers\Admin\Stationery\StockTypeController;
 use App\Http\Controllers\Admin\Stationery\StockItemController;
+use App\Http\Controllers\Admin\Stationery\ComponentStockController;
+use App\Http\Controllers\Admin\Stationery\CenterAllocationController;
 
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
@@ -327,29 +331,67 @@ Route::prefix('menus')->name('menus.')->group(function () {
 
 
  Route::prefix('stationery')->name('stationery.')->group(function () {
+            
+            // ==================== Stock Types ====================
+            Route::resource('stock-types', StockTypeController::class)
+                ->parameters(['stock-types' => 'stockType'])
+                ->except(['create']);
+            Route::get('stock-types/{stockType}/edit', [StockTypeController::class, 'edit'])
+                ->name('stock-types.edit');
+            Route::get('stock-types/{stockType}', [StockTypeController::class, 'show'])
+                ->name('stock-types.show');
+            Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
+                ->name('stock-types.options');
+            
+            // ==================== Stock Items ====================
+            Route::resource('stock-items', StockItemController::class)
+                ->parameters(['stock-items' => 'stockItem'])
+                ->except(['create']);
+            Route::get('stock-items/{stockItem}/edit', [StockItemController::class, 'edit'])
+                ->name('stock-items.edit');
+            Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
+                ->name('stock-items.show');
+            Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
+                ->name('stock-items.options');   
+            
+            // ==================== Component Stocks ====================
+             Route::get('components/{component}/stock', [ComponentStockController::class, 'index'])
+                ->name('component-stock.index');
+            Route::post('components/{component}/stock', [ComponentStockController::class, 'store'])
+                ->name('component-stock.store');
+            Route::get('components/{component}/stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
+                ->name('component-stock.edit');
+            Route::put('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'update'])
+                ->name('component-stock.update');
+            Route::delete('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'destroy'])
+                ->name('component-stock.destroy');
+            Route::post('components/{component}/stock/test', [ComponentStockController::class, 'testCalculation'])
+                ->name('component-stock.test');
+
         
-        // ==================== Stock Types ====================
-        Route::resource('stock-types', StockTypeController::class)
-            ->parameters(['stock-types' => 'stockType'])
-            ->except(['create']);
-        Route::get('stock-types/{stockType}/edit', [StockTypeController::class, 'edit'])
-            ->name('stock-types.edit');
-        Route::get('stock-types/{stockType}', [StockTypeController::class, 'show'])
-            ->name('stock-types.show');
-        Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
-            ->name('stock-types.options');
-        
-        // ==================== Stock Items ====================
-        Route::resource('stock-items', StockItemController::class)
-            ->parameters(['stock-items' => 'stockItem'])
-            ->except(['create']);
-        Route::get('stock-items/{stockItem}/edit', [StockItemController::class, 'edit'])
-            ->name('stock-items.edit');
-        Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
-            ->name('stock-items.show');
-        Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
-            ->name('stock-items.options');
-        });
+            Route::prefix('allocation')->name('allocation.')->group(function () {
+            // Main allocation page
+            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+    
+            // Generate allocation report
+            Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
+    
+            // Save allocation
+            Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
+    
+           // View allocations
+            Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
+    
+            // Get breakdown details
+            Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
+    
+            // Mark as dispatched
+            Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
+    
+            // Cancel allocation
+            Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
+});
+            });
 
 // Route::prefix('visitors')->name('visitors.')->group(function () {
     
@@ -730,14 +772,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         // ****************Fee Estamates *******************
         Route::get('/fee-estamates', [FeeEstamateController::class, 'index'])->name('fee-estamates.index');
         Route::get('/fee-estamates-private-centers', [FeeEstamateController::class, 'privateCenters'])->name('fee-estamates.privatecenters');
-
-
-
-
-
-
-
-
 
 
 

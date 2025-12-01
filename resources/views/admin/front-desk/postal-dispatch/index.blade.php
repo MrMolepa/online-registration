@@ -16,7 +16,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button type="button" class="btn btn-primary" id="addPostalDispatchBtn">
-                                        <i class="fa fa-plus"></i> Add Postal Dispatch
+                                        <i class="fa fa-plus"></i> Postal Dispatch
                                     </button>
                                     
                                     <div class="mt-3">

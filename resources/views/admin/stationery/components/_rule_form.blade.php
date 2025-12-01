@@ -16,7 +16,7 @@
                     <!-- Stock Item Selection -->
                     <div class="form-group">
                         <label for="stock_item_id">Stock Item<span class="text-danger">*</span></label>
-                        <select class="form-control" id="stock_item_id" name="stock_item_id" required>
+                        <select class="form-control" id="stock_item_id" name="stock_item_id">
                             <option value="">Select Stock Item</option>
                         </select>
                         <div class="invalid-feedback"></div>
@@ -25,7 +25,7 @@
                     <!-- Rule Type -->
                     <div class="form-group">
                         <label for="rule_type">Rule Type<span class="text-danger">*</span></label>
-                        <select class="form-control" id="rule_type" name="rule_type" required>
+                        <select class="form-control" id="rule_type" name="rule_type">
                             <option value="per_candidate">Per Candidate</option>
                             <option value="per_center">Per Center</option>
                             <option value="fixed">Fixed Quantity</option>

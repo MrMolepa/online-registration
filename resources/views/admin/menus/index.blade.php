@@ -34,7 +34,6 @@
                                             <option value="admin">Admin</option>
                                             <option value="candidate">Candidate</option>
                                             <option value="sponsor">Sponsor</option>
-                                            <option value="center">Center</option>
                                             <option value="web">Web</option>
                                         </select>
                                     </div>
@@ -110,24 +109,7 @@
 @push('scripts')
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
-    // TOASTER AND NOTIFICATION SETUP
-    toastr.options = {
-        closeButton: true,
-        newestOnTop: false,
-        progressBar: true,
-        positionClass: "toast-top-center",
-        preventDuplicates: false,
-        onclick: null,
-        showDuration: "3000",
-        hideDuration: "8000",
-        timeOut: "10000",
-        extendedTimeOut: "8000",
-        showEasing: "swing",
-        hideEasing: "linear",
-        showMethod: "fadeIn",
-        hideMethod: "fadeOut",
-    };
-
+   
     $(document).ready(function() {
         $.ajaxSetup({
             headers: {

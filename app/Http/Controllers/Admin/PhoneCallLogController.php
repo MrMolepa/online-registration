@@ -17,7 +17,7 @@ class PhoneCallLogController extends Controller
             return DataTables::of($logs)
                 ->addColumn('call_type_badge', function($log) {
                     $class = $log->call_type === 'Incoming' ? 'primary' : 'success';
-                    return '<span class="label label-'.$class.'">'.$log-> call_type.'</span>';
+                    return '<span class="label label-'.$class.'">'.$log->call_type.'</span>';
                 })
                 ->addColumn('actions', function($log) {
                     return '
@@ -50,6 +50,11 @@ class PhoneCallLogController extends Controller
             'note' => 'nullable|string',
             'call_type' => 'required|in:Incoming,Outgoing'
         ]);
+
+        // Add the logged-in user's name
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->user()->name ?? auth()->user()->username ?? auth()->user()->email ?? 'Unknown User';
+        }
 
         $log = PhoneCallLog::create($validated);
 
