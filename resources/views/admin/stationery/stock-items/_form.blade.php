@@ -34,7 +34,7 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="unit">Unit<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="unit" name="unit" placeholder="e.g., pack, box, piece, ream">
@@ -42,7 +42,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="stock_qty">Stock Quantity<span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" class="form-control" id="stock_qty" name="stock_qty" placeholder="0.00">
