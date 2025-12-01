@@ -16,7 +16,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button type="button" class="btn btn-primary" id="addPostalReceiveBtn">
-                                        <i class="fa fa-plus"></i> Add Postal Receive
+                                        <i class="fa fa-plus"></i> Postal Receive
                                     </button>
                                     
                                     <div class="mt-3">

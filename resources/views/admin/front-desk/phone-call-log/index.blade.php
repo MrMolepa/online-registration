@@ -16,7 +16,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button type="button" class="btn btn-primary" id="addPhoneCallLogBtn">
-                                        <i class="fa fa-plus"></i> Add Phone Call Log
+                                        <i class="fa fa-plus"></i> Phone Call Log
                                     </button>
                                     
                                     <div class="mt-3">

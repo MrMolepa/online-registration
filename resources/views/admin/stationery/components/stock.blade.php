@@ -99,21 +99,6 @@
 
 @push('scripts')
 <script>
-    toastr.options = {
-        closeButton: true,
-        newestOnTop: false,
-        progressBar: true,
-        positionClass: "toast-top-center",
-        preventDuplicates: false,
-        showDuration: "3000",
-        hideDuration: "8000",
-        timeOut: "10000",
-        extendedTimeOut: "8000",
-        showEasing: "swing",
-        hideEasing: "linear",
-        showMethod: "fadeIn",
-        hideMethod: "fadeOut",
-    };
 
     $(document).ready(function() {
         $.ajaxSetup({

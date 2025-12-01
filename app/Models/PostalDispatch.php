@@ -17,6 +17,7 @@ class PostalDispatch extends Model
         'address',
         'from',
         'date',
+        'created_by'
     ];
 
     protected $casts = [

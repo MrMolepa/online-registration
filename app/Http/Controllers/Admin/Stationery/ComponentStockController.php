@@ -144,7 +144,7 @@ class ComponentStockController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An allocation rule already exists for this stock item. Please edit the existing rule.'
-            ], 422);
+            ]);
         }
 
         $componentStock = ComponentStock::create($data);
@@ -204,7 +204,7 @@ class ComponentStockController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'An allocation rule already exists for this stock item.'
-                ], 422);
+                ]);
             }
         }
 
@@ -249,7 +249,7 @@ class ComponentStockController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No allocation rule found for this stock item'
-            ], 404);
+            ]);
         }
 
         $result = $componentStock->calculateAllocation(
