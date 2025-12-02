@@ -14,70 +14,83 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <!-- View Toggle Buttons -->
-                                    <div class="btn-group mb-3" role="group">
-                                        <button type="button" class="btn btn-default active" id="table-view-btn">
+                                    {{-- <div class="btn-group mb-3" role="group"> --}}
+                                        {{-- <button type="button" class="btn btn-default active" id="table-view-btn">
                                             <i class="fa fa-list"></i> Table View
                                         </button>
                                         <button type="button" class="btn btn-default" id="tree-view-btn">
                                             <i class="fa fa-sitemap"></i> Tree View (Drag & Drop)
                                         </button>
-                                    </div>
-                                    <button type="button" class="btn btn-primary" id="addMenuBtn">
-                                        <i class="fa fa-plus"></i> Add Menu
-                                    </button>
-                                    
-                                    <!-- Guard Filter -->
-                                    <div class="pull-right" style="width: 200px;">
-                                        <label for="guardFilterSelect" style="font-size: 12px;">Filter by Guard:</label>
-                                        <select class="form-control input-sm" id="guardFilterSelect">
-                                            <option value="">All Guards</option>
-                                            <option value="admin">Admin</option>
-                                            <option value="candidate">Candidate</option>
-                                            <option value="sponsor">Sponsor</option>
-                                            <option value="web">Web</option>
-                                        </select>
-                                    </div>
-                                    <div class="clearfix" style="margin-bottom: 15px;"></div>
-                                    
-                                    <div class="tab-content">
-                                        <!-- TABLE VIEW -->
-                                        <div id="table-view">
-                                            <table class="table table-striped" id="menusTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th>ID</th>
-                                                        <th>Name</th>
-                                                        <th>Route</th>
-                                                        <th>Icon</th>
-                                                        <th>Order</th>
-                                                        <th>Parent</th>
-                                                        <th>Guard</th>
-                                                        <th>Status</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                </tbody>
-                                            </table>
                                         </div>
+                                        <button type="button" class="btn btn-primary" id="addMenuBtn">
+                                            <i class="fa fa-plus"></i> Add Menu
+                                        </button> --}}
 
-                                        <!-- TREE VIEW (Drag & Drop) -->
-                                        <div id="tree-view" style="display: none;">
-                                            <div class="alert alert-info">
-                                                <i class="fa fa-hand-rock-o"></i> <strong>Drag and drop</strong> menus to reorder them. Changes are saved automatically. You can also drag child menus between parents.
+                                        <div class="custom-tabs-line tabs-line-bottom left-aligned">
+                                            <ul class="nav" role="tablist">
+                                                <li class="active"><a href="#table-view" role="tab"
+                                                        data-toggle="tab" id="table-view-btn">Table View
+                                                    </a></li>
+                                                <li><a href="#tree-view" role="tab" data-toggle="tab" id="tree-view-btn">Tree View (Drag & Drop)</a></li>
+                                            </ul>
+                                        </div>
+                                    
+                                        <!-- Guard Filter -->
+                                        
+                                        <div class="pull-right" style="width: 200px;">
+                                            <label for="guardFilterSelect" style="font-size: 12px;">Filter by Guard:</label>
+                                            <select class="form-control input-sm" id="guardFilterSelect">
+                                                <option value="">All Guards</option>
+                                                <option value="admin">Admin</option>
+                                                <option value="candidate">Candidate</option>
+                                                <option value="sponsor">Sponsor</option>
+                                                <option value="web">Web</option>
+                                            </select>
+                                        </div>
+                                        <div class="clearfix" style="margin-bottom: 15px;"></div>
+                                    
+                                        <div class="tab-content">
+                                            <!-- TABLE VIEW -->
+                                            <div class="tab-pane fade in active" id="table-view">
+                                                <button type="button" class="btn btn-primary pull-right" id="addMenuBtn">
+                                            <i class="fa fa-plus"></i> Add Menu
+                                        </button>
+                                                <table class="table table-striped" id="menusTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Name</th>
+                                                            <th>Route</th>
+                                                            <th>Icon</th>
+                                                            <th>Order</th>
+                                                            <th>Parent</th>
+                                                            <th>Guard</th>
+                                                            <th>Status</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                            <div id="menu-tree" class="menu-tree">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                     <span class="handle" style="cursor: grab;">☰</span>
+
+                                            <!-- TREE VIEW (Drag & Drop) -->
+                                            <div id="tree-view" class="tab-pane fade-in">
+                                                <div class="alert alert-info">
+                                                    <i class="fa fa-hand-rock-o"></i> <strong>Drag and drop</strong> menus to reorder them. Changes are saved automatically. You can also drag child menus between parents.
                                                 </div>
-                                                <div class="text-center" style="padding: 100px;">
-                                                    <i class="fa fa-spinner fa-spin fa-3x"></i>
-                                                    <p>Loading menus...</p>
+                                                <div id="menu-tree" class="menu-tree">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <span class="handle" style="cursor: grab;">☰</span>
+                                                    </div>
+                                                    <div class="text-center" style="padding: 100px;">
+                                                        <i class="fa fa-spinner fa-spin fa-3x"></i>
+                                                        <p>Loading menus...</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    {{-- </div> --}}
                             </div>
                         </div>
                     </div>
@@ -226,11 +239,11 @@
         function renderMenuItem(menu) {
             let html = `
                 <li class="menu-item list-group-item" data-id="${menu.id}" data-parent="${menu.parent_id || ''}" data-guard="${menu.guard_name}">
-                    <div class="menu-item-header">
+                    <div class="menu-item-header clearfix">
 
                         <div class="menu-item-actions pull-right">
                             <button class="btn btn-primary btn-xs edit-btn" data-url="${menu.edit_url}" title="Edit">
-                                <i class="fa fa-pencil"></i>
+                                <i class="fa fa-pen"></i>
                             </button>
                             <button class="btn btn-warning btn-xs permissions-btn"
                                     data-url="${menu.permissions_url}"
@@ -261,7 +274,7 @@
 
         // Render children
         function renderChildren(children) {
-            let html = '<ul class="menu-children">';
+            let html = '<ul class="menu-children lsit-group " style="margin-left: 20px; margin-top: 10px;">';
             children.forEach(function(child) {
                 html += renderMenuItem(child);
             });
