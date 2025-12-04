@@ -226,11 +226,11 @@
         function renderMenuItem(menu) {
             let html = `
                 <li class="menu-item list-group-item" data-id="${menu.id}" data-parent="${menu.parent_id || ''}" data-guard="${menu.guard_name}">
-                    <div class="menu-item-header">
+                    <div class="menu-item-header clearfix">
 
                         <div class="menu-item-actions pull-right">
                             <button class="btn btn-primary btn-xs edit-btn" data-url="${menu.edit_url}" title="Edit">
-                                <i class="fa fa-pencil"></i>
+                                <i class="fa fa-pen"></i>
                             </button>
                             <button class="btn btn-warning btn-xs permissions-btn"
                                     data-url="${menu.permissions_url}"
@@ -261,7 +261,7 @@
 
         // Render children
         function renderChildren(children) {
-            let html = '<ul class="menu-children">';
+            let html = '<ul class="menu-children list-group" style="margin-left: 20px; margin-top: 10px;">';
             children.forEach(function(child) {
                 html += renderMenuItem(child);
             });
