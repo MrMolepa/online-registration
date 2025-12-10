@@ -535,8 +535,10 @@ class CenterAllocationController extends Controller
 
         $centers = Center::orderBy('center_no')->get(['center_no', 'center_name']);
         $sessions = Session::orderBy('session')->get(['id', 'session']);
+        $levels = Level::where('is_active', true)->orderBy('id')->get();
 
-        return view('admin.stationery.allocation.view', compact('centers', 'sessions'));
+
+        return view('admin.stationery.allocation.view', compact('centers', 'sessions', 'levels'));
     }
 
     /**

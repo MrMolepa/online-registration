@@ -17,43 +17,52 @@
                         <div class="panel-body">
                             <form id="allocationForm">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="level">Level <span class="text-danger">*</span></label>
+                                            <select name="level" id="level" class="form-control select2" required>
+                                                <option value="">-- Select Level --</option>
+                                                @foreach($levels as $level)
+                                                    <option value="{{ $level->id }}">{{ $level->description ?? $level->id }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="center_no">Center <span class="text-danger">*</span></label>
-                                            <select name="center_no" id="center_no" class="form-control select2" required>
+                                            <select name="center_no" id="center_no" class="form-control select2" required disabled>
                                                 <option value="">-- Select Center --</option>
-                                                @foreach($centers as $center)
-                                                    <option value="{{ $center->center_no }}">
-                                                        {{ $center->center_no }} - {{ $center->center_name }}
-                                                    </option>
-                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
                                     
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="financial_year">Financial Year <span class="text-danger">*</span></label>
+                                            <select name="financial_year" id="financial_year" class="form-control select2" required disabled>
+                                                <option value="">-- Select Financial Year --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label for="session_id">Session <span class="text-danger">*</span></label>
-                                            <select name="session_id" id="session_id" class="form-control select2" required>
+                                            <select name="session_id" id="session_id" class="form-control select2" required disabled>
                                                 <option value="">-- Select Session --</option>
-                                                @foreach($sessions as $session)
-                                                    <option value="{{ $session->id }}">{{ $session->session }}</option>
-                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
-                                    
-                                    <div class="col-md-4">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-12">
                                         <div class="form-group">
                                             <label for="component_id">Component (Optional)</label>
-                                            <select name="component_id" id="component_id" class="form-control select2">
+                                            <select name="component_id" id="component_id" class="form-control select2" disabled>
                                                 <option value="">-- All Components --</option>
-                                                @foreach($components as $component)
-                                                    <option value="{{ $component->id }}">
-                                                        {{ $component->component_name }} 
-                                                        ({{ str_pad($component->subject_code, 4, '0', STR_PAD_LEFT) }}-{{ $component->component_code }})
-                                                    </option>
-                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -95,11 +104,14 @@
                                             <dt>Center:</dt>
                                             <dd><strong id="reportCenterName"></strong> (<span id="reportCenterNo"></span>)</dd>
                                             
+                                            <dt>Level:</dt>
+                                            <dd id="reportLevel"></dd>
+                                            
                                             <dt>Session:</dt>
                                             <dd id="reportSession"></dd>
                                             
-                                            <dt id="componentInfo" style="display: none;">Component:</dt>
-                                            <dd id="reportComponent" style="display: none;"></dd>
+                                            <dt>Financial Year:</dt>
+                                            <dd id="reportFinancialYear"></dd>
                                         </dl>
                                     </div>
                                     <div class="col-md-6">
@@ -109,6 +121,9 @@
                                             
                                             <dt>Invigilators:</dt>
                                             <dd id="reportInvigilators"></dd>
+                                            
+                                            <dt id="componentLabel" style="display: none;">Component:</dt>
+                                            <dd id="reportComponent" style="display: none;"></dd>
                                         </dl>
                                     </div>
                                 </div>
@@ -172,6 +187,9 @@
 @push('scripts')
 <script>
 let allocationData = null;
+let allSessions = @json($sessions);
+let allComponents = @json($components);
+let allCenters = @json($centers);
 
 $(document).ready(function() {
     $.ajaxSetup({
@@ -185,14 +203,139 @@ $(document).ready(function() {
         width: '100%'
     });
 
+    // When Level changes, load Centers and Financial Years
+    $('#level').on('change', function() {
+        const selectedLevel = $(this).val();
+        
+        // Reset dependent fields
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+        $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
+        $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
+        
+        if (!selectedLevel) {
+            return;
+        }
+
+        // Enable center dropdown and load centers by level
+        $('#center_no').prop('disabled', false);
+        loadCentersByLevel(selectedLevel);
+        
+        // Enable financial year dropdown and load available financial years
+        $('#financial_year').prop('disabled', false);
+        loadFinancialYears();
+        
+        // Enable and load components filtered by level
+        $('#component_id').prop('disabled', false);
+        loadComponentsByLevel(selectedLevel);
+    });
+
+    // When Financial Year changes, load Sessions
+    $('#financial_year').on('change', function() {
+        const selectedFinancialYear = $(this).val();
+        
+        // Reset session
+        $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        
+        if (!selectedFinancialYear) {
+            return;
+        }
+        
+        // Enable and load sessions by financial year
+        $('#session_id').prop('disabled', false);
+        loadSessionsByFinancialYear(selectedFinancialYear);
+    });
+
+    // Function to load centers by level via AJAX
+    function loadCentersByLevel(level) {
+        $.ajax({
+            url: "{{ route('admin.stationery.allocation.centers-by-level') }}",
+            method: 'GET',
+            data: { level: level },
+            success: function(response) {
+                if (response.success) {
+                    let centerOptions = '<option value="">-- Select Center --</option>';
+                    response.centers.forEach(center => {
+                        centerOptions += `<option value="${center.center_no}">${center.center_no} - ${center.center_name}</option>`;
+                    });
+                    $('#center_no').html(centerOptions);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading centers:', xhr);
+                toastr.error('Error loading centers');
+            }
+        });
+    }
+
+    // Function to load available financial years
+    function loadFinancialYears() {
+        // Get unique financial years from all sessions
+        const uniqueYears = [...new Set(allSessions.map(s => s.financial_year).filter(y => y))];
+        
+        let fyOptions = '<option value="">-- Select Financial Year --</option>';
+        uniqueYears.sort().forEach(year => {
+            fyOptions += `<option value="${year}">${year}</option>`;
+        });
+        
+        $('#financial_year').html(fyOptions);
+    }
+
+    // Function to load sessions by financial year via AJAX
+    function loadSessionsByFinancialYear(financialYear) {
+        $.ajax({
+            url: "{{ route('admin.stationery.allocation.sessions-by-level') }}",
+            method: 'GET',
+            data: { financial_year: financialYear },
+            success: function(response) {
+                if (response.success) {
+                    let sessionOptions = '<option value="">-- Select Session --</option>';
+                    response.sessions.forEach(session => {
+                        sessionOptions += `<option value="${session.id}">${session.session}</option>`;
+                    });
+                    $('#session_id').html(sessionOptions);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading sessions:', xhr);
+                toastr.error('Error loading sessions');
+            }
+        });
+    }
+
+    // Function to load components by level via AJAX
+    function loadComponentsByLevel(level) {
+        $.ajax({
+            url: "{{ route('admin.stationery.allocation.components-by-filters') }}",
+            method: 'GET',
+            data: { level: level },
+            success: function(response) {
+                if (response.success) {
+                    let componentOptions = '<option value="">-- All Components --</option>';
+                    response.components.forEach(comp => {
+                        const paddedSubjectCode = String(comp.subject_code).padStart(4, '0');
+                        componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${comp.component_code})</option>`;
+                    });
+                    $('#component_id').html(componentOptions);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading components:', xhr);
+                toastr.error('Error loading components');
+            }
+        });
+    }
+
     // Generate Report button click
     $('#generateReportBtn').on('click', function() {
+        const level = $('#level').val();
         const centerNo = $('#center_no').val();
+        const financialYear = $('#financial_year').val();
         const sessionId = $('#session_id').val();
         const componentId = $('#component_id').val();
 
-        if (!centerNo || !sessionId) {
-            toastr.error('Please select Center and Session');
+        if (!level || !centerNo || !financialYear || !sessionId) {
+            toastr.error('Please select Level, Center, Financial Year, and Session');
             return;
         }
 
@@ -207,7 +350,9 @@ $(document).ready(function() {
             data: {
                 _token: '{{ csrf_token() }}',
                 center_no: centerNo,
+                level: level,
                 session_id: sessionId,
+                financial_year: financialYear,
                 component_id: componentId || null
             },
             success: function(response) {
@@ -251,14 +396,24 @@ $(document).ready(function() {
         $('#reportCandidates').text(data.num_candidates);
         $('#reportInvigilators').text(data.num_invigilators);
         
+        // Display level
+        if (data.level) {
+            $('#reportLevel').text(data.level.description || data.level.level);
+        } else {
+            $('#reportLevel').text('-');
+        }
+        
+        // Display financial year
+        $('#reportFinancialYear').text(data.session.financial_year || '-');
+        
         // Update component info if selected
         if (data.component) {
             const fullCode = String(data.component.subject_code).padStart(4, '0') + '-' + data.component.component_code;
             $('#reportComponent').text(data.component.component_name + ' (' + fullCode + ')');
-            $('#componentInfo').show();
+            $('#componentLabel').show();
             $('#reportComponent').show();
         } else {
-            $('#componentInfo').hide();
+            $('#componentLabel').hide();
             $('#reportComponent').hide();
         }
 
@@ -387,6 +542,12 @@ $(document).ready(function() {
         allocationData = null;
         $('#allocationForm')[0].reset();
         $('.select2').val(null).trigger('change');
+        
+        // Reset cascading dropdowns
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+        $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
+        $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
     });
 });
 </script>
