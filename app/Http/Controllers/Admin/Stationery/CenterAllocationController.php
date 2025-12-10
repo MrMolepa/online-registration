@@ -11,6 +11,7 @@ use App\Models\ComponentStock;
 use App\Models\Session;
 use App\Models\StockItem;
 use App\Models\Subject;
+use App\Models\Level;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -22,31 +23,156 @@ class CenterAllocationController extends Controller
      */
     public function index()
     {
-        $centers = Center::orderBy('center_no')
-            ->get(['center_no', 'center_name']);
+        // Get all centers - will be filtered by level via JavaScript
+        $centers = Center::orderBy('center_no')->get(['center_no', 'center_name', 'level']);
         
-        $sessions = Session::orderBy('session')
-            ->get(['id', 'session']);
+        $levels = Level::where('is_active', true)
+            ->orderBy('id')
+            ->get();
         
-        // Load components with subject relationship for dropdown
+        // Get all sessions
+        $sessions = Session::orderBy('session')->get();
+        
+        // Load components with subject for dropdown
         $components = Component::with('subject')
             ->orderBy('subject_code')
             ->orderBy('component_code')
             ->get(['id', 'component_name', 'subject_code', 'component_code']);
 
-        return view('admin.stationery.allocation.index', compact('centers', 'sessions', 'components'));
+        $subjects = Subject::orderBy('subject_name')->get(['subject_code', 'subject_name']);
+
+        return view('admin.stationery.allocation.index', compact('centers', 'sessions', 'subjects', 'components', 'levels'));
+    }
+
+    /**
+     * Get centers filtered by level - AJAX endpoint
+     */
+    public function getCentersByLevel(Request $request)
+    {
+        $levelId = $request->level;
+        
+        \Log::info('Getting centers by level', [
+            'level_id_requested' => $levelId
+        ]);
+        
+        // Get the level details to understand what we're filtering by
+        $level = Level::find($levelId);
+        
+        if (!$level) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level not found'
+            ]);
+        }
+        
+        \Log::info('Level found', [
+            'level_id' => $level->id,
+            'level_description' => $level->description
+        ]);
+        
+        // Try multiple approaches to find centers
+        // Approach 1: Check center's level field (might be storing level ID, description, or code)
+        $centersDirectMatch = Center::where(function($q) use ($level, $levelId) {
+            $q->where('level', $levelId)
+              ->orWhere('level', $level->id)
+              ->orWhere('level', $level->description);
+        })->get(['center_no', 'center_name', 'level']);
+        
+        // Approach 2: Check many-to-many relationship
+        $centersRelationship = Center::whereHas('levels', function($q) use ($levelId) {
+            $q->where('levels.id', $levelId);
+        })->get(['center_no', 'center_name', 'level']);
+        
+        // Merge both results and remove duplicates
+        $centers = $centersDirectMatch->merge($centersRelationship)->unique('center_no');
+        
+        \Log::info('Centers found', [
+            'direct_match_count' => $centersDirectMatch->count(),
+            'relationship_match_count' => $centersRelationship->count(),
+            'total_unique_centers' => $centers->count(),
+            'sample_center_level_values' => $centers->take(5)->pluck('level')->toArray()
+        ]);
+        
+        // Sort by center_no
+        $centers = $centers->sortBy('center_no')->values();
+        
+        return response()->json([
+            'success' => true,
+            'centers' => $centers,
+            'debug' => [
+                'level_searched' => $level->description,
+                'direct_matches' => $centersDirectMatch->count(),
+                'relationship_matches' => $centersRelationship->count()
+            ]
+        ]);
+    }
+
+    /**
+     * Get sessions filtered by financial year - AJAX endpoint
+     */
+    public function getSessionsByLevel(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+        
+        // Get all sessions, optionally filtered by financial year
+        $sessions = Session::query()
+            ->when($financialYear, function($q) use ($financialYear) {
+                $q->where('financial_year', $financialYear);
+            })
+            ->where('is_active', true)
+            ->orderBy('session')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'sessions' => $sessions
+        ]);
+    }
+
+    /**
+     * Get components filtered by level and session - AJAX endpoint
+     */
+    public function getComponentsByFilters(Request $request)
+    {
+        $level = $request->level;
+        $sessionId = $request->session_id;
+        
+        // Get session details if provided
+        $session = null;
+        if ($sessionId) {
+            $session = Session::find($sessionId);
+        }
+        
+        // Build query for components based on subjects that match the level
+        $componentsQuery = Component::with('subject')
+            ->whereHas('subject', function($q) use ($level) {
+                if ($level) {
+                    $q->where('level', $level);
+                }
+            })
+            ->orderBy('subject_code')
+            ->orderBy('component_code');
+        
+        $components = $componentsQuery->get(['id', 'component_name', 'subject_code', 'component_code']);
+        
+        return response()->json([
+            'success' => true,
+            'components' => $components,
+            'session' => $session
+        ]);
     }
 
     /**
      * Generate allocation report
      */
-    public function generateReport(Request $request)
+  public function generateReport(Request $request)
     {
         try {
             $validated = $request->validate([
                 'center_no' => 'required|exists:centers,center_no',
                 'session_id' => 'required|exists:sessions,id',
-                'component_id' => 'nullable|exists:components,id',
+                //'subject_code' => 'nullable|exists:subjects,subject_code',
             ]);
 
             \Log::info('Generating allocation report', $validated);
@@ -57,7 +183,7 @@ class CenterAllocationController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Center not found'
-                ]);
+                ], 404);
             }
 
             // Get the session details
@@ -77,15 +203,13 @@ class CenterAllocationController extends Controller
             ]);
 
             // Get candidates for this center and session
+            // The center_candidate table has 'session' field which contains the session NAME not ID
             $candidatesQuery = CenterCandidate::where('center_no', $validated['center_no'])
-                ->where('session', $session->session);
+                ->where('session', $session->session); // Match with session name/value
             
-            // If component is selected, filter by its subject code
-            if (isset($validated['component_id'])) {
-                $component = Component::find($validated['component_id']);
-                if ($component) {
-                    $candidatesQuery->where('subject_number', 'LIKE', '%' . $component->subject_code . '%');
-                }
+            if (isset($validated['subject_code'])) {
+                // Filter by subject if provided
+                $candidatesQuery->where('subject_number', 'LIKE', '%' . $validated['subject_code'] . '%');
             }
             
             $candidates = $candidatesQuery->get();
@@ -100,6 +224,7 @@ class CenterAllocationController extends Controller
             ]);
             
             if ($numCandidates == 0) {
+                // Provide helpful debugging info
                 $allCandidatesInCenter = CenterCandidate::where('center_no', $validated['center_no'])
                     ->select('session')
                     ->groupBy('session')
@@ -120,7 +245,7 @@ class CenterAllocationController extends Controller
             // Get number of invigilators
             $numInvigilators = $this->estimateInvigilators($numCandidates);
 
-            // Get components for the allocation
+            // Get components for the subject(s)
             $components = $this->getComponentsForAllocation($validated);
             
             \Log::info('Components found', ['count' => $components->count()]);
@@ -128,8 +253,8 @@ class CenterAllocationController extends Controller
             if ($components->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No components found for the selected criteria. Please configure components first.'
-                ]);
+                    'message' => 'No components found for the selected subject(s). Please configure components first.'
+                ], 404);
             }
 
             $allocations = [];
@@ -176,8 +301,6 @@ class CenterAllocationController extends Controller
                                 'id' => $component->id,
                                 'component_code' => $component->component_code,
                                 'component_name' => $component->component_name,
-                                'subject_code' => $component->subject_code,
-                                'full_code' => $component->subject_code . '-' . $component->component_code,
                             ],
                             'stock_item' => [
                                 'id' => $stockItem->id,
@@ -208,12 +331,6 @@ class CenterAllocationController extends Controller
             
             \Log::info('Total allocations generated', ['count' => count($allocations)]);
 
-            // Get selected component details if provided
-            $selectedComponent = null;
-            if (isset($validated['component_id'])) {
-                $selectedComponent = Component::with('subject')->find($validated['component_id']);
-            }
-
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -230,7 +347,9 @@ class CenterAllocationController extends Controller
                         'session' => $session->session,
                         'description' => $session->description ?? null,
                     ],
-                    'component' => $selectedComponent,
+                    'subject' => isset($validated['subject_code']) 
+                        ? Subject::find($validated['subject_code']) 
+                        : null,
                 ]
             ]);
             
@@ -251,8 +370,24 @@ class CenterAllocationController extends Controller
                 'message' => 'Error generating report: ' . $e->getMessage()
             ]);
         }
+    
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'center' => $center,
+                'num_candidates' => $numCandidates,
+                'num_invigilators' => $numInvigilators,
+                'allocations' => $allocations,
+                'session' => Session::find($validated['session_id']),
+                'subject' => isset($validated['subject_code']) 
+                    ? Subject::find($validated['subject_code']) 
+                    : null,
+            ]
+        ]);
     }
 
+
+   
     /**
      * Save allocation to database
      */
@@ -505,6 +640,8 @@ class CenterAllocationController extends Controller
 
         if (isset($validated['component_id'])) {
             $query->where('id', $validated['component_id']);
+        } elseif (isset($validated['subject_code'])) {
+            $query->where('subject_code', $validated['subject_code']);
         }
 
         return $query->get();
