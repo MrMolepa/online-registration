@@ -390,7 +390,13 @@ Route::prefix('menus')->name('menus.')->group(function () {
     
             // Cancel allocation
             Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
-});
+            
+            // Filter endpoints
+            Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
+            Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
+            Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
+            
+            });
             });
 
 // Route::prefix('visitors')->name('visitors.')->group(function () {
