@@ -31,15 +31,6 @@
                                     
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <label for="center_no">Center <span class="text-danger">*</span></label>
-                                            <select name="center_no" id="center_no" class="form-control select2" required disabled>
-                                                <option value="">-- Select Center --</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-3">
-                                        <div class="form-group">
                                             <label for="financial_year">Financial Year <span class="text-danger">*</span></label>
                                             <select name="financial_year" id="financial_year" class="form-control select2" required disabled>
                                                 <option value="">-- Select Financial Year --</option>
@@ -55,12 +46,19 @@
                                             </select>
                                         </div>
                                     </div>
-                                </div>
-                                
-                                <div class="row">
+                                    
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="center_no">Center <span class="text-danger">*</span></label>
+                                            <select name="center_no" id="center_no" class="form-control select2" required disabled>
+                                                <option value="">-- Select Center --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="col-md-12">
                                         <div class="form-group">
-                                            <label for="component_id">Component (Optional)</label>
+                                            <label for="component_id">Component</label>
                                             <select name="component_id" id="component_id" class="form-control select2" disabled>
                                                 <option value="">-- All Components --</option>
                                             </select>
@@ -101,28 +99,31 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <dl class="dl-horizontal">
-                                            <dt>Center:</dt>
-                                            <dd><strong id="reportCenterName"></strong> (<span id="reportCenterNo"></span>)</dd>
-                                            
                                             <dt>Level:</dt>
                                             <dd id="reportLevel"></dd>
+                                            
+                                            <dt>Financial Year:</dt>
+                                            <dd id="reportFinancialYear"></dd>
                                             
                                             <dt>Session:</dt>
                                             <dd id="reportSession"></dd>
                                             
-                                            <dt>Financial Year:</dt>
-                                            <dd id="reportFinancialYear"></dd>
+                                            <dt>Center:</dt>
+                                            <dd><strong id="reportCenterName"></strong> (<span id="reportCenterNo"></span>)</dd>
                                         </dl>
                                     </div>
                                     <div class="col-md-6">
                                         <dl class="dl-horizontal">
-                                            <dt>Candidates:</dt>
+                                            <dt>Unique Candidates:</dt>
                                             <dd id="reportCandidates"></dd>
+                                            
+                                            <dt>Component Registrations:</dt>
+                                            <dd id="reportComponentRegistrations"></dd>
                                             
                                             <dt>Invigilators:</dt>
                                             <dd id="reportInvigilators"></dd>
                                             
-                                            <dt id="componentLabel" style="display: none;">Component:</dt>
+                                            <dt id="componentLabel" style="display: none;">Selected Component:</dt>
                                             <dd id="reportComponent" style="display: none;"></dd>
                                         </dl>
                                     </div>
@@ -137,6 +138,7 @@
                                             <tr>
                                                 <th>#</th>
                                                 <th>Component</th>
+                                                <th>Candidates</th>
                                                 <th>Stock Item</th>
                                                 <th>Stock Type</th>
                                                 <th class="text-center">Required</th>
@@ -187,106 +189,110 @@
 @push('scripts')
 <script>
 let allocationData = null;
-let allSessions = @json($sessions);
-let allComponents = @json($components);
-let allCenters = @json($centers);
+let allFinancialYears = @json($financialYears);
 
 $(document).ready(function() {
     $.ajaxSetup({
         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
     });
 
-    // Initialize select2 for better dropdown experience
+    // Initialize select2
     $('.select2').select2({
         placeholder: 'Select an option',
         allowClear: true,
         width: '100%'
     });
 
-    // When Level changes, load Centers and Financial Years
+    // When Level changes, load Financial Years
     $('#level').on('change', function() {
         const selectedLevel = $(this).val();
         
         // Reset dependent fields
-        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
         $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
         $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
         $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
         
         if (!selectedLevel) {
             return;
         }
 
-        // Enable center dropdown and load centers by level
-        $('#center_no').prop('disabled', false);
-        loadCentersByLevel(selectedLevel);
-        
-        // Enable financial year dropdown and load available financial years
+        // Enable and populate financial years
         $('#financial_year').prop('disabled', false);
-        loadFinancialYears();
-        
-        // Enable and load components filtered by level
-        $('#component_id').prop('disabled', false);
-        loadComponentsByLevel(selectedLevel);
+        let fyOptions = '<option value="">-- Select Financial Year --</option>';
+        allFinancialYears.forEach(fy => {
+            fyOptions += `<option value="${fy}">${fy}</option>`;
+        });
+        $('#financial_year').html(fyOptions);
     });
 
     // When Financial Year changes, load Sessions
     $('#financial_year').on('change', function() {
+        const selectedLevel = $('#level').val();
         const selectedFinancialYear = $(this).val();
         
-        // Reset session
+        // Reset dependent fields
         $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+        $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
         
         if (!selectedFinancialYear) {
             return;
         }
-        
-        // Enable and load sessions by financial year
+
+        // Enable and load sessions
         $('#session_id').prop('disabled', false);
-        loadSessionsByFinancialYear(selectedFinancialYear);
+        loadSessionsByFilters(selectedLevel, selectedFinancialYear);
     });
 
-    // Function to load centers by level via AJAX
-    function loadCentersByLevel(level) {
+    // When Session changes, load Centers
+    $('#session_id').on('change', function() {
+        const selectedLevel = $('#level').val();
+        const selectedFinancialYear = $('#financial_year').val();
+        const selectedSession = $(this).val();
+        
+        // Reset dependent fields
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+        $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
+        
+        if (!selectedSession) {
+            return;
+        }
+        
+        // Enable and load centers
+        $('#center_no').prop('disabled', false);
+        loadCentersByFilters(selectedLevel, selectedFinancialYear, selectedSession);
+    });
+
+    // When Center changes, load Components
+    $('#center_no').on('change', function() {
+        const selectedLevel = $('#level').val();
+        const selectedFinancialYear = $('#financial_year').val();
+        const selectedSession = $('#session_id').val();
+        const selectedCenter = $(this).val();
+        
+        // Reset component field
+        $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
+        
+        if (!selectedCenter) {
+            return;
+        }
+        
+        // Enable and load components
+        $('#component_id').prop('disabled', false);
+        loadComponentsByFilters(selectedLevel, selectedFinancialYear, selectedSession, selectedCenter);
+    });
+
+    // Function to load sessions by filters
+    function loadSessionsByFilters(level, financialYear) {
         $.ajax({
-            url: "{{ route('admin.stationery.allocation.centers-by-level') }}",
+            url: "{{ route('admin.stationery.allocation.sessions-by-filters') }}",
             method: 'GET',
-            data: { level: level },
-            success: function(response) {
-                if (response.success) {
-                    let centerOptions = '<option value="">-- Select Center --</option>';
-                    response.centers.forEach(center => {
-                        centerOptions += `<option value="${center.center_no}">${center.center_no} - ${center.center_name}</option>`;
-                    });
-                    $('#center_no').html(centerOptions);
-                }
+            data: { 
+                level: level,
+                financial_year: financialYear 
             },
-            error: function(xhr) {
-                console.error('Error loading centers:', xhr);
-                toastr.error('Error loading centers');
-            }
-        });
-    }
-
-    // Function to load available financial years
-    function loadFinancialYears() {
-        // Get unique financial years from all sessions
-        const uniqueYears = [...new Set(allSessions.map(s => s.financial_year).filter(y => y))];
-        
-        let fyOptions = '<option value="">-- Select Financial Year --</option>';
-        uniqueYears.sort().forEach(year => {
-            fyOptions += `<option value="${year}">${year}</option>`;
-        });
-        
-        $('#financial_year').html(fyOptions);
-    }
-
-    // Function to load sessions by financial year via AJAX
-    function loadSessionsByFinancialYear(financialYear) {
-        $.ajax({
-            url: "{{ route('admin.stationery.allocation.sessions-by-level') }}",
-            method: 'GET',
-            data: { financial_year: financialYear },
             success: function(response) {
                 if (response.success) {
                     let sessionOptions = '<option value="">-- Select Session --</option>';
@@ -303,20 +309,60 @@ $(document).ready(function() {
         });
     }
 
-    // Function to load components by level via AJAX
-    function loadComponentsByLevel(level) {
+    // Function to load centers by filters
+    function loadCentersByFilters(level, financialYear, sessionId) {
+        $.ajax({
+            url: "{{ route('admin.stationery.allocation.centers-by-filters') }}",
+            method: 'GET',
+            data: { 
+                level: level,
+                financial_year: financialYear,
+                session_id: sessionId 
+            },
+            success: function(response) {
+                if (response.success) {
+                    let centerOptions = '<option value="">-- Select Center --</option>';
+                    response.centers.forEach(center => {
+                        centerOptions += `<option value="${center.center_no}">${center.center_no} - ${center.center_name}</option>`;
+                    });
+                    $('#center_no').html(centerOptions);
+                    
+                    if (response.centers.length === 0) {
+                        toastr.warning('No centers found with candidates for this level, session, and financial year');
+                    }
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading centers:', xhr);
+                toastr.error('Error loading centers');
+            }
+        });
+    }
+
+    // Function to load components by filters
+    function loadComponentsByFilters(level, financialYear, sessionId, centerNo) {
         $.ajax({
             url: "{{ route('admin.stationery.allocation.components-by-filters') }}",
             method: 'GET',
-            data: { level: level },
+            data: { 
+                level: level,
+                financial_year: financialYear,
+                session_id: sessionId,
+                center_no: centerNo
+            },
             success: function(response) {
                 if (response.success) {
                     let componentOptions = '<option value="">-- All Components --</option>';
                     response.components.forEach(comp => {
-                        const paddedSubjectCode = String(comp.subject_code).padStart(4, '0');
-                        componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${comp.component_code})</option>`;
+                        const paddedSubjectCode = String(comp.subject_code).padStart(4, '0'); 
+                        const paddedComponentCode = String(comp.component_code).padStart(2, '0'); 
+                        componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${paddedComponentCode}) - ${comp.candidate_count} candidates</option>`;
                     });
                     $('#component_id').html(componentOptions);
+                    
+                    if (response.components.length === 0) {
+                        toastr.info('No components found with candidate registrations');
+                    }
                 }
             },
             error: function(xhr) {
@@ -329,13 +375,13 @@ $(document).ready(function() {
     // Generate Report button click
     $('#generateReportBtn').on('click', function() {
         const level = $('#level').val();
-        const centerNo = $('#center_no').val();
         const financialYear = $('#financial_year').val();
         const sessionId = $('#session_id').val();
+        const centerNo = $('#center_no').val();
         const componentId = $('#component_id').val();
 
-        if (!level || !centerNo || !financialYear || !sessionId) {
-            toastr.error('Please select Level, Center, Financial Year, and Session');
+        if (!level || !financialYear || !sessionId || !centerNo) {
+            toastr.error('Please select Level, Financial Year, Session, and Center');
             return;
         }
 
@@ -349,10 +395,10 @@ $(document).ready(function() {
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
-                center_no: centerNo,
                 level: level,
-                session_id: sessionId,
                 financial_year: financialYear,
+                session_id: sessionId,
+                center_no: centerNo,
                 component_id: componentId || null
             },
             success: function(response) {
@@ -372,14 +418,8 @@ $(document).ready(function() {
                 const errorMsg = xhr.responseJSON?.message || 'An error occurred';
                 toastr.error(errorMsg);
                 
-                // Show debug info if available
                 if (xhr.responseJSON?.debug) {
                     console.log('Debug Info:', xhr.responseJSON.debug);
-                    
-                    let debugMsg = xhr.responseJSON.debug.hint || '';
-                    if (debugMsg) {
-                        toastr.warning(debugMsg, 'Hint', {timeOut: 10000});
-                    }
                 }
             }
         });
@@ -390,21 +430,14 @@ $(document).ready(function() {
         $('#allocationTableBody').empty();
         
         // Update header information
+        $('#reportLevel').text(data.level ? data.level.description : '-');
+        $('#reportFinancialYear').text(data.session.financial_year);
+        $('#reportSession').text(data.session.session);
         $('#reportCenterName').text(data.center.center_name);
         $('#reportCenterNo').text(data.center.center_no);
-        $('#reportSession').text(data.session.session);
         $('#reportCandidates').text(data.num_candidates);
+        $('#reportComponentRegistrations').text(data.total_component_registrations || '-');
         $('#reportInvigilators').text(data.num_invigilators);
-        
-        // Display level
-        if (data.level) {
-            $('#reportLevel').text(data.level.description || data.level.level);
-        } else {
-            $('#reportLevel').text('-');
-        }
-        
-        // Display financial year
-        $('#reportFinancialYear').text(data.session.financial_year || '-');
         
         // Update component info if selected
         if (data.component) {
@@ -426,9 +459,10 @@ $(document).ready(function() {
                         <td>${index + 1}</td>
                         <td>
                             ${allocation.component.component_name}<br>
-                            <small class="text-muted">
-                                ${allocation.component.full_code}
-                            </small>
+                            <small class="text-muted">${allocation.component.full_code}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-info">${allocation.component.candidates_registered}</span>
                         </td>
                         <td>${allocation.stock_item.name}</td>
                         <td>${allocation.stock_item.stock_type || '-'}</td>
@@ -461,7 +495,7 @@ $(document).ready(function() {
         } else {
             $('#allocationTableBody').append(`
                 <tr>
-                    <td colspan="9" class="text-center">
+                    <td colspan="10" class="text-center">
                         <div class="alert alert-warning">
                             <i class="fa fa-exclamation-triangle"></i>
                             No allocation rules configured for the selected component(s)
@@ -496,7 +530,6 @@ $(document).ready(function() {
             return;
         }
 
-        // Check if any allocation cannot be fulfilled
         const unallocatable = allocationData.allocations.filter(a => !a.can_allocate);
         if (unallocatable.length > 0) {
             if (!confirm('Some items have insufficient stock. Do you want to proceed anyway?')) {
@@ -504,7 +537,6 @@ $(document).ready(function() {
             }
         }
 
-        // Prepare allocation data
         const allocations = allocationData.allocations.map(a => ({
             component_id: a.component.id,
             stock_item_id: a.stock_item.id,
@@ -512,7 +544,6 @@ $(document).ready(function() {
             breakdown: a.breakdown
         }));
 
-        // Save allocation
         $.ajax({
             url: "{{ route('admin.stationery.allocation.save') }}",
             method: 'POST',
@@ -543,10 +574,8 @@ $(document).ready(function() {
         $('#allocationForm')[0].reset();
         $('.select2').val(null).trigger('change');
         
-        // Reset cascading dropdowns
-        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
-        $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
         $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+        $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
         $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
     });
 });
