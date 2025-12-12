@@ -12,12 +12,13 @@ use Yajra\DataTables\Facades\DataTables;
 class ComponentStockController extends Controller
 {
     /**
-     * Display allocation rules for a component
+     * Display allocation rules management page
      */
-    public function index(Request $request, Component $component)
+    public function index(Request $request)
     {
-        if ($request->ajax()) {
-            $componentStocks = ComponentStock::where('component_id', $component->id)
+        // Handle DataTables AJAX request
+        if ($request->ajax() && $request->has('component_id')) {
+            $componentStocks = ComponentStock::where('component_id', $request->component_id)
                 ->with(['stockItem.stockType'])
                 ->get();
             
@@ -42,24 +43,6 @@ class ComponentStockController extends Controller
                     ];
                     return $labels[$row->rule_type] ?? $row->rule_type;
                 })
-                ->addColumn('base_quantity', function($row) {
-                    return $row->base_qty;
-                })
-                ->addColumn('extras_fixed', function($row) {
-                    return $row->extras_fixed ?? 0;
-                })
-                ->addColumn('extras_percent', function($row) {
-                    return $row->extras_percentage ?? 0;
-                })
-                ->addColumn('extras_per_candidate', function($row) {
-                    return $row->extras_per_candidate ?? 0;
-                })
-                ->addColumn('extras_percent_candidates', function($row) {
-                    return 0; // This field doesn't exist in model
-                })
-                ->addColumn('condition_value', function($row) {
-                    return 0; // This field doesn't exist in model
-                })
                 ->addColumn('formula_summary', function($row) {
                     $summary = "Base: {$row->base_qty} × Multiplier: {$row->multiplier}";
                     
@@ -75,21 +58,19 @@ class ComponentStockController extends Controller
                     return $summary;
                 })
                 ->addColumn('test_calculation', function($row) {
-                    // Test with 50 candidates
                     $result = $row->calculateAllocation(50, 0, []);
                     $testQty = $result['quantity'];
                     return '<span class="text-primary"><strong>' . $testQty . '</strong></span> <small>(for 50 candidates)</small>';
                 })
-                ->addColumn('actions', function($row) use ($component) {
+                ->addColumn('actions', function($row) {
                     return '
                         <button class="btn btn-primary btn-sm edit-rule-btn" 
                             data-id="' . $row->id . '" 
-                            data-url="' . route('admin.stationery.component-stock.update', [$component->id, $row->id]) . '" 
                             title="Edit Rule">
                             <i class="fa fa-edit"></i>
                         </button>
                         <button class="btn btn-danger btn-sm delete-rule-btn" 
-                            data-url="' . route('admin.stationery.component-stock.destroy', [$component->id, $row->id]) . '" 
+                            data-id="' . $row->id . '" 
                             title="Delete Rule">
                             <i class="fa fa-trash"></i>
                         </button>';
@@ -98,21 +79,43 @@ class ComponentStockController extends Controller
                 ->make(true);
         }
 
-        $component->load(['subject', 'componentStocks']);
+        // Load initial data for the page
+        $components = Component::with('subject')
+            ->orderBy('component_code')
+            ->get();
+            
         $stockItems = StockItem::where('is_active', true)
             ->with('stockType')
             ->orderBy('name')
             ->get();
 
-        return view('admin.stationery.components.stock', compact('component', 'stockItems'));
+        return view('admin.stationery.components.stock', compact('components', 'stockItems'));
+    }
+
+    /**
+     * Get component details
+     */
+    public function getComponent(Request $request)
+    {
+        $validated = $request->validate([
+            'component_id' => 'required|exists:components,id'
+        ]);
+
+        $component = Component::with('subject')->findOrFail($validated['component_id']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $component
+        ]);
     }
 
     /**
      * Store a new allocation rule
      */
-    public function store(Request $request, Component $component)
+    public function store(Request $request)
     {
         $validated = $request->validate([
+            'component_id' => 'required|exists:components,id',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'rule_type' => 'required|in:per_candidate,per_center,fixed,conditional',
             'base_quantity' => 'required|numeric|min:0',
@@ -122,9 +125,8 @@ class ComponentStockController extends Controller
             'extras_per_candidate' => 'nullable|numeric|min:0',
         ]);
 
-        // Map field names to model columns
         $data = [
-            'component_id' => $component->id,
+            'component_id' => $validated['component_id'],
             'stock_item_id' => $validated['stock_item_id'],
             'rule_type' => $validated['rule_type'],
             'base_qty' => $validated['base_quantity'],
@@ -135,8 +137,8 @@ class ComponentStockController extends Controller
             'is_active' => true,
         ];
 
-        // Check if rule already exists for this stock item
-        $existing = ComponentStock::where('component_id', $component->id)
+        // Check if rule already exists
+        $existing = ComponentStock::where('component_id', $validated['component_id'])
             ->where('stock_item_id', $validated['stock_item_id'])
             ->first();
 
@@ -144,7 +146,7 @@ class ComponentStockController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An allocation rule already exists for this stock item. Please edit the existing rule.'
-            ]);
+            ], 422);
         }
 
         $componentStock = ComponentStock::create($data);
@@ -159,20 +161,21 @@ class ComponentStockController extends Controller
     /**
      * Get allocation rule for editing
      */
-    public function edit(Component $component, ComponentStock $componentStock)
+    public function edit(ComponentStock $componentStock)
     {
         return response()->json([
             'success' => true,
-            'data' => $componentStock->load('stockItem.stockType')
+            'data' => $componentStock->load('stockItem.stockType', 'component')
         ]);
     }
 
     /**
      * Update an allocation rule
      */
-    public function update(Request $request, Component $component, ComponentStock $componentStock)
+    public function update(Request $request, ComponentStock $componentStock)
     {
         $validated = $request->validate([
+            'component_id' => 'required|exists:components,id',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'rule_type' => 'required|in:per_candidate,per_center,fixed,conditional',
             'base_quantity' => 'required|numeric|min:0',
@@ -182,8 +185,8 @@ class ComponentStockController extends Controller
             'extras_per_candidate' => 'nullable|numeric|min:0',
         ]);
 
-        // Map field names to model columns
         $data = [
+            'component_id' => $validated['component_id'],
             'stock_item_id' => $validated['stock_item_id'],
             'rule_type' => $validated['rule_type'],
             'base_qty' => $validated['base_quantity'],
@@ -193,9 +196,10 @@ class ComponentStockController extends Controller
             'extras_per_candidate' => $validated['extras_per_candidate'] ?? 0,
         ];
 
-        // Check if changing to a stock item that already has a rule
-        if ($componentStock->stock_item_id != $validated['stock_item_id']) {
-            $existing = ComponentStock::where('component_id', $component->id)
+        // Check for duplicate rules
+        if ($componentStock->stock_item_id != $validated['stock_item_id'] || 
+            $componentStock->component_id != $validated['component_id']) {
+            $existing = ComponentStock::where('component_id', $validated['component_id'])
                 ->where('stock_item_id', $validated['stock_item_id'])
                 ->where('id', '!=', $componentStock->id)
                 ->first();
@@ -204,7 +208,7 @@ class ComponentStockController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'An allocation rule already exists for this stock item.'
-                ]);
+                ], 422);
             }
         }
 
@@ -213,14 +217,14 @@ class ComponentStockController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Allocation rule updated successfully',
-            'data' => $componentStock->fresh()->load('stockItem.stockType')
+            'data' => $componentStock->fresh()->load('stockItem.stockType', 'component')
         ]);
     }
 
     /**
      * Delete an allocation rule
      */
-    public function destroy(Component $component, ComponentStock $componentStock)
+    public function destroy(ComponentStock $componentStock)
     {
         $componentStock->delete();
 
@@ -233,23 +237,24 @@ class ComponentStockController extends Controller
     /**
      * Test calculation with sample data
      */
-    public function testCalculation(Request $request, Component $component)
+    public function testCalculation(Request $request)
     {
         $validated = $request->validate([
+            'component_id' => 'required|exists:components,id',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'candidates' => 'required|integer|min:1',
             'centers' => 'nullable|integer|min:1'
         ]);
 
-        $componentStock = ComponentStock::where('component_id', $component->id)
+        $componentStock = ComponentStock::where('component_id', $validated['component_id'])
             ->where('stock_item_id', $validated['stock_item_id'])
             ->first();
 
         if (!$componentStock) {
             return response()->json([
                 'success' => false,
-                'message' => 'No allocation rule found for this stock item'
-            ]);
+                'message' => 'No allocation rule found for this stock item and component'
+            ], 404);
         }
 
         $result = $componentStock->calculateAllocation(
