@@ -23,17 +23,18 @@ class CenterAllocationController extends Controller
      */
     public function index()
     {
-        // Get all centers - will be filtered by level via JavaScript
-        $centers = Center::orderBy('center_no')->get(['center_no', 'center_name', 'level']);
+        $levels = Level::where('is_active', true)->orderBy('id')->get();
         
-        $levels = Level::where('is_active', true)
-            ->orderBy('id')
-            ->get();
+        // Get all financial years from sessions
+        $financialYears = Session::whereNotNull('financial_year')
+            ->distinct()
+            ->orderBy('financial_year', 'desc')
+            ->pluck('financial_year');
         
-        // Get all sessions
         $sessions = Session::orderBy('session')->get();
         
-        // Load components with subject for dropdown
+        $centers = Center::orderBy('center_no')->get(['center_no', 'center_name', 'level']);
+        
         $components = Component::with('subject')
             ->orderBy('subject_code')
             ->orderBy('component_code')
@@ -41,83 +42,18 @@ class CenterAllocationController extends Controller
 
         $subjects = Subject::orderBy('subject_name')->get(['subject_code', 'subject_name']);
 
-        return view('admin.stationery.allocation.index', compact('centers', 'sessions', 'subjects', 'components', 'levels'));
+        return view('admin.stationery.allocation.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
     }
 
     /**
-     * Get centers filtered by level - AJAX endpoint
+     * Get sessions filtered by level and financial year - AJAX endpoint
      */
-    public function getCentersByLevel(Request $request)
-    {
-        $levelId = $request->level;
-        
-        \Log::info('Getting centers by level', [
-            'level_id_requested' => $levelId
-        ]);
-        
-        // Get the level details to understand what we're filtering by
-        $level = Level::find($levelId);
-        
-        if (!$level) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Level not found'
-            ]);
-        }
-        
-        \Log::info('Level found', [
-            'level_id' => $level->id,
-            'level_description' => $level->description
-        ]);
-        
-        // Try multiple approaches to find centers
-        // Approach 1: Check center's level field (might be storing level ID, description, or code)
-        $centersDirectMatch = Center::where(function($q) use ($level, $levelId) {
-            $q->where('level', $levelId)
-              ->orWhere('level', $level->id)
-              ->orWhere('level', $level->description);
-        })->get(['center_no', 'center_name', 'level']);
-        
-        // Approach 2: Check many-to-many relationship
-        $centersRelationship = Center::whereHas('levels', function($q) use ($levelId) {
-            $q->where('levels.id', $levelId);
-        })->get(['center_no', 'center_name', 'level']);
-        
-        // Merge both results and remove duplicates
-        $centers = $centersDirectMatch->merge($centersRelationship)->unique('center_no');
-        
-        \Log::info('Centers found', [
-            'direct_match_count' => $centersDirectMatch->count(),
-            'relationship_match_count' => $centersRelationship->count(),
-            'total_unique_centers' => $centers->count(),
-            'sample_center_level_values' => $centers->take(5)->pluck('level')->toArray()
-        ]);
-        
-        // Sort by center_no
-        $centers = $centers->sortBy('center_no')->values();
-        
-        return response()->json([
-            'success' => true,
-            'centers' => $centers,
-            'debug' => [
-                'level_searched' => $level->description,
-                'direct_matches' => $centersDirectMatch->count(),
-                'relationship_matches' => $centersRelationship->count()
-            ]
-        ]);
-    }
-
-    /**
-     * Get sessions filtered by financial year - AJAX endpoint
-     */
-    public function getSessionsByLevel(Request $request)
+    public function getSessionsByFilters(Request $request)
     {
         $level = $request->level;
         $financialYear = $request->financial_year;
         
-        // Get all sessions, optionally filtered by financial year
-        $sessions = Session::query()
-            ->when($financialYear, function($q) use ($financialYear) {
+        $sessions = Session::when($financialYear, function($q) use ($financialYear) {
                 $q->where('financial_year', $financialYear);
             })
             ->where('is_active', true)
@@ -131,48 +67,149 @@ class CenterAllocationController extends Controller
     }
 
     /**
-     * Get components filtered by level and session - AJAX endpoint
+     * Get centers filtered by level, financial year and session - AJAX endpoint
+     */
+    public function getCentersByFilters(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+        $sessionId = $request->session_id;
+        
+        if (!$level || !$sessionId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level and Session are required'
+            ]);
+        }
+        
+        $session = Session::find($sessionId);
+        
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found'
+            ]);
+        }
+        
+        // Get level details
+        $levelData = Level::find($level);
+        
+        // Get centers that have candidates for this level, financial year and session
+        $centers = DB::table('center_candidate')
+            ->select('center_candidate.center_no', 'centers.center_name')
+            ->join('centers', 'center_candidate.center_no', '=', 'centers.center_no')
+            ->where('center_candidate.level', $levelData ? $levelData->description : $level)
+            ->where('center_candidate.financial_year', $financialYear)
+            ->where('center_candidate.session', $session->session)
+            ->groupBy('center_candidate.center_no', 'centers.center_name')
+            ->orderBy('center_candidate.center_no')
+            ->get();
+        
+        \Log::info('Centers loaded for filters', [
+            'level' => $levelData ? $levelData->description : $level,
+            'financial_year' => $financialYear,
+            'session' => $session->session,
+            'centers_count' => $centers->count()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'centers' => $centers
+        ]);
+    }
+
+    /**
+     * Get components filtered by level, financial year, session and center - AJAX endpoint
      */
     public function getComponentsByFilters(Request $request)
     {
         $level = $request->level;
+        $financialYear = $request->financial_year;
         $sessionId = $request->session_id;
+        $centerNo = $request->center_no;
         
-        // Get session details if provided
-        $session = null;
-        if ($sessionId) {
-            $session = Session::find($sessionId);
+        if (!$level || !$sessionId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level and Session are required'
+            ]);
         }
         
-        // Build query for components based on subjects that match the level
-        $componentsQuery = Component::with('subject')
-            ->whereHas('subject', function($q) use ($level) {
-                if ($level) {
-                    $q->where('level', $level);
-                }
-            })
-            ->orderBy('subject_code')
-            ->orderBy('component_code');
+        $session = Session::find($sessionId);
         
-        $components = $componentsQuery->get(['id', 'component_name', 'subject_code', 'component_code']);
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found'
+            ]);
+        }
+        
+        // Get level details
+        $levelData = Level::find($level);
+        
+        // Get components that have candidates registered in this level, center, session, and financial year
+        $componentsQuery = DB::table('center_candidate')
+            ->select(
+                'components.id',
+                'components.component_name',
+                'components.subject_code',
+                'components.component_code',
+                'subjects.subject_name',
+                DB::raw('COUNT(DISTINCT center_candidate.candidate_no) as candidate_count')
+            )
+             
+            ->join('candidate_subject', function($join) {
+                $join->on('center_candidate.candidate_no', '=', 'candidate_subject.candidate_no')
+                    ->on('center_candidate.session', '=', 'candidate_subject.session')
+                    ->on('center_candidate.financial_year', '=', 'candidate_subject.financial_year')
+                    ->on('center_candidate.level', '=', 'candidate_subject.level');
+            })
+             ->join('subjects', 'candidate_subject.subject_code', '=', 'subjects.subject_code')
+            ->join('timetable', 'candidate_subject.subject_code', '=', 'timetable.subject_code')
+            ->join('components', function($join) {
+                $join->on('timetable.subject_code', '=', 'components.subject_code')
+                    ->on('timetable.paper_no', '=', 'components.component_code');
+            })
+            ->where('center_candidate.level', $levelData ? $levelData->description : $level)
+            ->where('center_candidate.financial_year', $financialYear)
+            ->where('center_candidate.session', $session->session);
+        
+        if ($centerNo) {
+            $componentsQuery->where('center_candidate.center_no', $centerNo);
+        }
+        
+        $components = $componentsQuery
+            ->groupBy('components.id', 'components.component_name', 'components.subject_code', 'components.component_code')
+            ->orderBy('components.subject_code')
+            ->orderBy('components.component_code')
+            ->get();
+        
+        \Log::info('Components loaded', [
+            'level' => $levelData ? $levelData->description : $level,
+            'financial_year' => $financialYear,
+            'session' => $session->session,
+            'center_no' => $centerNo,
+            'components_count' => $components->count()
+        ]);
         
         return response()->json([
             'success' => true,
-            'components' => $components,
-            'session' => $session
+            'components' => $components
         ]);
     }
 
     /**
      * Generate allocation report
      */
-  public function generateReport(Request $request)
+    public function generateReport(Request $request)
     {
         try {
             $validated = $request->validate([
-                'center_no' => 'required|exists:centers,center_no',
+                'level' => 'required|exists:levels,id',
+                'financial_year' => 'required|string',
                 'session_id' => 'required|exists:sessions,id',
-                //'subject_code' => 'nullable|exists:subjects,subject_code',
+                'center_no' => 'required|exists:centers,center_no',
+                'component_id' => 'nullable|exists:components,id',
             ]);
 
             \Log::info('Generating allocation report', $validated);
@@ -183,83 +220,109 @@ class CenterAllocationController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Center not found'
-                ], 404);
+                ]);
             }
 
-            // Get the session details
             $session = Session::find($validated['session_id']);
             
             if (!$session) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session not found'
-                ], 404);
+                ]);
             }
             
-            \Log::info('Session details', [
-                'session_id' => $session->id,
-                'session_name' => $session->session,
-                'financial_year' => $session->financial_year ?? null
-            ]);
-
-            // Get candidates for this center and session
-            // The center_candidate table has 'session' field which contains the session NAME not ID
-            $candidatesQuery = CenterCandidate::where('center_no', $validated['center_no'])
-                ->where('session', $session->session); // Match with session name/value
+            $level = Level::find($validated['level']);
             
-            if (isset($validated['subject_code'])) {
-                // Filter by subject if provided
-                $candidatesQuery->where('subject_number', 'LIKE', '%' . $validated['subject_code'] . '%');
-            }
-            
-            $candidates = $candidatesQuery->get();
-            $numCandidates = $candidates->count();
-            
-            \Log::info('Candidates search result', [
-                'center_no' => $validated['center_no'],
-                'session_searched' => $session->session,
-                'candidates_found' => $numCandidates,
-                'total_candidates_in_center' => CenterCandidate::where('center_no', $validated['center_no'])->count(),
-                'sample_candidate_session' => $candidates->first() ? $candidates->first()->session : 'no candidates'
-            ]);
-            
-            if ($numCandidates == 0) {
-                // Provide helpful debugging info
-                $allCandidatesInCenter = CenterCandidate::where('center_no', $validated['center_no'])
-                    ->select('session')
-                    ->groupBy('session')
-                    ->pluck('session')
-                    ->toArray();
-                
+            if (!$level) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No candidates found for this center and session. Please verify that candidates are registered.',
-                    'debug' => [
-                        'searched_for_session' => $session->session,
-                        'available_sessions_in_center' => $allCandidatesInCenter,
-                        'hint' => 'The session value might not match. Available sessions in this center: ' . implode(', ', $allCandidatesInCenter)
-                    ]
+                    'message' => 'Level not found'
+                ]);
+            }
+            
+            \Log::info('Session and level details', [
+                'session_id' => $session->id,
+                'session_name' => $session->session,
+                'level_id' => $level->id,
+                'level_description' => $level->description,
+                'financial_year' => $validated['financial_year']
+            ]);
+
+            // Get candidate counts per component for this level, center, session, and financial year
+            $componentCandidatesQuery = DB::table('center_candidate')
+                ->select(
+                    'components.id as component_id',
+                    'components.component_name',
+                    'components.subject_code',
+                    'components.component_code',
+                    DB::raw('COUNT(DISTINCT center_candidate.candidate_no) as candidate_count')
+                )
+                ->join('candidate_subject', function($join) {
+                    $join->on('center_candidate.candidate_no', '=', 'candidate_subject.candidate_no')
+                        ->on('center_candidate.session', '=', 'candidate_subject.session')
+                        ->on('center_candidate.financial_year', '=', 'candidate_subject.financial_year')
+                        ->on('center_candidate.level', '=', 'candidate_subject.level');
+                })
+                ->join('timetable', 'candidate_subject.subject_code', '=', 'timetable.subject_code')
+                ->join('components', function($join) {
+                    $join->on('timetable.subject_code', '=', 'components.subject_code')
+                        ->on('timetable.paper_no', '=', 'components.component_code');
+                })
+                ->where('center_candidate.center_no', $validated['center_no'])
+                ->where('center_candidate.level', $level->description)
+                ->where('center_candidate.session', $session->session)
+                ->where('center_candidate.financial_year', $validated['financial_year']);
+            
+            // Filter by specific component if provided
+            if (isset($validated['component_id'])) {
+                $componentCandidatesQuery->where('components.id', $validated['component_id']);
+            }
+            
+            $componentCandidates = $componentCandidatesQuery
+                ->groupBy('components.id', 'components.component_name', 'components.subject_code', 'components.component_code')
+                ->get();
+            
+            $totalCandidates = $componentCandidates->sum('candidate_count');
+            
+            \Log::info('Component candidates result', [
+                'center_no' => $validated['center_no'],
+                'level' => $level->description,
+                'session' => $session->session,
+                'financial_year' => $validated['financial_year'],
+                'components_with_candidates' => $componentCandidates->count(),
+                'total_candidate_registrations' => $totalCandidates
+            ]);
+            
+            if ($componentCandidates->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No candidates found registered for any components in this level, center, session, and financial year.'
                 ]);
             }
 
-            // Get number of invigilators
-            $numInvigilators = $this->estimateInvigilators($numCandidates);
-
-            // Get components for the subject(s)
-            $components = $this->getComponentsForAllocation($validated);
+            // Get number of unique candidates
+            $uniqueCandidates = DB::table('center_candidate')
+                ->where('center_no', $validated['center_no'])
+                ->where('level', $level->description)
+                ->where('session', $session->session)
+                ->where('financial_year', $validated['financial_year'])
+                ->distinct('candidate_no')
+                ->count('candidate_no');
             
-            \Log::info('Components found', ['count' => $components->count()]);
-            
-            if ($components->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No components found for the selected subject(s). Please configure components first.'
-                ], 404);
-            }
+            $numInvigilators = $this->estimateInvigilators($uniqueCandidates);
 
             $allocations = [];
             
-            foreach ($components as $component) {
+            foreach ($componentCandidates as $componentCandidate) {
+                $component = Component::find($componentCandidate->component_id);
+                
+                if (!$component) {
+                    continue;
+                }
+                
+                $numCandidates = $componentCandidate->candidate_count;
+                
                 // Get component stocks with allocation rules
                 $componentStocks = ComponentStock::where('component_id', $component->id)
                     ->where('is_active', true)
@@ -269,6 +332,7 @@ class CenterAllocationController extends Controller
                 \Log::info('Component stocks found', [
                     'component_id' => $component->id,
                     'component_name' => $component->component_name,
+                    'candidates_registered' => $numCandidates,
                     'stocks_count' => $componentStocks->count()
                 ]);
 
@@ -279,7 +343,7 @@ class CenterAllocationController extends Controller
 
                 foreach ($componentStocks as $componentStock) {
                     try {
-                        // Calculate allocation
+                        // Calculate allocation based on actual candidates for this component
                         $calculation = $componentStock->calculateAllocation(
                             $numCandidates,
                             $numInvigilators,
@@ -301,6 +365,9 @@ class CenterAllocationController extends Controller
                                 'id' => $component->id,
                                 'component_code' => $component->component_code,
                                 'component_name' => $component->component_name,
+                                'subject_code' => $component->subject_code,
+                                'full_code' => $component->subject_code . '-' . $component->component_code,
+                                'candidates_registered' => $numCandidates,
                             ],
                             'stock_item' => [
                                 'id' => $stockItem->id,
@@ -339,16 +406,22 @@ class CenterAllocationController extends Controller
                         'center_name' => $center->center_name,
                         'district' => $center->district,
                     ],
-                    'num_candidates' => $numCandidates,
+                    'level' => [
+                        'id' => $level->id,
+                        'description' => $level->description,
+                    ],
+                    'num_candidates' => $uniqueCandidates,
+                    'total_component_registrations' => $totalCandidates,
                     'num_invigilators' => $numInvigilators,
                     'allocations' => $allocations,
                     'session' => [
                         'id' => $session->id,
                         'session' => $session->session,
+                        'financial_year' => $validated['financial_year'],
                         'description' => $session->description ?? null,
                     ],
-                    'subject' => isset($validated['subject_code']) 
-                        ? Subject::find($validated['subject_code']) 
+                    'component' => isset($validated['component_id']) 
+                        ? Component::with('subject')->find($validated['component_id']) 
                         : null,
                 ]
             ]);
@@ -370,24 +443,8 @@ class CenterAllocationController extends Controller
                 'message' => 'Error generating report: ' . $e->getMessage()
             ]);
         }
-    
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'center' => $center,
-                'num_candidates' => $numCandidates,
-                'num_invigilators' => $numInvigilators,
-                'allocations' => $allocations,
-                'session' => Session::find($validated['session_id']),
-                'subject' => isset($validated['subject_code']) 
-                    ? Subject::find($validated['subject_code']) 
-                    : null,
-            ]
-        ]);
     }
 
-
-   
     /**
      * Save allocation to database
      */
@@ -537,7 +594,6 @@ class CenterAllocationController extends Controller
         $sessions = Session::orderBy('session')->get(['id', 'session']);
         $levels = Level::where('is_active', true)->orderBy('id')->get();
 
-
         return view('admin.stationery.allocation.view', compact('centers', 'sessions', 'levels'));
     }
 
@@ -631,21 +687,5 @@ class CenterAllocationController extends Controller
     {
         // Assuming 1 invigilator per 25 candidates
         return (int) ceil($numCandidates / 25);
-    }
-
-    /**
-     * Helper: Get components for allocation
-     */
-    private function getComponentsForAllocation($validated)
-    {
-        $query = Component::query();
-
-        if (isset($validated['component_id'])) {
-            $query->where('id', $validated['component_id']);
-        } elseif (isset($validated['subject_code'])) {
-            $query->where('subject_code', $validated['subject_code']);
-        }
-
-        return $query->get();
     }
 }
