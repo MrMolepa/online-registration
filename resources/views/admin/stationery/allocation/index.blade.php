@@ -356,7 +356,8 @@ $(document).ready(function() {
                     response.components.forEach(comp => {
                         const paddedSubjectCode = String(comp.subject_code).padStart(4, '0'); 
                         const paddedComponentCode = String(comp.component_code).padStart(2, '0'); 
-                        componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${paddedComponentCode}) - ${comp.candidate_count} candidates</option>`;
+                         const subjectname = comp.subject_name; 
+                        componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${paddedComponentCode}) -${comp.subject_name} - ${comp.candidate_count} candidates</option>`;
                     });
                     $('#component_id').html(componentOptions);
                     
