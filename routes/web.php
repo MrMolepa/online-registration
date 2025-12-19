@@ -329,7 +329,6 @@ Route::prefix('menus')->name('menus.')->group(function () {
 
 });
 
-
  Route::prefix('stationery')->name('stationery.')->group(function () {
             
             // ==================== Stock Types ====================
@@ -354,20 +353,21 @@ Route::prefix('menus')->name('menus.')->group(function () {
             Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
                 ->name('stock-items.options');   
             
-            // ==================== Component Stocks ====================
-             Route::get('components/{component}/stock', [ComponentStockController::class, 'index'])
+           // ==================== Component Stocks ====================
+            Route::get('component-stock', [ComponentStockController::class, 'index'])
                 ->name('component-stock.index');
-            Route::post('components/{component}/stock', [ComponentStockController::class, 'store'])
+            Route::post('component-stock/get-component', [ComponentStockController::class, 'getComponent'])
+                ->name('component-stock.get-component');
+            Route::post('component-stock', [ComponentStockController::class, 'store'])
                 ->name('component-stock.store');
-            Route::get('components/{component}/stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
+            Route::get('component-stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
                 ->name('component-stock.edit');
-            Route::put('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'update'])
+            Route::put('component-stock/{componentStock}', [ComponentStockController::class, 'update'])
                 ->name('component-stock.update');
-            Route::delete('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'destroy'])
+            Route::delete('component-stock/{componentStock}', [ComponentStockController::class, 'destroy'])
                 ->name('component-stock.destroy');
-            Route::post('components/{component}/stock/test', [ComponentStockController::class, 'testCalculation'])
+            Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
-
         
             Route::prefix('allocation')->name('allocation.')->group(function () {
             // Main allocation page
