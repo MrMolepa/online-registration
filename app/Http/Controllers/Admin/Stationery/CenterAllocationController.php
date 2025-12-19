@@ -13,6 +13,7 @@ use App\Models\StockItem;
 use App\Models\Subject;
 use App\Models\Level;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session as FacadesSession;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -201,7 +202,7 @@ class CenterAllocationController extends Controller
     /**
      * Generate allocation report
      */
-    public function generateReport(Request $request)
+   public function generateReport(Request $request)
     {
         try {
             $validated = $request->validate([
@@ -291,7 +292,8 @@ class CenterAllocationController extends Controller
                 'session' => $session->session,
                 'financial_year' => $validated['financial_year'],
                 'components_with_candidates' => $componentCandidates->count(),
-                'total_candidate_registrations' => $totalCandidates
+                'total_candidate_registrations' => $totalCandidates,
+                'specific_component' => isset($validated['component_id']) ? 'Yes' : 'No'
             ]);
             
             if ($componentCandidates->isEmpty()) {
@@ -313,90 +315,203 @@ class CenterAllocationController extends Controller
             $numInvigilators = $this->estimateInvigilators($uniqueCandidates);
 
             $allocations = [];
+            $componentsWithoutRules = [];
             
-            foreach ($componentCandidates as $componentCandidate) {
-                $component = Component::find($componentCandidate->component_id);
+            // If no specific component selected, get ALL components with allocation rules
+            // and match them with candidate data
+            if (!isset($validated['component_id'])) {
+                \Log::info('No specific component selected - allocating for all components with rules');
                 
-                if (!$component) {
-                    continue;
-                }
+                // Get all component IDs that have candidates
+                $componentIdsWithCandidates = $componentCandidates->pluck('component_id')->toArray();
                 
-                $numCandidates = $componentCandidate->candidate_count;
+                // Get all components that have allocation rules configured
+                $componentsWithRules = Component::whereHas('componentStocks', function($query) {
+                    $query->where('is_active', true);
+                })
+                ->whereIn('id', $componentIdsWithCandidates)
+                ->with(['componentStocks' => function($query) {
+                    $query->where('is_active', true)->with('stockItem.stockType');
+                }])
+                ->get();
                 
-                // Get component stocks with allocation rules
-                $componentStocks = ComponentStock::where('component_id', $component->id)
-                    ->where('is_active', true)
-                    ->with(['stockItem.stockType'])
-                    ->get();
-
-                \Log::info('Component stocks found', [
-                    'component_id' => $component->id,
-                    'component_name' => $component->component_name,
-                    'candidates_registered' => $numCandidates,
-                    'stocks_count' => $componentStocks->count()
+                \Log::info('Components with allocation rules', [
+                    'total_components_with_candidates' => count($componentIdsWithCandidates),
+                    'components_with_rules' => $componentsWithRules->count()
                 ]);
+                
+                // Process each component that has both candidates AND allocation rules
+                foreach ($componentsWithRules as $component) {
+                    // Find the candidate data for this component
+                    $componentCandidateData = $componentCandidates->firstWhere('component_id', $component->id);
+                    
+                    if (!$componentCandidateData) {
+                        continue; // Skip if no candidates for this component
+                    }
+                    
+                    $numCandidates = $componentCandidateData->candidate_count;
+                    
+                    foreach ($component->componentStocks as $componentStock) {
+                        try {
+                            // Calculate allocation based on actual candidates for this component
+                            $calculation = $componentStock->calculateAllocation(
+                                $numCandidates,
+                                $numInvigilators,
+                                []
+                            );
 
-                if ($componentStocks->isEmpty()) {
-                    \Log::warning('No allocation rules found for component', ['component_id' => $component->id]);
-                    continue;
-                }
+                            $stockItem = $componentStock->stockItem;
+                            
+                            if (!$stockItem) {
+                                \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
+                                continue;
+                            }
+                            
+                            $availableStock = $stockItem->stock_qty ?? 0;
+                            $canAllocate = $availableStock >= $calculation['quantity'];
 
-                foreach ($componentStocks as $componentStock) {
-                    try {
-                        // Calculate allocation based on actual candidates for this component
-                        $calculation = $componentStock->calculateAllocation(
-                            $numCandidates,
-                            $numInvigilators,
-                            []
-                        );
-
-                        $stockItem = $componentStock->stockItem;
-                        
-                        if (!$stockItem) {
-                            \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
-                            continue;
+                            $allocations[] = [
+                                'component' => [
+                                    'id' => $component->id,
+                                    'component_code' => $component->component_code,
+                                    'component_name' => $component->component_name,
+                                    'subject_code' => $component->subject_code,
+                                    'full_code' => $component->subject_code . '-' . $component->component_code,
+                                    'candidates_registered' => $numCandidates,
+                                ],
+                                'stock_item' => [
+                                    'id' => $stockItem->id,
+                                    'name' => $stockItem->name,
+                                    'unit' => $stockItem->unit,
+                                    'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
+                                ],
+                                'component_stock' => [
+                                    'id' => $componentStock->id,
+                                    'rule_type' => $componentStock->rule_type,
+                                    'base_qty' => $componentStock->base_qty,
+                                    'multiplier' => $componentStock->multiplier,
+                                ],
+                                'required_qty' => $calculation['quantity'],
+                                'available_stock' => $availableStock,
+                                'can_allocate' => $canAllocate,
+                                'remaining_stock' => $availableStock - $calculation['quantity'],
+                                'breakdown' => $calculation['breakdown'],
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::error('Error calculating allocation', [
+                                'component_id' => $component->id,
+                                'component_stock_id' => $componentStock->id,
+                                'error' => $e->getMessage()
+                            ]);
                         }
-                        
-                        $availableStock = $stockItem->stock_qty ?? 0;
-                        $canAllocate = $availableStock >= $calculation['quantity'];
-
-                        $allocations[] = [
-                            'component' => [
-                                'id' => $component->id,
-                                'component_code' => $component->component_code,
-                                'component_name' => $component->component_name,
-                                'subject_code' => $component->subject_code,
-                                'full_code' => $component->subject_code . '-' . $component->component_code,
-                                'candidates_registered' => $numCandidates,
-                            ],
-                            'stock_item' => [
-                                'id' => $stockItem->id,
-                                'name' => $stockItem->name,
-                                'unit' => $stockItem->unit,
-                                'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
-                            ],
-                            'component_stock' => [
-                                'id' => $componentStock->id,
-                                'rule_type' => $componentStock->rule_type,
-                                'base_qty' => $componentStock->base_qty,
-                                'multiplier' => $componentStock->multiplier,
-                            ],
-                            'required_qty' => $calculation['quantity'],
-                            'available_stock' => $availableStock,
-                            'can_allocate' => $canAllocate,
-                            'remaining_stock' => $availableStock - $calculation['quantity'],
-                            'breakdown' => $calculation['breakdown'],
+                    }
+                }
+                
+                // Track components that have candidates but no allocation rules
+                $componentIdsWithRules = $componentsWithRules->pluck('id')->toArray();
+                foreach ($componentCandidates as $compData) {
+                    if (!in_array($compData->component_id, $componentIdsWithRules)) {
+                        $componentsWithoutRules[] = [
+                            'component_id' => $compData->component_id,
+                            'component_name' => $compData->component_name,
+                            'subject_code' => $compData->subject_code,
+                            'component_code' => $compData->component_code,
+                            'candidate_count' => $compData->candidate_count,
                         ];
-                    } catch (\Exception $e) {
-                        \Log::error('Error calculating allocation', [
-                            'component_stock_id' => $componentStock->id,
-                            'error' => $e->getMessage()
-                        ]);
+                    }
+                }
+                
+            } else {
+                // Specific component selected - original logic
+                \Log::info('Specific component selected - allocating for single component');
+                
+                foreach ($componentCandidates as $componentCandidate) {
+                    $component = Component::find($componentCandidate->component_id);
+                    
+                    if (!$component) {
+                        continue;
+                    }
+                    
+                    $numCandidates = $componentCandidate->candidate_count;
+                    
+                    // Get component stocks with allocation rules
+                    $componentStocks = ComponentStock::where('component_id', $component->id)
+                        ->where('is_active', true)
+                        ->with(['stockItem.stockType'])
+                        ->get();
+
+                    \Log::info('Component stocks found', [
+                        'component_id' => $component->id,
+                        'component_name' => $component->component_name,
+                        'candidates_registered' => $numCandidates,
+                        'stocks_count' => $componentStocks->count()
+                    ]);
+
+                    if ($componentStocks->isEmpty()) {
+                        \Log::warning('No allocation rules found for component', ['component_id' => $component->id]);
+                        continue;
+                    }
+
+                    foreach ($componentStocks as $componentStock) {
+                        try {
+                            // Calculate allocation based on actual candidates for this component
+                            $calculation = $componentStock->calculateAllocation(
+                                $numCandidates,
+                                $numInvigilators,
+                                []
+                            );
+
+                            $stockItem = $componentStock->stockItem;
+                            
+                            if (!$stockItem) {
+                                \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
+                                continue;
+                            }
+                            
+                            $availableStock = $stockItem->stock_qty ?? 0;
+                            $canAllocate = $availableStock >= $calculation['quantity'];
+
+                            $allocations[] = [
+                                'component' => [
+                                    'id' => $component->id,
+                                    'component_code' => $component->component_code,
+                                    'component_name' => $component->component_name,
+                                    'subject_code' => $component->subject_code,
+                                    'full_code' => $component->subject_code . '-' . $component->component_code,
+                                    'candidates_registered' => $numCandidates,
+                                ],
+                                'stock_item' => [
+                                    'id' => $stockItem->id,
+                                    'name' => $stockItem->name,
+                                    'unit' => $stockItem->unit,
+                                    'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
+                                ],
+                                'component_stock' => [
+                                    'id' => $componentStock->id,
+                                    'rule_type' => $componentStock->rule_type,
+                                    'base_qty' => $componentStock->base_qty,
+                                    'multiplier' => $componentStock->multiplier,
+                                ],
+                                'required_qty' => $calculation['quantity'],
+                                'available_stock' => $availableStock, 
+                                'can_allocate' => $canAllocate,
+                                'remaining_stock' => $availableStock - $calculation['quantity'],
+                                'breakdown' => $calculation['breakdown'],
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::error('Error calculating allocation', [
+                                'component_stock_id' => $componentStock->id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
                     }
                 }
             }
             
-            \Log::info('Total allocations generated', ['count' => count($allocations)]);
+            \Log::info('Total allocations generated', [
+                'allocations_count' => count($allocations),
+                'components_without_rules_count' => count($componentsWithoutRules)
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -414,6 +529,7 @@ class CenterAllocationController extends Controller
                     'total_component_registrations' => $totalCandidates,
                     'num_invigilators' => $numInvigilators,
                     'allocations' => $allocations,
+                    'components_without_rules' => $componentsWithoutRules,
                     'session' => [
                         'id' => $session->id,
                         'session' => $session->session,
@@ -426,7 +542,7 @@ class CenterAllocationController extends Controller
                 ]
             ]);
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
@@ -444,7 +560,6 @@ class CenterAllocationController extends Controller
             ]);
         }
     }
-
     /**
      * Save allocation to database
      */
@@ -460,7 +575,7 @@ class CenterAllocationController extends Controller
             'allocations.*.breakdown' => 'nullable|array',
         ]);
 
-        DB::beginTransaction();
+        DB::beginTransaction(); 
         
         try {
             $savedAllocations = [];
@@ -596,7 +711,7 @@ class CenterAllocationController extends Controller
 
         return view('admin.stationery.allocation.view', compact('centers', 'sessions', 'levels'));
     }
-
+    //                             
     /**
      * Mark allocation as dispatched
      */
@@ -638,7 +753,7 @@ class CenterAllocationController extends Controller
                 'message' => 'Cannot cancel dispatched or received allocation'
             ]);
         }
-
+ 
         DB::beginTransaction();
         
         try {
@@ -647,7 +762,7 @@ class CenterAllocationController extends Controller
             
             $allocation->delete();
 
-            DB::commit();
+                        DB::commit();
 
             return response()->json([
                 'success' => true,
