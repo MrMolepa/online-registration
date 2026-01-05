@@ -14,18 +14,21 @@ class MenuTable extends Migration
     public function up(): void
     {
         Schema::create('menus', function (Blueprint $table) {
-            $table->id()->unsignedBigInteger(); // Primary key
-            $table->string('name');                   // Menu text
-            $table->string('route')->nullable();       // Laravel route name
-            $table->string('icon')->nullable();        // e.g. "fas fa-home"
-            $table->string('role')->nullable();        // e.g. "admin", "teacher"
-            $table->string('permission')->nullable();  // optional permission name
-            $table->unsignedBigInteger('parent_id')->nullable(); // for nesting
+            $table->id();  // FIXED
+
+            $table->string('name');
+            $table->string('route')->nullable();
+            $table->string('icon')->nullable();
+            $table->string('role')->nullable();
+            $table->string('permission')->nullable();
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->integer('order')->default(0);
-            
-            $table->boolean('is_active')->default(true);    // for sorting
+            $table->string('guard_name')->default('web');
+            $table->boolean('is_active')->default(true);
+
             $table->timestamps();
         });
+
     }
 
     public function down(): void

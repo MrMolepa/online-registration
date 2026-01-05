@@ -24,8 +24,25 @@ class Role extends LaratrustRole
     protected static $logAttributes = [
         'name', 'display_name', 'description'
     ];
+    // In Role.php
+    public function menuPermissions()
+    {
+        return $this->belongsToMany(Permission::class, 'menu_permission')
+                    ->withPivot('menu_id')
+                    ->withTimestamps();
+    }
+
+    public function menusWithPermission($permissionId)
+    {
+        return $this->belongsToMany(Menu::class, 'menu_permission')
+                    ->wherePivot('permission_id', $permissionId);
+    }
 
 
+    public function menus()
+    {
+        return $this->belongsToMany(Menu::class, 'menu_role');
+    }
 
      /**
      * Get all of the post's comments.

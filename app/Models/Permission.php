@@ -23,4 +23,9 @@ class Permission extends LaratrustPermission
     protected static $logAttributes = [
         'name', 'display_name', 'description'
     ];
+    
+     public function menus()
+    {
+        return $this->belongsToMany(Menu::class, 'menu_permission');
+    }
 }

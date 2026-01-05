@@ -6,6 +6,7 @@ use App\Models\Menu;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MenuServiceProvider extends ServiceProvider
 {
@@ -17,78 +18,43 @@ class MenuServiceProvider extends ServiceProvider
         //
     }
 
-    /**
-     * Bootstrap services.
-     */
-    // public function boot(): void
-    // {
-    //     // Share menu data with sidebar view
-    //     View::composer('admin.partials.sidebar', function ($view) {
-    //         $menus = $this->getAuthorizedMenus();
-    //         $view->with('dynamicMenus', $menus);
-    //     });
-    // }
-//  public function boot()
-// {
-//     view()->composer('admin.partials.sidebar', function ($view) {
 
-//         $user = auth()->user();
-//         if (!$user) {
-//             return; // no user logged in
-//         }
-
-//         // Get role IDs
-//         $roleIds = $user->roles->pluck('id')->toArray();
-
-//         // Menu permission IDs
-//         $allowedMenuIds = \DB::table('menu_permissions')
-//             ->whereIn('role_id', $roleIds)
-//             ->pluck('menu_id')
-//             ->toArray();
-
-//         // Load ALL allowed menus (parents + singles)
-//         $menus = \App\Models\Menu::whereIn('id', $allowedMenuIds)
-//             ->orderBy('order', 'asc')
-//             ->with(['children' => function ($q) use ($allowedMenuIds) {
-//                 $q->whereIn('id', $allowedMenuIds)
-//                   ->orderBy('order', 'asc');
-//             }])
-//             ->get();
-
-//         // Only show parent menus (parent_id = null)
-//         $parents = $menus->whereNull('parent_id');
-
-//         // Filter parents:
-//         // - show parents that have children
-//         // - or parents that are single menu items (no children)
-//         $finalMenus = $parents->filter(function ($menu) {
-//             return $menu->children->isNotEmpty() || is_null($menu->parent_id);
-//         });
-
-//         $view->with('dynamicMenus', $finalMenus);
-//     });
-// }
 
 public function boot()
 {
-    view()->composer('admin.partials.sidebar', function ($view) {
+    view()->composer(
+    ['admin.partials.sidebar', 'school.partials.sidebar', 'candidate.partials.sidebar'],
+    function ($view) {
 
         $user = auth()->user();
         if (!$user) {
             return;
         }
 
-        // 1. Get user role IDs
-        $roleIds = $user->roles->pluck('id')->toArray();
+        //  direct
+     $directPermissionIds = $user->permissions->pluck('id')->toArray();
+
+
+    //permissions ONLY from roles (not direct)
+        $permissionIds = $user->roles
+                    ->load('permissions')
+                    ->pluck('permissions')
+                    ->flatten()
+                    ->pluck('id')
+                    ->unique()
+                    ->toArray();
+
+
+$merged = array_merge($directPermissionIds,  $permissionIds);
 
         // 2. Get all menu IDs this user has access to
-        $allowedMenuIds = \DB::table('menu_permissions')
-            ->whereIn('role_id', $roleIds)
+        $allowedMenuIds = DB::table('menu_permission')
+            ->whereIn('permission_id',$merged)
             ->pluck('menu_id')
             ->toArray();
 
         // 3. Load allowed parent menus
-        $parents = \App\Models\Menu::whereNull('parent_id')
+        $parents = Menu::whereNull('parent_id')
             ->whereIn('id', $allowedMenuIds)  // only allowed parents
             ->orderBy('order', 'asc')
             ->get();
@@ -100,7 +66,7 @@ public function boot()
 
 
 
-        
+
 
 
 
