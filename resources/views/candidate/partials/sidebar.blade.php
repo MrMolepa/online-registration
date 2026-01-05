@@ -1,28 +1,49 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.home') }}">
-                <i class="mdi mdi-home menu-icon"></i>
-                <span class="menu-title">Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.profile.index') }}">
-                <i class="mdi menu-icon mdi-account-circle"></i>
-                <span class="menu-title">Candidate Profile</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.profile.kin') }}">
-                <i class="mdi mdi-account-network menu-icon"></i>
-                <span class="menu-title">Next of Kin</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.payment') }}">
-                <i class="mdi mdi-cash-multiple  menu-icon"></i>
-                <span class="menu-title">Payments</span>
-            </a>
-        </li>
-    </ul>
+
+                {{-- Dynamic Menu Items --}}
+                @if(isset($dynamicMenus) && $dynamicMenus->isNotEmpty())
+                    @foreach($dynamicMenus as $menu)
+                        <li>
+                            @if($menu->children && $menu->children->isNotEmpty())
+                                {{-- Parent Menu with Children --}}
+                                <a href="#{{ getMenuCollapseId($menu) }}"
+                                   data-toggle="collapse"
+                                   class="{{ isMenuActive($menu) ? '' : 'collapsed' }}">
+                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
+                                    <span>{{ $menu->name }}</span>
+                                    <i class="icon-submenu lnr lnr-chevron-left"></i>
+                                </a>
+                                <div id="{{ getMenuCollapseId($menu) }}"
+                                     class="collapse {{ isMenuActive($menu) ? 'in' : '' }}">
+                                    <ul class="nav">
+                                        @foreach($menu->children as $child)
+                                            <li>
+                                                <a href="{{ $child->route ? route($child->route) : '#' }}"
+                                                   class="{{ isActiveRoute($child->route) ? 'active' : '' }}">
+                                                    @if($child->icon)
+                                                        <i class="{{ $child->icon }}"></i>
+                                                    @endif
+                                                    {{ $child->name }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @else
+                                {{-- Single Menu Item --}}
+                                <a href="{{ $menu->route ? route($menu->route) : '#' }}"
+                                   class="{{ isActiveRoute($menu->route) ? 'active' : '' }}">
+                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
+                                    <span>{{ $menu->name }}</span>
+                                </a>
+                            @endif
+                        </li>
+                    @endforeach
+                @endif
+
+
+            </ul>
 </nav>
+
+

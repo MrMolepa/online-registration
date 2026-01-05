@@ -22,7 +22,7 @@ class Menu extends Model
 
     ];
 
-    protected static function boot() 
+    protected static function boot()
     {
         parent::boot();
 
@@ -32,7 +32,7 @@ class Menu extends Model
             }else{
                 $menu->order = Menu::whereNull('parent_id')->max('order') + 1;
         }
-        
+
     });
 
         static::deleted(function ($menu){
@@ -45,8 +45,8 @@ class Menu extends Model
             $count = 1;
             foreach ($siblings as $sibling) {
                 $sibling->update(['order' => $count++]);
-            }        
-        
+            }
+
             });
 
     }
@@ -60,12 +60,20 @@ class Menu extends Model
     public function parent()
     {
         return $this->belongsTo(Menu::class, 'parent_id');
-    }   
+    }
 
+    // Menus assigned to roles
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'menu_role');
+    }
+
+    // Menus linked to permissions
     public function permissions()
     {
-        return $this->hasMany(MenuPermission::class, 'menu_id');
+        return $this->belongsToMany(Permission::class, 'menu_permission');
     }
+
 
     protected $casts = [
         'is_active' => 'boolean',

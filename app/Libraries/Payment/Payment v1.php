@@ -58,7 +58,7 @@ class Payment
             $q->where('name', '=', 'LGCSE7');
         })->get()->pluck('subject_code')->toArray();
         // Sponsor
-           $sponsors = DB::table('center_candidate')->select(
+        $sponsors = DB::table('center_candidate')->select(
             [
                 'center_candidate.sponser'
             ],
@@ -115,7 +115,7 @@ class Payment
                     $join->on('center_candidate.session', '=', 'candidate_subject.session');
                     $join->on('center_candidate.financial_year', '=', 'candidate_subject.financial_year');
                 })
-                ->groupBy(['center_candidate.candidate_no','center_candidate.financial_year', 'center_candidate.level', 'center_candidate.session'])
+                ->groupBy(['center_candidate.candidate_no', 'center_candidate.financial_year', 'center_candidate.level', 'center_candidate.session'])
                 ->where('center_candidate.center_no', '=', $center)
                 ->where('center_candidate.level', '=', $level)
                 ->where('center_candidate.financial_year', '=',  $financial_year)
@@ -231,6 +231,7 @@ class Payment
         }
         // Amount paid
         $amount_paid_bank_statement = BankStatement::where('center_id', '=', $center)
+
             ->where('checked_status', '=', 2)
             ->where('financial_year', '=', $financial_year)
             ->sum('amount_paid');
@@ -244,6 +245,9 @@ class Payment
         $otherCharge = CenterOtherCharge::where('center_id', '=', $center)
             ->where('financial_year', '=', $financial_year)
             ->sum('charge');
+        //Other Charges
+
+
         $balance = ($total_overdue + $otherCharge)  -  $totalPaidCenter;
         return collect(
             (object) [

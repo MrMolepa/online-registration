@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class MenuRole extends Model
 {
     use HasFactory;
+
 }
