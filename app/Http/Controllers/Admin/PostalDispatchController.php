@@ -40,6 +40,11 @@ class PostalDispatchController extends Controller
             'date' => 'required|date',
         ]);
 
+        // Add the logged-in user's name
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->user()->name ?? auth()->user()->username ?? auth()->user()->email ?? 'Unknown User';
+        }
+
         $log = PostalDispatch::create($validated);
 
         return response()->json([

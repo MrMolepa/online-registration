@@ -20,6 +20,7 @@ class Visitor extends Model
         'date',
         'in_time',
         'out_time',
+        'created_by'
     ];
 
     protected $casts = [

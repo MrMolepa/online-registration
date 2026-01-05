@@ -96,11 +96,11 @@ $merged = array_merge($directPermissionIds,  $permissionIds);
 
         // Get all active parent menus with their children
         $menus = Menu::where('is_active', true)
-            ->where('guard_name', $guardName)// Fetch only menus for the current guard
+            ->where('guard_name', $guardName)
             ->whereNull('parent_id')
             ->with(['children' => function ($query) use ($guardName) {
                 $query->where('is_active', true)
-                    ->where('guard_name', $guardName)// Fetch only active children for the same guard
+                    ->where('guard_name', $guardName)
                     ->orderBy('order');
             }])
             ->orderBy('order')
@@ -121,7 +121,7 @@ $merged = array_merge($directPermissionIds,  $permissionIds);
         })->filter(function ($menu) {
             // Remove parent menus that have no accessible children
             if ($menu->children->isNotEmpty()) {
-                return $menu->children->count() > 0;// Keep parent if it has accessible children
+                return $menu->children->count() > 0;
             }
             return true;
         });
@@ -134,12 +134,12 @@ $merged = array_merge($directPermissionIds,  $permissionIds);
     {
         // Get menu permissions for this menu
         $menuPermissions = $menu->permissions()// Fetch permissions
-            ->with(['role', 'permission'])
-            ->get();// this gets all permissions associated with the menu
+            ->with(['role', 'permission'])// 
+            ->get();
 
         // If no permissions assigned, menu is accessible to all
         if ($menuPermissions->isEmpty()) {
-            return true;
+            return false;
         }
 
         // Get user's roles

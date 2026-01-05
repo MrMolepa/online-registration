@@ -51,35 +51,8 @@
 
 @endsection
 
-@push('styles')
-<style>
-    .label { padding: .3em .6em; border-radius: .25em; }
-    .label-success { background-color: #5cb85c; color: #fff; }
-    .label-danger { background-color: #d9534f; color: #fff; }
-    .mt-3 { margin-top: 20px; }
-</style>
-@endpush
-
 @push('scripts')
 <script>
-    // TOASTER AND NOTIFICATION SETUP
-    toastr.options = {
-        closeButton: true,
-        newestOnTop: false,
-        progressBar: true,
-        positionClass: "toast-top-center",
-        preventDuplicates: false,
-        onclick: null,
-        showDuration: "3000",
-        hideDuration: "8000",
-        timeOut: "10000",
-        extendedTimeOut: "8000",
-        showEasing: "swing",
-        hideEasing: "linear",
-        showMethod: "fadeIn",
-        hideMethod: "fadeOut",
-    };
-
     $(document).ready(function() {
         $.ajaxSetup({
             headers: {
@@ -123,7 +96,7 @@
             });
         }
 
-        // Open modal for Add
+        // Open modal for Add 
         $('#addStockTypeBtn').click(function() {
             $('#stockTypeForm')[0].reset();
             $('#stock_type_id').val('');
@@ -138,14 +111,14 @@
             $('#stockTypeModal').modal('show');
         });
 
-        // Open modal for Edit
+        // Open modal for Edit // its almost 1 hour 30
         $(document).on('click', '.edit-btn', function(e) {
             e.preventDefault();
             let url = $(this).data('url');
 
-            $.ajax({
+            $.ajax({ 
                 url: url,
-                type: 'GET',
+                type: 'GET',l,
                 success: function(response) {
                     if (response.data) {
                         const stockType = response.data;

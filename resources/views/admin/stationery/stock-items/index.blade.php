@@ -20,7 +20,7 @@
                                     </button>
                                     
                                     <div class="mt-3">
-                                        <table class="table table-striped" id="stockItemTable">
+                                        <table class="table table-striped table-bordered" id="stockItemTable">
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
@@ -53,36 +53,9 @@
 
 @endsection
 
-@push('styles')
-<style>
-    .label { padding: .3em .6em; border-radius: .25em; }
-    .label-success { background-color: #5cb85c; color: #fff; }
-    .label-danger { background-color: #d9534f; color: #fff; }
-    .mt-3 { margin-top: 20px; }
-    .text-success { color: #5cb85c; }
-    .text-danger { color: #d9534f; }
-</style>
-@endpush
 
 @push('scripts')
 <script>
-    // TOASTER AND NOTIFICATION SETUP
-    toastr.options = {
-        closeButton: true,
-        newestOnTop: false,
-        progressBar: true,
-        positionClass: "toast-top-center",
-        preventDuplicates: false,
-        onclick: null,
-        showDuration: "3000",
-        hideDuration: "8000",
-        timeOut: "10000",
-        extendedTimeOut: "8000",
-        showEasing: "swing",
-        hideEasing: "linear",
-        showMethod: "fadeIn",
-        hideMethod: "fadeOut",
-    };
 
     $(document).ready(function() {
         $.ajaxSetup({
@@ -109,24 +82,29 @@
         let table = $('#stockItemTable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('admin.stationery.stock-items.index') }}",
-            columns: [
-                {data: 'id', name: 'id'},
-                {data: 'stock_type_name', name: 'stockType.name'},
-                {data: 'name', name: 'name'},
-                {data: 'stock_display', name: 'stock_qty'},
-                {data: 'status_badge', name: 'is_active'},
-                {data: 'created_at', name: 'created_at'},
-                {
-                    data: 'actions',
-                    name: 'actions',
-                    orderable: false,
-                    searchable: false
+            ajax: {
+                url: "{{ route('admin.stationery.stock-items.index') }}",
+                type: 'GET',
+                error: function(xhr, error, code) {
+                    console.log('DataTables Error:', xhr, error, code);
+                    toastr.error('Error loading data. Please refresh the page.');
                 }
-            ]
+            },
+            columns: [
+                {data: 'id', name: 'id', width: '5%'},
+                {data: 'stock_type_name', name: 'stockType.name', width: '18%'},
+                {data: 'name', name: 'name', width: '25%'},
+                {data: 'stock_display', name: 'stock_qty', width: '15%', orderable: true, searchable: false},
+                {data: 'status_badge', name: 'is_active', width: '10%'},
+                {data: 'created_at', name: 'created_at', width: '12%'},
+                {data: 'actions', name: 'actions', orderable: false, searchable: false, width: '15%'}
+            ],
+            order: [[0, 'desc']],
+            pageLength: 10,
+            responsive: true
         });
 
-        // Helper function to fill form fields
+        // Helper function to fill form fields dynamically after fetching data 
         function fillForm(data, formId) {
             const form = $(formId);
             $.each(data, function(key, value) {
@@ -153,15 +131,13 @@
             
             // Set default active status
             $('#is_active').prop('checked', true);
-            
-            // Load stock types
             loadStockTypes();
-            
             $('#stockItemModal').modal('show');
         });
 
         // Open modal for Edit
         $(document).on('click', '.edit-btn', function(e) {
+            loadStockTypes();
             e.preventDefault();
             let url = $(this).data('url');
 
@@ -171,9 +147,6 @@
                 success: function(response) {
                     if (response.data) {
                         const stockItem = response.data;
-                        
-                        // Load stock types first
-                        loadStockTypes();
                         
                         // Small delay to ensure dropdown is populated
                         setTimeout(function() {
@@ -185,7 +158,7 @@
                             $('#stockItemForm').attr('action', response.url);
                             
                             $('#stockItemModal').modal('show');
-                        }, 200);
+                        });
                     } else {
                         toastr.error('Stock item not found');
                     }
@@ -212,7 +185,8 @@
                         $('#view_name').text(stockItem.name || 'N/A');
                         $('#view_stock_type').text(stockItem.stock_type ? stockItem.stock_type.name : 'N/A');
                         $('#view_unit').text(stockItem.unit || 'N/A');
-                        $('#view_stock_qty').text(Number(stockItem.stock_qty).toFixed(2) + ' ' + stockItem.unit);;
+                        $('#view_stock_qty').text(Number(stockItem.stock_qty).toFixed(2) + ' ' + stockItem.unit);
+
                         $('#view_supplier_info').text(stockItem.supplier_info || 'N/A');
                         $('#view_status').html(stockItem.is_active 
                             ? '<span class="label label-success">Active</span>' 

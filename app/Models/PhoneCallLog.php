@@ -19,7 +19,8 @@ class PhoneCallLog extends Model
         'next_follow_up_date',
         'call_duration',
         'note',
-        'call_type'
+        'call_type',
+        'created_by'
     ];
 
     protected $casts = [
