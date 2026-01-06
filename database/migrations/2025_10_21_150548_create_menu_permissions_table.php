@@ -19,14 +19,15 @@ class CreateMenuPermissionsTable extends Migration
             $table->unsignedBigInteger('role_id'); // Foreign key to roles
             $table->unsignedBigInteger('permission_id'); // Foreign key to permissions
             $table->string('guard_name'); // Guard assignment
-            
+             $table->timestamps();//
+
 
             // Foreign key constraints
             $table->foreign('menu_id')->references('id')->on('menus')->onDelete('cascade');
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
             $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
 
-            
+
         });
     }
 

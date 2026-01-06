@@ -55,6 +55,13 @@ use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowInstanceController;
 use App\Http\Controllers\Admin\ApprovalController;
 
+
+//stationery
+use App\Http\Controllers\Admin\Stationery\StockTypeController;
+use App\Http\Controllers\Admin\Stationery\StockItemController;
+use App\Http\Controllers\Admin\Stationery\ComponentStockController;
+use App\Http\Controllers\Admin\Stationery\CenterAllocationController;
+
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
 use App\Http\Controllers\Admin\CandidateRegistrationController;
@@ -273,6 +280,7 @@ Route::group([
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
     Route::middleware(['guest:web', 'PreventBackHistory'])->group(function () {
         Route::get('login', [
             'as' => 'login',
@@ -295,29 +303,126 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('password/reset', 'App\Http\Controllers\Admin\Auth\ResetPasswordController@reset')->name('password.update');
     });
     Route::middleware(['auth:admin', 'PreventBackHistory'])->group(function () {
-        // Menu Permission Routes
-    Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
-    Route::get('/guards', [MenuPermissionController::class, 'getGuards'])->name('guards');    
-    Route::get('/', [MenuPermissionController::class, 'index'])->name('index');
-    Route::post('/', [MenuPermissionController::class, 'store'])->name('store');
-    Route::delete('/{menuPermission}', [MenuPermissionController::class, 'destroy'])->name('destroy');
-    Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])->name('menu');
 
-});
-Route::prefix('menus')->name('menus.')->group(function () {
-    // Main Menu Routes
-    Route::get('/', [MenuController::class, 'index'])->name('index');
-    Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
-    Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
-    Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
-    Route::post('/', [MenuController::class, 'store'])->name('store');
-    Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
-    Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
-    Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-   // Route::get('/guards', [MenuController::class, 'getGuards'])->name('guards');
-   Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
 
-});
+        
+       // Menu Permission Routes (PIVOT-BASED)
+        Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
+
+
+            Route::get('/guards', [MenuPermissionController::class, 'getGuards'])
+                ->name('guards');
+
+
+            // (Optional) Only keep if you really need a list page
+            // Route::get('/', [MenuPermissionController::class, 'index'])->name('index');
+
+
+            // Assign permission to menu
+            Route::post('/', [MenuPermissionController::class, 'store'])
+                ->name('store');
+
+
+            //Detach permission from menu (NO model binding)
+            Route::delete('/', [MenuPermissionController::class, 'destroy'])
+                ->name('destroy');
+
+
+            // Get permissions for a specific menu
+            Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])
+                ->name('menu');
+        });
+
+
+
+
+        Route::prefix('menus')->name('menus.')->group(function () {
+            // Main Menu Routes
+            Route::get('/', [MenuController::class, 'index'])->name('index');
+            Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
+            Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
+            Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
+            Route::post('/', [MenuController::class, 'store'])->name('store');
+            Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
+            Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
+            Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
+            // Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
+            Route::get('/ajax/sidebar', function () {
+                return view('admin.partials.sidebar')->render();
+            })->middleware(['auth:admin']);
+        });
+
+
+ Route::prefix('stationery')->name('stationery.')->group(function () {
+            
+            // ==================== Stock Types ====================
+            Route::resource('stock-types', StockTypeController::class)
+                ->parameters(['stock-types' => 'stockType'])
+                ->except(['create']);
+            Route::get('stock-types/{stockType}/edit', [StockTypeController::class, 'edit'])
+                ->name('stock-types.edit');
+            Route::get('stock-types/{stockType}', [StockTypeController::class, 'show'])
+                ->name('stock-types.show');
+            Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
+                ->name('stock-types.options');
+            
+            // ==================== Stock Items ====================
+            Route::resource('stock-items', StockItemController::class)
+                ->parameters(['stock-items' => 'stockItem'])
+                ->except(['create']);
+            Route::get('stock-items/{stockItem}/edit', [StockItemController::class, 'edit'])
+                ->name('stock-items.edit');
+            Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
+                ->name('stock-items.show');
+            Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
+                ->name('stock-items.options');   
+            
+           // ==================== Component Stocks ====================
+            Route::get('component-stock', [ComponentStockController::class, 'index'])
+                ->name('component-stock.index');
+            Route::post('component-stock/get-component', [ComponentStockController::class, 'getComponent'])
+                ->name('component-stock.get-component');
+            Route::post('component-stock', [ComponentStockController::class, 'store'])
+                ->name('component-stock.store');
+            Route::get('component-stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
+                ->name('component-stock.edit');
+            Route::put('component-stock/{componentStock}', [ComponentStockController::class, 'update'])
+                ->name('component-stock.update');
+            Route::delete('component-stock/{componentStock}', [ComponentStockController::class, 'destroy'])
+                ->name('component-stock.destroy');
+            Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
+                ->name('component-stock.test');
+        
+            Route::prefix('allocation')->name('allocation.')->group(function () {
+            // Main allocation page
+            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+    
+            // Generate allocation report
+            Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
+    
+            // Save allocation
+            Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
+    
+           // View allocations
+            Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
+    
+            // Get breakdown details
+            Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
+    
+            // Mark as dispatched
+            Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
+    
+            // Cancel allocation
+            Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
+            
+            // Filter endpoints
+            Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
+            Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
+            Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
+            
+            });
+            });
+
 // Route::prefix('visitors')->name('visitors.')->group(function () {
     
 // });
@@ -370,17 +475,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
 
     });
-
-    
-    
-    
-    
-
-
-
-
-
-
         
         //'middleware' => 'admin'
 
@@ -708,14 +802,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         // ****************Fee Estamates *******************
         Route::get('/fee-estamates', [FeeEstamateController::class, 'index'])->name('fee-estamates.index');
         Route::get('/fee-estamates-private-centers', [FeeEstamateController::class, 'privateCenters'])->name('fee-estamates.privatecenters');
-
-
-
-
-
-
-
-
 
 
 

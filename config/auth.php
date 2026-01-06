@@ -69,10 +69,7 @@ return [
             'provider' => 'sponsors',
           ],
           
-    'center' => [
-        'driver' => 'session',
-        'provider' => 'centers',
-    ],
+ 
     ],
     
 

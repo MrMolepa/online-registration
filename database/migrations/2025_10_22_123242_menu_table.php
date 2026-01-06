@@ -18,13 +18,14 @@ class MenuTable extends Migration
             $table->string('name');                   // Menu text
             $table->string('route')->nullable();       // Laravel route name
             $table->string('icon')->nullable();        // e.g. "fas fa-home"
-            $table->string('role')->nullable();        // e.g. "admin", "teacher"
+            $table->string('role')->nullable();        // e.g. "admin", "teacher" 
             $table->string('permission')->nullable();  // optional permission name
             $table->unsignedBigInteger('parent_id')->nullable(); // for nesting
-            $table->integer('order')->default(0); 
-            $table->boolean('is_active')->default(true);    // for sorting
+            $table->integer('order')->default(0);
+            $table->boolean('is_active')->default(true);// for sorting
             $table->timestamps();
         });
+
     }
 
     public function down(): void

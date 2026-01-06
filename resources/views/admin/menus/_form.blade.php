@@ -1,17 +1,17 @@
 <!-- Menu Form Modal -->
-<div class="modal fade" id="menuModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="menuModal" tabindex="-1" role="dialog" >
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h3 class="modal-title">Menu</h3>
+                <h3 class="modal-title"> Add Menu</h3>
             </div>
             <form id="menuForm" method="POST">
                 @csrf
                 <input type="hidden" id="menu_id" name="menu_id" value="">
-                
+
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="name">Name<span class="text-danger">*</span></label>
@@ -56,7 +56,7 @@
                             <input type="hidden" name="is_active" value="0">
                             <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1">
                             <label class="form-check-label" for="is_active">
-                                Active 
+                                Active
                             </label>
                         </div>
                         <div class="invalid-feedback"></div>
@@ -66,21 +66,23 @@
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Save Menu</button>
                     <button type="button" class="btn btn-danger resetform" data-dismiss="modal">Cancel</button>
-                </div> 
+                </div>
             </form>
         </div>
     </div>
 </div>
+
 
 @push('scripts')
 <script>
 $(document).ready(function() {
     // Load menus and guards when modal opens
     $('#menuModal').on('show.bs.modal', function() {
+
+console.log('Menu modal opened, loading parent menus and guards.');
+    });
         loadParentMenus();
         loadGuards();
-        console.log('Menu modal opened, loading parent menus and guards.');
-    });
 
     // Load parent menus
     function loadParentMenus() {

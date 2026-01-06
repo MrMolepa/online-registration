@@ -7,11 +7,8 @@ use App\Models\FeeStracture;
 use App\Models\Invitation;
 use App\Models\Publication;
 use App\Models\Session;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-
-
-
-
 
 function is_opened($level, $session)
 {
@@ -410,5 +407,162 @@ if (!function_exists('getMenuCollapseId')) {
     function getMenuCollapseId($menu)
     {
         return 'menu-' . $menu->id . '-collapse';
+    }
+}
+
+
+/**
+ * Check if current route matches menu route
+ */
+if (!function_exists('isActiveRoute')) {
+    function isActiveRoute($route)
+    {
+        if (!$route) {
+            return false;
+        }
+        
+        try {
+            // Check if current route name matches
+            if (Route::currentRouteName() == $route) {
+                return true;
+            }
+            
+            // Check if current URL contains the route
+            return request()->is($route . '*');
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
+/**
+ * Check if menu or its children are active
+ */
+if (!function_exists('isMenuActive')) {
+    function isMenuActive($menu)
+    {
+        // Check if current menu is active
+        if (isActiveRoute($menu->route)) {
+            return true;
+        }
+        
+        // Check if any children are active
+        if ($menu->children && $menu->children->isNotEmpty()) {
+            foreach ($menu->children as $child) {
+                if (isActiveRoute($child->route)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Generate unique collapse ID for menu
+ */
+if (!function_exists('getMenuCollapseId')) {
+    function getMenuCollapseId($menu)
+    {
+        return 'menu-' . $menu->id . '-collapse';
+    }
+}
+
+/**
+ * Check if user can access a specific menu
+ */
+if (!function_exists('userCanAccessMenu')) {
+    function userCanAccessMenu($menuId, $user = null)
+    {
+        if (!$user) {
+            $user = auth()->user();
+        }
+        
+        if (!$user) {
+            return false;
+        }
+        
+        $menu = \App\Models\Menu::find($menuId);
+        
+        if (!$menu) {
+            return false;
+        }
+        
+        $menuPermissions = $menu->permissions()->with(['role', 'permission'])->get();
+        
+        // If no permissions assigned, menu is accessible to all
+        if ($menuPermissions->isEmpty()) {
+            return true;
+        }
+        
+        // Get user's roles
+        $userRoles = $user->roles->pluck('id')->toArray();
+        
+        // Get user's permissions (both direct and through roles)
+        $userPermissions = $user->permissions->pluck('id')->toArray();
+        $rolePermissions = $user->roles->flatMap(function ($role) {
+            return $role->permissions->pluck('id');
+        })->toArray();
+        
+        $allUserPermissions = array_unique(array_merge($userPermissions, $rolePermissions));
+        
+        // Check if user has any of the required role + permission combinations
+        foreach ($menuPermissions as $menuPermission) {
+            $hasRole = in_array($menuPermission->role_id, $userRoles);
+            $hasPermission = in_array($menuPermission->permission_id, $allUserPermissions);
+            
+            if ($hasRole && $hasPermission) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+}
+
+/**
+ * Get accessible menus for current user
+ */
+if (!function_exists('getUserMenus')) {
+    function getUserMenus($guardName = null)
+    {
+        if (!auth()->check()) {
+            return collect([]);
+        }
+        
+        if (!$guardName) {
+            $guardName = auth()->getDefaultDriver();
+        }
+        
+        $user = auth()->user();
+        
+        $menus = \App\Models\Menu::where('is_active', true)
+            ->where('guard_name', $guardName)
+            ->whereNull('parent_id')
+            ->with(['children' => function ($query) use ($guardName) {
+                $query->where('is_active', true)
+                    ->where('guard_name', $guardName)
+                    ->orderBy('order');
+            }])
+            ->orderBy('order')
+            ->get();
+        
+        return $menus->filter(function ($menu) use ($user) {
+            return userCanAccessMenu($menu->id, $user);
+        })->map(function ($menu) use ($user) {
+            if ($menu->children->isNotEmpty()) {
+                $filteredChildren = $menu->children->filter(function ($child) use ($user) {
+                    return userCanAccessMenu($child->id, $user);
+                });
+                $menu->setRelation('children', $filteredChildren);
+            }
+            return $menu;
+        })->filter(function ($menu) {
+            if ($menu->children->isNotEmpty()) {
+                return $menu->children->count() > 0;
+            }
+            return true;
+        });
     }
 }
