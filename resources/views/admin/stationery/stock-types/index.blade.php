@@ -153,7 +153,7 @@
                         const stockType = response.data;
                         
                         // Populate view modal
-                        $('#view_name').text(stockType.name || 'N/A');
+                        $('#view  _name').text(stockType.name || 'N/A');
                         $('#view_description').text(stockType.description || 'N/A');
                         $('#view_status').html(stockType.is_active 
                             ? '<span class="label label-success">Active</span>' 

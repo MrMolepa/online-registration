@@ -16,6 +16,7 @@
                                     <span>{{ $menu->name }}</span>
                                     <i class="icon-submenu lnr lnr-chevron-left"></i>
                                 </a>
+
                                 <div id="{{ getMenuCollapseId($menu) }}" 
                                      class="collapse {{ isMenuActive($menu) ? 'in' : '' }}">
                                     <ul class="nav">
@@ -43,8 +44,6 @@
                         </li>
                     @endforeach
                 @endif
-
-              
             </ul>
         </nav>
     </div>
