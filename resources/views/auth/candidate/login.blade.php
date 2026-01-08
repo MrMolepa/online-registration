@@ -1,14 +1,23 @@
 @extends('layouts.candidatelogin')
 @section('content')
     <div class="row w-100 mx-0">
-        <div class="col-lg-4 mx-auto">
-            <div class="auth-form-light text-left py-4 px-2 px-sm-5">
-                <h4>Candidate</h4>
-                <form class="pt-2" method="POST" action="{{ route('candidate.login') }}">
+        <div class="col-12 d-flex justify-content-center">
+            <div class="auth-split-card">
+                <div class="auth-left p-4">
+                    <div class="auth-card text-left py-2 px-2 px-sm-4">
+                        <div class="auth-brand text-center">
+                            @php
+                                $png = public_path('candidates/images/logo.png');
+                                $svg = asset('candidates/images/logo.svg');
+                            @endphp
+                            <img src="{{ file_exists($png) ? asset('candidates/images/logo.png') : $svg }}" alt="ECoL logo" class="auth-logo">
+                        </div>
+                        <h4 class="auth-title text-center">Candidate Login</h4>
+                        <form class="pt-2" method="POST" action="{{ route('candidate.login') }}">
                     @csrf
                     <div class="form-group">
-                        <input type="text" name="national_id" value="{{ old('national_id') }}"   class="form-control form-control-sm  @error('national_id') is-invalid @enderror"
-                            placeholder="National ID">
+                        <label for="national_id" class="form-label">National ID</label>
+                        <input id="national_id" type="text" name="national_id" value="{{ old('national_id') }}" class="form-control form-control-sm @error('national_id') is-invalid @enderror" placeholder="National ID">
                         @error('national_id')
                             <span class="invalid-feedback" role="alert">
                                   {{ $message }}
@@ -16,7 +25,8 @@
                         @enderror
                     </div>
                     <div class="form-group">
-                        <input type="password"  name="password" class="form-control form-control-sm @error('password') is-invalid @enderror" placeholder="Password">
+                        <label for="password" class="form-label">Password</label>
+                        <input id="password" type="password" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror" placeholder="Password">
                         @error('password')
                             <span class="invalid-feedback" role="alert">
                                 {{ $message }}
@@ -38,6 +48,14 @@
                         </div>
                     </div>
                 </form>
+                    </div>
+                </div>
+                <div class="auth-right d-none d-md-flex" style="background-image: url('{{ asset('candidates/images/students-across-florida-are-set-to-resume-SUNUCTHRCFBDFDXQALXPTPA3ME.avif') }}');">
+                    <div class="auth-right-inner">
+                        <h1 class="welcome-title">Welcome to the Candidate Portal</h1>
+                        <p class="welcome-sub">Login to access your examination details.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -147,6 +165,8 @@
                 $('.agree-btn').attr('disabled', null);
             }
         });
+
+        // floating label removed: no extra JS required
   </script>
 
 @endpush
