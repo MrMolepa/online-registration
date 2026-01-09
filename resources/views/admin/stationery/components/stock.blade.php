@@ -18,15 +18,21 @@
                         <div class="panel-body">
                             <div class="form-group">
                                 <label for="component_selector">Choose a component to manage its allocation rules</label>
-                                <select class="form-control" id="component_selector" style="width: 100%;">
+                                    <select class="form-control" id="component_selector" style="width: 100%;">
                                     <option value="">-- Select a Component --</option>
                                     @foreach($components as $comp)
-                                        <option value="{{ $comp->id }}" 
-                                                data-code="{{ $comp->component_code }}"
+                                        @php
+                                            $paddedSubject = str_pad($comp->subject_code, 4, '0', STR_PAD_LEFT);
+                                            $paddedComponent = str_pad($comp->component_code, 2, '0', STR_PAD_LEFT);
+                                            $componentKey = $paddedSubject . '-' . $paddedComponent;
+                                            $subjectName = $comp->subject ? $comp->subject->subject_name : 'N/A';
+                                        @endphp
+                                        <option value="{{ $componentKey }}" 
+                                                data-key="{{ $componentKey }}"
+                                                data-code="{{ $componentKey }}"
                                                 data-name="{{ $comp->component_name }}"
-                                                data-subject="{{ $comp->subject ? $comp->subject->subject_name : 'N/A' }}">
-                                            {{ $comp->component_code }} - {{ $comp->component_name }} 
-                                            ({{ $comp->subject ? $comp->subject->subject_name : 'N/A' }})
+                                                data-subject="{{ $subjectName }}">
+                                            {{ $comp->component_name }} ({{ $componentKey }}) - {{ $subjectName }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -120,7 +126,7 @@
             }
         });
 
-        let currentComponentId = null;
+        let currentComponentKey = null;
         let table = null;
 
         // Initialize Select2 for component selector
@@ -131,9 +137,9 @@
 
         // Component Selection Handler
         $('#component_selector').on('change', function() {
-            currentComponentId = $(this).val();
+            currentComponentKey = $(this).val();
             
-            if (currentComponentId) {
+            if (currentComponentKey) {
                 const selectedOption = $(this).find('option:selected');
                 
                 // Update display info
@@ -146,7 +152,7 @@
                 $('#rulesTableSection').show();
                 
                 // Initialize or reload DataTable
-                loadAllocationRules(currentComponentId);
+                loadAllocationRules(currentComponentKey);
             } else {
                 // Hide sections if no component selected
                 $('#componentInfoSection').hide();
@@ -158,7 +164,7 @@
         });
 
         // Initialize DataTable
-        function loadAllocationRules(componentId) {
+        function loadAllocationRules(componentKey) {
             if (table) {
                 table.destroy();
             }
@@ -169,7 +175,7 @@
                 ajax: {
                     url: "{{ route('admin.stationery.component-stock.index') }}",
                     data: function(d) {
-                        d.component_id = componentId;
+                        d.component_key = componentKey;
                     }
                 },
                 columns: [
@@ -214,14 +220,14 @@
 
         // Add Rule
         $('#addRuleBtn').click(function() {
-            if (!currentComponentId) {
+            if (!currentComponentKey) {
                 toastr.warning('Please select a component first');
                 return;
             }
             
             $('#ruleForm')[0].reset();
             $('#rule_id').val('');
-            $('#form_component_id').val(currentComponentId);
+            $('#form_component_key').val(currentComponentKey);
             $('#ruleModalTitle').text('Add Allocation Rule');
             $('.form-control').removeClass('is-invalid');
             $('.invalid-feedback').text('');
@@ -251,7 +257,7 @@
                         
                         setTimeout(function() {
                             $('#rule_id').val(rule.id);
-                            $('#form_component_id').val(rule.component_id);
+                            $('#form_component_key').val(rule.component_id);
                             $('#stock_item_id').val(rule.stock_item_id);
                             $('#rule_type').val(rule.rule_type);
                             $('#base_quantity').val(rule.base_qty);
@@ -280,7 +286,7 @@
         $('#ruleForm').submit(function(e) {
             e.preventDefault();
             
-            if (!currentComponentId) {
+            if (!currentComponentKey) {
                 toastr.warning('Please select a component first');
                 return;
             }
@@ -343,7 +349,7 @@
 
         // Test Calculator
         $('#testCalculatorBtn').click(function() {
-            if (!currentComponentId) {
+            if (!currentComponentKey) {
                 toastr.warning('Please select a component first');
                 return;
             }
@@ -355,7 +361,7 @@
 
         // Calculate Test
         $('#calculateTestBtn').click(function() {
-            if (!currentComponentId) {
+            if (!currentComponentKey) {
                 toastr.warning('Please select a component first');
                 return;
             }
@@ -372,7 +378,7 @@
                 url: '{{ route("admin.stationery.component-stock.test") }}',
                 type: 'POST',
                 data: {
-                    component_id: currentComponentId,
+                    component_key: currentComponentKey,
                     stock_item_id: stockItemId,
                     candidates: candidates,
                     centers: 1

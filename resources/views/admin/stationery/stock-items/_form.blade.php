@@ -1,6 +1,6 @@
 <!-- Stock Item Form Modal -->
 <div class="modal fade" id="stockItemModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-compact">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
@@ -32,7 +32,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -49,8 +49,10 @@
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
-                        
-                        <div class="col-md-6">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <label for="supplier_info">Supplier Info</label>
                                 <input type="text" class="form-control" id="supplier_info" name="supplier_info" placeholder="Supplier details">

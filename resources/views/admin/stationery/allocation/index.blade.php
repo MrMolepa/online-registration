@@ -542,6 +542,7 @@ $(document).ready(function() {
             component_id: a.component.id,
             stock_item_id: a.stock_item.id,
             allocated_qty: a.required_qty,
+            num_candidates: a.component.candidates_registered || 0,
             breakdown: a.breakdown
         }));
 

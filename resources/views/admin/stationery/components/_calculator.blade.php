@@ -1,4 +1,11 @@
 <!-- Test Calculator Modal -->
+<style>
+    /* Scoped: make validation feedback text red inside calculator modal */
+    #calculatorModal .invalid-feedback {
+        color: #f80d09ff !important;
+        display: block;
+    }
+</style>
 <div class="modal fade" id="calculatorModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
