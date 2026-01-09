@@ -1,6 +1,6 @@
 <!-- Phone Call Log Form Modal -->
 <div class="modal fade" id="visitorsBookModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
@@ -13,36 +13,61 @@
                 <input type="hidden" id="visitorsBook_id" name="visitorsBook_id" value="">
 
                 <div class="modal-body">
-                    <div class="form-group">
+                    <div class="row">
+                        <div class="form-group col-md-12">
                         <label for="name">Name<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="visitor_name" name="visitor_name" placeholder="Enter visitor name">
                         <div class="invalid-feedback"></div>
                     </div>
-                    <div class="form-group">
+                    </div>
+                    
+                    <div class="row">
+                         <div class="form-group col-md-12">
                         <label for="meeting_with">Meeting With<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="meeting_with" name="meeting_with" placeholder="Enter person to meet">
                         <div class="invalid-feedback"></div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="number_of_person">Number of Persons<span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="number_of_person" name="number_of_person" placeholder="Enter number of persons">
+                    <div class="row">
+                       
+                        
+                         <div class="form-group col-md-8">
+                        <label for="purpose">Purpose<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="purpose" name="purpose" placeholder="Enter purpose of visit">
                         <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label for="number_of_person">Number of Persons<span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="number_of_person" name="number_of_person" placeholder="Enter number of persons">
+                            <div class="invalid-feedback"></div>
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label for="contact_number">Contact Number<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter contact number">
                         <div class="invalid-feedback"></div>
+                    </div> 
                     </div>
-                    <div class="form-group">
-                        <label for="purpose">Purpose<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="purpose" name="purpose" placeholder="Enter purpose of visit">
-                        <div class="invalid-feedback"></div>
-                    </div>
-                    <div class="form-group">
+                    
+                   
+                    <div class="row">
+                        <div class="form-group col-md-4">
                         <label for="date_of_visit">Date of Visit<span class="text-danger">*</span></label>
                         <input type="text" class="form-control datepicker" id="date" name="date" placeholder="Select date of visit">
                         <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="in_time">In Time<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control datepicker" id="in_time" name="in_time" placeholder="Select in time">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="out_time">Out Time</label>
+                            <input type="text" class="form-control timepicker" id="out_time" name="out_time" placeholder="Select out time">
+                            <div class="invalid-feedback"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="in_time">In Time<span class="text-danger">*</span></label>

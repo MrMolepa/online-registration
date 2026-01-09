@@ -48,6 +48,10 @@
                             </div>
                         </div>
                     </div>
+                    
+                    
+
+                   
 
 
 
@@ -142,7 +146,7 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-info mt-3">
+                    <div class="alert alert-info mt-4">
                         <i class="fa fa-info-circle"></i> <strong>Calculation Formula:</strong><br>
                         <code>Result = (Base Qty × Count × Multiplier) + Fixed Extras + (Candidates × Per Candidate) +
                             (Base × Percent%)</code>
