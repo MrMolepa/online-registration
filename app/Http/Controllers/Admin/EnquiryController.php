@@ -53,9 +53,14 @@ class EnquiryController extends Controller
             'is_active' => 'nullable|boolean'
         ]);
 
+          // Add the logged-in user's name
+        if (auth()->check()) {
+            $validated['created_by'] = auth()->user()->name ?? auth()->user()->username ?? auth()->user()->email ?? 'Unknown User';
+        }
+
+
         // Handle checkbox value
         $validated['is_active'] = $request->has('is_active') ? 1 : 0;
-
         $enquiry = Enquiry::create($validated);
 
         return response()->json([

@@ -104,7 +104,7 @@
             responsive: true
         });
 
-        // Helper function to fill form fields
+        // Helper function to fill form fields dynamically after fetching data 
         function fillForm(data, formId) {
             const form = $(formId);
             $.each(data, function(key, value) {
@@ -131,7 +131,7 @@
             
             // Set default active status
             $('#is_active').prop('checked', true);
-            
+            loadStockTypes();
             $('#stockItemModal').modal('show');
         });
 

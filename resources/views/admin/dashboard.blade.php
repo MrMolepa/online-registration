@@ -16,7 +16,7 @@
                                     <span class="icon"><i class="lnr lnr-apartment"></i></span>
                                     <p>
                                         <span class="number">{{ $registered_schools->schools }}</span>
-                                        <span class="title">Registered Schools</span>
+                                       z <span class="title">Registered Schools</span>
                                     </p>
                                 </div>
                             </div>

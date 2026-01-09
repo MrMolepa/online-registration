@@ -78,7 +78,7 @@
                             <h4>Saved Allocations</h4>
                         </div>
                         <div class="panel-body">
-                            <table class="table table-striped table-bordered" id="allocationsDataTable">
+                            <table class="table table-striped" id="allocationsDataTable">
                                 <thead>
                                     <tr>
                                         <th>ID</th>

@@ -6,24 +6,38 @@
 <div class="main">
     <div class="main-content">
         <div class="container-fluid">
-            <div class="row mb-3">
+            <h3 class="page-title">Component Allocation Rules Manager</h3>
+            
+            <!-- Component Selection Card -->
+            <div class="row">
                 <div class="col-md-12">
-                    @if(Route::has('admin.components-stock.index'))
-                        <a href="{{ route('admin.components-stock.index', ['subject_code' => $component->subject_code]) }}" class="btn btn-default">
-                            <i class="fa fa-arrow-left"></i> Back to Components
-                        </a>
-                    @else
-                        <a href="{{ url()->previous() }}" class="btn btn-default">
-                            <i class="fa fa-arrow-left"></i> Back
-                        </a>
-                    @endif
+                    <div class="panel panel-primary">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-filter"></i> Select Component</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label for="component_selector">Choose a component to manage its allocation rules</label>
+                                <select class="form-control" id="component_selector" style="width: 100%;">
+                                    <option value="">-- Select a Component --</option>
+                                    @foreach($components as $comp)
+                                        <option value="{{ $comp->id }}" 
+                                                data-code="{{ $comp->component_code }}"
+                                                data-name="{{ $comp->component_name }}"
+                                                data-subject="{{ $comp->subject ? $comp->subject->subject_name : 'N/A' }}">
+                                            {{ $comp->component_code }} - {{ $comp->component_name }} 
+                                            ({{ $comp->subject ? $comp->subject->subject_name : 'N/A' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <h3 class="page-title">Allocation Rules for: {{ $component->component_name }} ({{ $component->component_code }})</h3>
-            
-            <!-- Component Info Card -->
-            <div class="row">
+            <!-- Component Info Card (Hidden initially) -->
+            <div class="row" id="componentInfoSection" style="display: none;">
                 <div class="col-md-12">
                     <div class="panel panel-info">
                         <div class="panel-heading">
@@ -33,15 +47,15 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <strong>Component Code:</strong><br>
-                                    {{ $component->component_code }}
+                                    <span id="display_component_code">-</span>
                                 </div>
                                 <div class="col-md-6">
                                     <strong>Component Name:</strong><br>
-                                    {{ $component->component_name }}
+                                    <span id="display_component_name">-</span>
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Subject:</strong><br>
-                                    {{ $component->subject ? $component->subject->subject_name : 'N/A' }}
+                                    <span id="display_subject">-</span>
                                 </div>
                             </div>
                         </div>
@@ -49,8 +63,8 @@
                 </div>
             </div>
 
-            <!-- Allocation Rules Table -->
-            <div class="row">
+            <!-- Allocation Rules Table (Hidden initially) -->
+            <div class="row" id="rulesTableSection" style="display: none;">
                 <div class="col-md-12">
                     <div class="panel panel-headline">
                         <div class="panel-body">
@@ -99,7 +113,6 @@
 
 @push('scripts')
 <script>
-
     $(document).ready(function() {
         $.ajaxSetup({
             headers: {
@@ -107,22 +120,69 @@
             }
         });
 
-        const componentId = '{{ $component->id }}';
+        let currentComponentId = null;
+        let table = null;
 
-        let table = $('#allocationRulesTable').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: "{{ route('admin.stationery.component-stock.index', $component->id) }}",
-            columns: [
-                {data: 'id', name: 'id'},
-                {data: 'stock_type_name', name: 'stockItem.stockType.name'},
-                {data: 'stock_item_name', name: 'stockItem.name'},
-                {data: 'rule_display', name: 'rule_type'},
-                {data: 'formula_summary', name: 'base_qty'},
-                {data: 'test_calculation', name: 'test_calculation', orderable: false, searchable: false},
-                {data: 'actions', name: 'actions', orderable: false, searchable: false}
-            ]
+        // Initialize Select2 for component selector
+        $('#component_selector').select2({
+            placeholder: '-- Select a Component --',
+            allowClear: true
         });
+
+        // Component Selection Handler
+        $('#component_selector').on('change', function() {
+            currentComponentId = $(this).val();
+            
+            if (currentComponentId) {
+                const selectedOption = $(this).find('option:selected');
+                
+                // Update display info
+                $('#display_component_code').text(selectedOption.data('code'));
+                $('#display_component_name').text(selectedOption.data('name'));
+                $('#display_subject').text(selectedOption.data('subject'));
+                
+                // Show component info and rules table
+                $('#componentInfoSection').show();
+                $('#rulesTableSection').show();
+                
+                // Initialize or reload DataTable
+                loadAllocationRules(currentComponentId);
+            } else {
+                // Hide sections if no component selected
+                $('#componentInfoSection').hide();
+                $('#rulesTableSection').hide();
+                if (table) {
+                    table.clear().draw();
+                }
+            }
+        });
+
+        // Initialize DataTable
+        function loadAllocationRules(componentId) {
+            if (table) {
+                table.destroy();
+            }
+            
+            table = $('#allocationRulesTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('admin.stationery.component-stock.index') }}",
+                    data: function(d) {
+                        d.component_id = componentId;
+                    }
+                },
+                columns: [
+                    {data: 'id', name: 'id'},
+                    {data: 'stock_type_name', name: 'stockItem.stockType.name'},
+                    {data: 'stock_item_name', name: 'stockItem.name'},
+                    {data: 'rule_display', name: 'rule_type'},
+                    {data: 'formula_summary', name: 'base_qty'},
+                    {data: 'test_calculation', name: 'test_calculation', orderable: false, searchable: false},
+                    {data: 'actions', name: 'actions', orderable: false, searchable: false}
+                ]
+            });
+        }
 
         // Load stock items for dropdown
         function loadStockItems() {
@@ -154,12 +214,17 @@
 
         // Add Rule
         $('#addRuleBtn').click(function() {
+            if (!currentComponentId) {
+                toastr.warning('Please select a component first');
+                return;
+            }
+            
             $('#ruleForm')[0].reset();
             $('#rule_id').val('');
+            $('#form_component_id').val(currentComponentId);
             $('#ruleModalTitle').text('Add Allocation Rule');
             $('.form-control').removeClass('is-invalid');
             $('.invalid-feedback').text('');
-            $('#ruleForm').attr('action', '{{ route("admin.stationery.component-stock.store", $component->id) }}');
             
             loadStockItems();
             toggleConditionalField();
@@ -171,10 +236,8 @@
         $(document).on('click', '.edit-rule-btn', function(e) {
             e.preventDefault();
             let id = $(this).data('id');
-            let url = $(this).data('url');
             
-            // Get the edit URL
-            let editUrl = '{{ route("admin.stationery.component-stock.edit", [$component->id, ":id"]) }}';
+            let editUrl = '{{ route("admin.stationery.component-stock.edit", ":id") }}';
             editUrl = editUrl.replace(':id', id);
 
             $.ajax({
@@ -184,11 +247,11 @@
                     if (response.success) {
                         let rule = response.data;
                         
-                        // Load stock items first
                         loadStockItems();
                         
                         setTimeout(function() {
                             $('#rule_id').val(rule.id);
+                            $('#form_component_id').val(rule.component_id);
                             $('#stock_item_id').val(rule.stock_item_id);
                             $('#rule_type').val(rule.rule_type);
                             $('#base_quantity').val(rule.base_qty);
@@ -199,13 +262,12 @@
                             $('#condition_value').val(0);
                             
                             $('#ruleModalTitle').text('Edit Allocation Rule');
-                            $('#ruleForm').attr('action', url);
                             $('.form-control').removeClass('is-invalid');
                             $('.invalid-feedback').text('');
                             
                             toggleConditionalField();
                             $('#ruleModal').modal('show');
-                        }, 300);
+                        }, 100);
                     }
                 },
                 error: function(xhr) {
@@ -217,9 +279,17 @@
         // Submit Rule
         $('#ruleForm').submit(function(e) {
             e.preventDefault();
+            
+            if (!currentComponentId) {
+                toastr.warning('Please select a component first');
+                return;
+            }
+            
             let id = $('#rule_id').val();
             let method = id ? 'PUT' : 'POST';
-            let url = $('#ruleForm').attr('action');
+            let url = id 
+                ? '{{ route("admin.stationery.component-stock.update", ":id") }}'.replace(':id', id)
+                : '{{ route("admin.stationery.component-stock.store") }}';
             
             $('.form-control').removeClass('is-invalid');
             $('.invalid-feedback').text('');
@@ -255,7 +325,9 @@
                 return;
             }
             
-            let url = $(this).data('url');
+            let id = $(this).data('id');
+            let url = '{{ route("admin.stationery.component-stock.destroy", ":id") }}'.replace(':id', id);
+            
             $.ajax({
                 url: url,
                 type: 'DELETE',
@@ -271,6 +343,11 @@
 
         // Test Calculator
         $('#testCalculatorBtn').click(function() {
+            if (!currentComponentId) {
+                toastr.warning('Please select a component first');
+                return;
+            }
+            
             loadStockItems();
             $('#calc_result').hide();
             $('#calculatorModal').modal('show');
@@ -278,6 +355,11 @@
 
         // Calculate Test
         $('#calculateTestBtn').click(function() {
+            if (!currentComponentId) {
+                toastr.warning('Please select a component first');
+                return;
+            }
+            
             let stockItemId = $('#calc_stock_item_id').val();
             let candidates = $('#calc_candidates').val();
             
@@ -287,9 +369,10 @@
             }
             
             $.ajax({
-                url: '{{ route("admin.stationery.component-stock.test", $component->id) }}',
+                url: '{{ route("admin.stationery.component-stock.test") }}',
                 type: 'POST',
                 data: {
+                    component_id: currentComponentId,
                     stock_item_id: stockItemId,
                     candidates: candidates,
                     centers: 1

@@ -11,6 +11,7 @@
             <form id="ruleForm" method="POST">
                 @csrf
                 <input type="hidden" id="rule_id" name="rule_id" value="">
+                <input type="hidden" id="form_component_id" name="component_id" value="">
                 
                 <div class="modal-body">
                     <!-- Stock Item Selection -->
@@ -126,8 +127,8 @@
                                 <div class="form-group">
                                     <label for="extras_percent_candidates">Candidate % Extras</label>
                                     <input type="number" step="0.01" class="form-control" id="extras_percent_candidates" 
-                                           name="extras_percent_candidates" placeholder="e.g., 5" max="100">
-                                    <small class="form-text text-muted">Add % based on candidates (e.g., +5%)</small>
+                                           name="extras_percent_candidates" placeholder="e.g., 5" max="100" disabled>
+                                    <small class="form-text text-muted">Not currently implemented</small>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
@@ -136,7 +137,7 @@
 
                     <div class="alert alert-info mt-4">
                         <i class="fa fa-info-circle"></i> <strong>Calculation Formula:</strong><br>
-                        <code>Result = (Base Qty × Count × Multiplier) + Fixed Extras + (Candidates × Per Candidate) + (Base × Percent%) + (Base × Candidate%)</code>
+                        <code>Result = (Base Qty × Count × Multiplier) + Fixed Extras + (Candidates × Per Candidate) + (Base × Percent%)</code>
                     </div>
                 </div>
                 

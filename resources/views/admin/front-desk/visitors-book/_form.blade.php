@@ -11,7 +11,7 @@
             <form id="visitorsBookForm" method="POST">
                 @csrf
                 <input type="hidden" id="visitorsBook_id" name="visitorsBook_id" value="">
-                
+
                 <div class="modal-body">
                     <div class="row">
                         <div class="form-group col-md-12">
@@ -43,9 +43,8 @@
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
-                    
-                    <div class="row">
-                       <div class="form-group col-md-12">
+
+                    <div class="form-group">
                         <label for="contact_number">Contact Number<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="phone" name="phone" placeholder="Enter contact number">
                         <div class="invalid-feedback"></div>
@@ -70,7 +69,16 @@
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
-                    
+                    <div class="form-group">
+                        <label for="in_time">In Time<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control timepicker" id="in_time" name="in_time" placeholder="Select in time">
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="out_time">Out Time</label>
+                        <input type="text" class="form-control timepicker" id="out_time" name="out_time" placeholder="Select out time">
+                        <div class="invalid-feedback"></div>
+                    </div>
                 </div>
 
                 <div class="modal-footer">

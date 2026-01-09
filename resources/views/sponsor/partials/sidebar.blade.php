@@ -6,42 +6,68 @@
         <span class="brand-text font-weight-light">ECoL</span>
     </a>
 
+
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Sidebar user (optional) -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-          
+
+
             <div class="info">
-                <a href="#" class="d-block">{{auth()->user()->email}}</a>
+                <a href="#" class="d-block">{{ auth()->user()->email }}</a>
             </div>
         </div>
         <!-- Sidebar Menu -->
         <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
-                data-accordion="false">
-                <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
+            <ul class="nav">
 
-                <li class="nav-item">
-                    <a href="{{route('sponsor.home')}}" class="nav-link">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>
-                            Dashboard
 
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{route('sponsor.candidate.index')}}" class="nav-link">
-                        <i class="nav-icon fas fa-th"></i>
-                        <p>
-                            Candidates
-                        </p>
-                    </a>
-                </li>
+                {{-- Dynamic Menu Items --}}
+                @if (isset($dynamicMenus) && $dynamicMenus->isNotEmpty())
+                    @foreach ($dynamicMenus as $menu)
+                        <li>
+                            @if ($menu->children && $menu->children->isNotEmpty())
+                                {{-- Parent Menu with Children --}}
+                                <a href="#{{ getMenuCollapseId($menu) }}" data-toggle="collapse"
+                                    class="{{ isMenuActive($menu) ? '' : 'collapsed' }}">
+                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
+                                    <span>{{ $menu->name }}</span>
+                                    <i class="icon-submenu lnr lnr-chevron-left"></i>
+                                </a>
+                                <div id="{{ getMenuCollapseId($menu) }}"
+                                    class="collapse {{ isMenuActive($menu) ? 'in' : '' }}">
+                                    <ul class="nav">
+                                        @foreach ($menu->children as $child)
+                                            <li>
+                                                <a href="{{ $child->route ? route($child->route) : '#' }}"
+                                                    class="{{ isActiveRoute($child->route) ? 'active' : '' }}">
+                                                    @if ($child->icon)
+                                                        <i class="{{ $child->icon }}"></i>
+                                                    @endif
+                                                    {{ $child->name }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @else
+                                {{-- Single Menu Item --}}
+                                <a href="{{ $menu->route ? route($menu->route) : '#' }}"
+                                    class="{{ isActiveRoute($menu->route) ? 'active' : '' }}">
+                                    <i class="{{ $menu->icon ?: 'lnr lnr-menu' }}"></i>
+                                    <span>{{ $menu->name }}</span>
+                                </a>
+                            @endif
+                        </li>
+                    @endforeach
+                @endif
+
+
 
 
             </ul>
+
+
         </nav>
         <!-- /.sidebar-menu -->
     </div>
@@ -53,23 +79,9 @@
 
 
 
-{{-- <nav class="sidebar">
-    <div class="logo d-flex justify-content-between">
-        <a href="index.html"><img src="img/logo.png" alt></a>
-        <div class="sidebar_close_icon d-lg-none">
-            <i class="ti-close"></i>
-        </div>
-    </div>
-    <ul id="sidebar_menu">
-        <li class="mm-active">
-            <a href="{{route('sponsor.home')}}">
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li>
-            <a href="{{route('sponsor.candidate.index')}}" aria-expanded="false">
-                <span>Candidates</span>
-            </a>
-        </li>
-    </ul>
-</nav> --}}
+
+
+
+
+
+

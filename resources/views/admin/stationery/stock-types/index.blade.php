@@ -96,7 +96,7 @@
             });
         }
 
-        // Open modal for Add
+        // Open modal for Add 
         $('#addStockTypeBtn').click(function() {
             $('#stockTypeForm')[0].reset();
             $('#stock_type_id').val('');
@@ -111,14 +111,14 @@
             $('#stockTypeModal').modal('show');
         });
 
-        // Open modal for Edit
+        // Open modal for Edit // its almost 1 hour 30
         $(document).on('click', '.edit-btn', function(e) {
             e.preventDefault();
             let url = $(this).data('url');
 
-            $.ajax({
+            $.ajax({ 
                 url: url,
-                type: 'GET',
+                type: 'GET',l,
                 success: function(response) {
                     if (response.data) {
                         const stockType = response.data;
@@ -153,7 +153,7 @@
                         const stockType = response.data;
                         
                         // Populate view modal
-                        $('#view_name').text(stockType.name || 'N/A');
+                        $('#view  _name').text(stockType.name || 'N/A');
                         $('#view_description').text(stockType.description || 'N/A');
                         $('#view_status').html(stockType.is_active 
                             ? '<span class="label label-success">Active</span>' 

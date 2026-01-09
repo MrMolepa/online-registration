@@ -23,6 +23,7 @@
                         <label for="description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="4" placeholder="Enter description (optional)"></textarea>
                         <div class="invalid-feedback"></div>
+                        
                     </div>
                     
                     <div class="mb-3">

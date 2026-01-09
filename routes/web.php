@@ -306,28 +306,51 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 
         
-        // Menu Permission Routes
-    Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
-    Route::get('/guards', [MenuPermissionController::class, 'getGuards'])->name('guards');    
-    Route::get('/', [MenuPermissionController::class, 'index'])->name('index');
-    Route::post('/', [MenuPermissionController::class, 'store'])->name('store');
-    Route::delete('/{menuPermission}', [MenuPermissionController::class, 'destroy'])->name('destroy');
-    Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])->name('menu');
+       // Menu Permission Routes (PIVOT-BASED)
+        Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
 
-});
-Route::prefix('menus')->name('menus.')->group(function () {
-    // Main Menu Routes
-    Route::get('/', [MenuController::class, 'index'])->name('index');
-    Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
-    Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
-    Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
-    Route::post('/', [MenuController::class, 'store'])->name('store');
-    Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
-    Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
-    Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-    Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
 
-});
+            Route::get('/guards', [MenuPermissionController::class, 'getGuards'])
+                ->name('guards');
+
+
+            // (Optional) Only keep if you really need a list page
+            // Route::get('/', [MenuPermissionController::class, 'index'])->name('index');
+
+
+            // Assign permission to menu
+            Route::post('/', [MenuPermissionController::class, 'store'])
+                ->name('store');
+
+
+            //Detach permission from menu (NO model binding)
+            Route::delete('/', [MenuPermissionController::class, 'destroy'])
+                ->name('destroy');
+
+
+            // Get permissions for a specific menu
+            Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])
+                ->name('menu');
+        });
+
+
+
+
+        Route::prefix('menus')->name('menus.')->group(function () {
+            // Main Menu Routes
+            Route::get('/', [MenuController::class, 'index'])->name('index');
+            Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
+            Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
+            Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
+            Route::post('/', [MenuController::class, 'store'])->name('store');
+            Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
+            Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
+            Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
+            // Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
+            Route::get('/ajax/sidebar', function () {
+                return view('admin.partials.sidebar')->render();
+            })->middleware(['auth:admin']);
+        });
 
 
  Route::prefix('stationery')->name('stationery.')->group(function () {
@@ -354,20 +377,21 @@ Route::prefix('menus')->name('menus.')->group(function () {
             Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
                 ->name('stock-items.options');   
             
-            // ==================== Component Stocks ====================
-             Route::get('components/{component}/stock', [ComponentStockController::class, 'index'])
+           // ==================== Component Stocks ====================
+            Route::get('component-stock', [ComponentStockController::class, 'index'])
                 ->name('component-stock.index');
-            Route::post('components/{component}/stock', [ComponentStockController::class, 'store'])
+            Route::post('component-stock/get-component', [ComponentStockController::class, 'getComponent'])
+                ->name('component-stock.get-component');
+            Route::post('component-stock', [ComponentStockController::class, 'store'])
                 ->name('component-stock.store');
-            Route::get('components/{component}/stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
+            Route::get('component-stock/{componentStock}/edit', [ComponentStockController::class, 'edit'])
                 ->name('component-stock.edit');
-            Route::put('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'update'])
+            Route::put('component-stock/{componentStock}', [ComponentStockController::class, 'update'])
                 ->name('component-stock.update');
-            Route::delete('components/{component}/stock/{componentStock}', [ComponentStockController::class, 'destroy'])
+            Route::delete('component-stock/{componentStock}', [ComponentStockController::class, 'destroy'])
                 ->name('component-stock.destroy');
-            Route::post('components/{component}/stock/test', [ComponentStockController::class, 'testCalculation'])
+            Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
-
         
             Route::prefix('allocation')->name('allocation.')->group(function () {
             // Main allocation page
@@ -390,7 +414,13 @@ Route::prefix('menus')->name('menus.')->group(function () {
     
             // Cancel allocation
             Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
-});
+            
+            // Filter endpoints
+            Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
+            Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
+            Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
+            
+            });
             });
 
 // Route::prefix('visitors')->name('visitors.')->group(function () {

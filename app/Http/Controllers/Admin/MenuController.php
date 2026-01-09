@@ -32,7 +32,7 @@ class MenuController extends Controller
                         <button class="btn btn-warning btn-sm permissions-btn" data-url="' . route('admin.menu-permissions.menu', $menu->id) . '" data-name="' . e($menu->name) . '">Permissions</button>
                         <button class="btn btn-danger btn-sm delete-btn" data-url="' . route('admin.menus.destroy', $menu->id) . '">Delete</button>';
                 })
-                ->rawColumns(['actions']) 
+                ->rawColumns(['actions'])
                 ->make(true);
         }
 
@@ -47,18 +47,19 @@ class MenuController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'route' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:50', 
+            'icon' => 'nullable|string|max:50',
             'parent_id' => 'nullable|exists:menus,id',
             'guard_name' => ['string', Rule::in($guards)],
             'is_active' => 'nullable|boolean',
         ]);
 
         $menu = Menu::create($validated);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Menu created successfully',
             'menu' => $menu
+
         ]);
     }
 
@@ -69,7 +70,7 @@ class MenuController extends Controller
             'success' => true,
             'url' => route('admin.menus.update', $menu->id),
             'menu' => $menu->load('parent')
-        ]); 
+        ]);
     }
 
 
@@ -86,7 +87,7 @@ class MenuController extends Controller
         ]);
 
         $menu->update($validated);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Menu updated successfully',
@@ -117,7 +118,7 @@ class MenuController extends Controller
         $guards = array_keys(Config('auth.guards'));
         return response()->json([
             'success' => true,
-            'guards' => $guards,                                      
+            'guards' => $guards,
         ]);
     }
 
@@ -180,7 +181,7 @@ class MenuController extends Controller
     public function reorder(Request $request)
     {
         $order = $request->input('order', []);
-        
+
         foreach ($order as $item) {
             Menu::where('id', $item['id'])->update([
                 'parent_id' => $item['parent_id'],

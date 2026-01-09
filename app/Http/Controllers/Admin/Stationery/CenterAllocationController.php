@@ -11,7 +11,9 @@ use App\Models\ComponentStock;
 use App\Models\Session;
 use App\Models\StockItem;
 use App\Models\Subject;
+use App\Models\Level;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session as FacadesSession;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
 
@@ -22,32 +24,193 @@ class CenterAllocationController extends Controller
      */
     public function index()
     {
-        $centers = Center::orderBy('center_no')
-            ->get(['center_no', 'center_name']);
+        $levels = Level::where('is_active', true)->orderBy('id')->get();
         
-        $sessions = Session::orderBy('session')
-            ->get(['id', 'session']);
+        // Get all financial years from sessions
+        $financialYears = Session::whereNotNull('financial_year')
+            ->distinct()
+            ->orderBy('financial_year', 'desc')
+            ->pluck('financial_year');
         
-        $components = Component::orderBy('component_name')->get(['id', 'component_name', 'subject_code']);
+        $sessions = Session::orderBy('session')->get();
+        
+        $centers = Center::orderBy('center_no')->get(['center_no', 'center_name', 'level']);
+        
+        $components = Component::with('subject')
+            ->orderBy('subject_code')
+            ->orderBy('component_code')
+            ->get(['id', 'component_name', 'subject_code', 'component_code']);
 
         $subjects = Subject::orderBy('subject_name')->get(['subject_code', 'subject_name']);
 
-        return view('admin.stationery.allocation.index', compact('centers', 'sessions', 'subjects'));
+        return view('admin.stationery.allocation.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
+    }
+
+    /**
+     * Get sessions filtered by level and financial year - AJAX endpoint
+     */
+    public function getSessionsByFilters(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+        
+        $sessions = Session::when($financialYear, function($q) use ($financialYear) {
+                $q->where('financial_year', $financialYear);
+            })
+            ->where('is_active', true)
+            ->orderBy('session')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'sessions' => $sessions
+        ]);
+    }
+
+    /**
+     * Get centers filtered by level, financial year and session - AJAX endpoint
+     */
+    public function getCentersByFilters(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+        $sessionId = $request->session_id;
+        
+        if (!$level || !$sessionId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level and Session are required'
+            ]);
+        }
+        
+        $session = Session::find($sessionId);
+        
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found'
+            ]);
+        }
+        
+        // Get level details
+        $levelData = Level::find($level);
+        
+        // Get centers that have candidates for this level, financial year and session
+        $centers = DB::table('center_candidate')
+            ->select('center_candidate.center_no', 'centers.center_name')
+            ->join('centers', 'center_candidate.center_no', '=', 'centers.center_no')
+            ->where('center_candidate.level', $levelData ? $levelData->description : $level)
+            ->where('center_candidate.financial_year', $financialYear)
+            ->where('center_candidate.session', $session->session)
+            ->groupBy('center_candidate.center_no', 'centers.center_name')
+            ->orderBy('center_candidate.center_no')
+            ->get();
+        
+        \Log::info('Centers loaded for filters', [
+            'level' => $levelData ? $levelData->description : $level,
+            'financial_year' => $financialYear,
+            'session' => $session->session,
+            'centers_count' => $centers->count()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'centers' => $centers
+        ]);
+    }
+
+    /**
+     * Get components filtered by level, financial year, session and center - AJAX endpoint
+     */
+    public function getComponentsByFilters(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+        $sessionId = $request->session_id;
+        $centerNo = $request->center_no;
+        
+        if (!$level || !$sessionId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Level and Session are required'
+            ]);
+        }
+        
+        $session = Session::find($sessionId);
+        
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session not found'
+            ]);
+        }
+        
+        // Get level details
+        $levelData = Level::find($level);
+        
+        // Get components that have candidates registered in this level, center, session, and financial year
+        $componentsQuery = DB::table('center_candidate')
+            ->select(
+                'components.id',
+                'components.component_name',
+                'components.subject_code',
+                'components.component_code',
+                'subjects.subject_name',
+                DB::raw('COUNT(DISTINCT center_candidate.candidate_no) as candidate_count')
+            )
+             
+            ->join('candidate_subject', function($join) {
+                $join->on('center_candidate.candidate_no', '=', 'candidate_subject.candidate_no')
+                    ->on('center_candidate.session', '=', 'candidate_subject.session')
+                    ->on('center_candidate.financial_year', '=', 'candidate_subject.financial_year')
+                    ->on('center_candidate.level', '=', 'candidate_subject.level');
+            })
+             ->join('subjects', 'candidate_subject.subject_code', '=', 'subjects.subject_code')
+            ->join('timetable', 'candidate_subject.subject_code', '=', 'timetable.subject_code')
+            ->join('components', function($join) {
+                $join->on('timetable.subject_code', '=', 'components.subject_code')
+                    ->on('timetable.paper_no', '=', 'components.component_code');
+            })
+            ->where('center_candidate.level', $levelData ? $levelData->description : $level)
+            ->where('center_candidate.financial_year', $financialYear)
+            ->where('center_candidate.session', $session->session);
+        
+        if ($centerNo) {
+            $componentsQuery->where('center_candidate.center_no', $centerNo);
+        }
+        
+        $components = $componentsQuery
+            ->groupBy('components.id', 'components.component_name', 'components.subject_code', 'components.component_code')
+            ->orderBy('components.subject_code')
+            ->orderBy('components.component_code')
+            ->get();
+        
+        \Log::info('Components loaded', [
+            'level' => $levelData ? $levelData->description : $level,
+            'financial_year' => $financialYear,
+            'session' => $session->session,
+            'center_no' => $centerNo,
+            'components_count' => $components->count()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'components' => $components
+        ]);
     }
 
     /**
      * Generate allocation report
      */
-    /**
-     * Generate allocation report - FIXED VERSION
-     */
-    public function generateReport(Request $request)
+   public function generateReport(Request $request)
     {
         try {
             $validated = $request->validate([
-                'center_no' => 'required|exists:centers,center_no',
+                'level' => 'required|exists:levels,id',
+                'financial_year' => 'required|string',
                 'session_id' => 'required|exists:sessions,id',
-                //'subject_code' => 'nullable|exists:subjects,subject_code',
+                'center_no' => 'required|exists:centers,center_no',
+                'component_id' => 'nullable|exists:components,id',
             ]);
 
             \Log::info('Generating allocation report', $validated);
@@ -58,153 +221,297 @@ class CenterAllocationController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Center not found'
-                ], 404);
+                ]);
             }
 
-            // Get the session details
             $session = Session::find($validated['session_id']);
             
             if (!$session) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session not found'
-                ], 404);
+                ]);
             }
             
-            \Log::info('Session details', [
+            $level = Level::find($validated['level']);
+            
+            if (!$level) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Level not found'
+                ]);
+            }
+            
+            \Log::info('Session and level details', [
                 'session_id' => $session->id,
                 'session_name' => $session->session,
-                'financial_year' => $session->financial_year ?? null
+                'level_id' => $level->id,
+                'level_description' => $level->description,
+                'financial_year' => $validated['financial_year']
             ]);
 
-            // Get candidates for this center and session
-            // The center_candidate table has 'session' field which contains the session NAME not ID
-            $candidatesQuery = CenterCandidate::where('center_no', $validated['center_no'])
-                ->where('session', $session->session); // Match with session name/value
+            // Get candidate counts per component for this level, center, session, and financial year
+            $componentCandidatesQuery = DB::table('center_candidate')
+                ->select(
+                    'components.id as component_id',
+                    'components.component_name',
+                    'components.subject_code',
+                    'components.component_code',
+                    DB::raw('COUNT(DISTINCT center_candidate.candidate_no) as candidate_count')
+                )
+                ->join('candidate_subject', function($join) {
+                    $join->on('center_candidate.candidate_no', '=', 'candidate_subject.candidate_no')
+                        ->on('center_candidate.session', '=', 'candidate_subject.session')
+                        ->on('center_candidate.financial_year', '=', 'candidate_subject.financial_year')
+                        ->on('center_candidate.level', '=', 'candidate_subject.level');
+                })
+                ->join('timetable', 'candidate_subject.subject_code', '=', 'timetable.subject_code')
+                ->join('components', function($join) {
+                    $join->on('timetable.subject_code', '=', 'components.subject_code')
+                        ->on('timetable.paper_no', '=', 'components.component_code');
+                })
+                ->where('center_candidate.center_no', $validated['center_no'])
+                ->where('center_candidate.level', $level->description)
+                ->where('center_candidate.session', $session->session)
+                ->where('center_candidate.financial_year', $validated['financial_year']);
             
-            if (isset($validated['subject_code'])) {
-                // Filter by subject if provided
-                $candidatesQuery->where('subject_number', 'LIKE', '%' . $validated['subject_code'] . '%');
+            // Filter by specific component if provided
+            if (isset($validated['component_id'])) {
+                $componentCandidatesQuery->where('components.id', $validated['component_id']);
             }
             
-            $candidates = $candidatesQuery->get();
-            $numCandidates = $candidates->count();
+            $componentCandidates = $componentCandidatesQuery
+                ->groupBy('components.id', 'components.component_name', 'components.subject_code', 'components.component_code')
+                ->get();
             
-            \Log::info('Candidates search result', [
+            $totalCandidates = $componentCandidates->sum('candidate_count');
+            
+            \Log::info('Component candidates result', [
                 'center_no' => $validated['center_no'],
-                'session_searched' => $session->session,
-                'candidates_found' => $numCandidates,
-                'total_candidates_in_center' => CenterCandidate::where('center_no', $validated['center_no'])->count(),
-                'sample_candidate_session' => $candidates->first() ? $candidates->first()->session : 'no candidates'
+                'level' => $level->description,
+                'session' => $session->session,
+                'financial_year' => $validated['financial_year'],
+                'components_with_candidates' => $componentCandidates->count(),
+                'total_candidate_registrations' => $totalCandidates,
+                'specific_component' => isset($validated['component_id']) ? 'Yes' : 'No'
             ]);
             
-            if ($numCandidates == 0) {
-                // Provide helpful debugging info
-                $allCandidatesInCenter = CenterCandidate::where('center_no', $validated['center_no'])
-                    ->select('session')
-                    ->groupBy('session')
-                    ->pluck('session')
-                    ->toArray();
-                
+            if ($componentCandidates->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No candidates found for this center and session. Please verify that candidates are registered.',
-                    'debug' => [
-                        'searched_for_session' => $session->session,
-                        'available_sessions_in_center' => $allCandidatesInCenter,
-                        'hint' => 'The session value might not match. Available sessions in this center: ' . implode(', ', $allCandidatesInCenter)
-                    ]
-                ], 404);
+                    'message' => 'No candidates found registered for any components in this level, center, session, and financial year.'
+                ]);
             }
 
-            // Get number of invigilators
-            $numInvigilators = $this->estimateInvigilators($numCandidates);
-
-            // Get components for the subject(s)
-            $components = $this->getComponentsForAllocation($validated);
+            // Get number of unique candidates
+            $uniqueCandidates = DB::table('center_candidate')
+                ->where('center_no', $validated['center_no'])
+                ->where('level', $level->description)
+                ->where('session', $session->session)
+                ->where('financial_year', $validated['financial_year'])
+                ->distinct('candidate_no')
+                ->count('candidate_no');
             
-            \Log::info('Components found', ['count' => $components->count()]);
-            
-            if ($components->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No components found for the selected subject(s). Please configure components first.'
-                ], 404);
-            }
+            $numInvigilators = $this->estimateInvigilators($uniqueCandidates);
 
             $allocations = [];
+            $componentsWithoutRules = [];
             
-            foreach ($components as $component) {
-                // Get component stocks with allocation rules
-                $componentStocks = ComponentStock::where('component_id', $component->id)
-                    ->where('is_active', true)
-                    ->with(['stockItem.stockType'])
-                    ->get();
-
-                \Log::info('Component stocks found', [
-                    'component_id' => $component->id,
-                    'component_name' => $component->component_name,
-                    'stocks_count' => $componentStocks->count()
+            // If no specific component selected, get ALL components with allocation rules
+            // and match them with candidate data
+            if (!isset($validated['component_id'])) {
+                \Log::info('No specific component selected - allocating for all components with rules');
+                
+                // Get all component IDs that have candidates
+                $componentIdsWithCandidates = $componentCandidates->pluck('component_id')->toArray();
+                
+                // Get all components that have allocation rules configured
+                $componentsWithRules = Component::whereHas('componentStocks', function($query) {
+                    $query->where('is_active', true);
+                })
+                ->whereIn('id', $componentIdsWithCandidates)
+                ->with(['componentStocks' => function($query) {
+                    $query->where('is_active', true)->with('stockItem.stockType');
+                }])
+                ->get();
+                
+                \Log::info('Components with allocation rules', [
+                    'total_components_with_candidates' => count($componentIdsWithCandidates),
+                    'components_with_rules' => $componentsWithRules->count()
                 ]);
+                
+                // Process each component that has both candidates AND allocation rules
+                foreach ($componentsWithRules as $component) {
+                    // Find the candidate data for this component
+                    $componentCandidateData = $componentCandidates->firstWhere('component_id', $component->id);
+                    
+                    if (!$componentCandidateData) {
+                        continue; // Skip if no candidates for this component
+                    }
+                    
+                    $numCandidates = $componentCandidateData->candidate_count;
+                    
+                    foreach ($component->componentStocks as $componentStock) {
+                        try {
+                            // Calculate allocation based on actual candidates for this component
+                            $calculation = $componentStock->calculateAllocation(
+                                $numCandidates,
+                                $numInvigilators,
+                                []
+                            );
 
-                if ($componentStocks->isEmpty()) {
-                    \Log::warning('No allocation rules found for component', ['component_id' => $component->id]);
-                    continue;
-                }
+                            $stockItem = $componentStock->stockItem;
+                            
+                            if (!$stockItem) {
+                                \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
+                                continue;
+                            }
+                            
+                            $availableStock = $stockItem->stock_qty ?? 0;
+                            $canAllocate = $availableStock >= $calculation['quantity'];
 
-                foreach ($componentStocks as $componentStock) {
-                    try {
-                        // Calculate allocation
-                        $calculation = $componentStock->calculateAllocation(
-                            $numCandidates,
-                            $numInvigilators,
-                            []
-                        );
-
-                        $stockItem = $componentStock->stockItem;
-                        
-                        if (!$stockItem) {
-                            \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
-                            continue;
+                            $allocations[] = [
+                                'component' => [
+                                    'id' => $component->id,
+                                    'component_code' => $component->component_code,
+                                    'component_name' => $component->component_name,
+                                    'subject_code' => $component->subject_code,
+                                    'full_code' => $component->subject_code . '-' . $component->component_code,
+                                    'candidates_registered' => $numCandidates,
+                                ],
+                                'stock_item' => [
+                                    'id' => $stockItem->id,
+                                    'name' => $stockItem->name,
+                                    'unit' => $stockItem->unit,
+                                    'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
+                                ],
+                                'component_stock' => [
+                                    'id' => $componentStock->id,
+                                    'rule_type' => $componentStock->rule_type,
+                                    'base_qty' => $componentStock->base_qty,
+                                    'multiplier' => $componentStock->multiplier,
+                                ],
+                                'required_qty' => $calculation['quantity'],
+                                'available_stock' => $availableStock,
+                                'can_allocate' => $canAllocate,
+                                'remaining_stock' => $availableStock - $calculation['quantity'],
+                                'breakdown' => $calculation['breakdown'],
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::error('Error calculating allocation', [
+                                'component_id' => $component->id,
+                                'component_stock_id' => $componentStock->id,
+                                'error' => $e->getMessage()
+                            ]);
                         }
-                        
-                        $availableStock = $stockItem->stock_qty ?? 0;
-                        $canAllocate = $availableStock >= $calculation['quantity'];
-
-                        $allocations[] = [
-                            'component' => [
-                                'id' => $component->id,
-                                'component_code' => $component->component_code,
-                                'component_name' => $component->component_name,
-                            ],
-                            'stock_item' => [
-                                'id' => $stockItem->id,
-                                'name' => $stockItem->name,
-                                'unit' => $stockItem->unit,
-                                'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
-                            ],
-                            'component_stock' => [
-                                'id' => $componentStock->id,
-                                'rule_type' => $componentStock->rule_type,
-                                'base_qty' => $componentStock->base_qty,
-                                'multiplier' => $componentStock->multiplier,
-                            ],
-                            'required_qty' => $calculation['quantity'],
-                            'available_stock' => $availableStock,
-                            'can_allocate' => $canAllocate,
-                            'remaining_stock' => $availableStock - $calculation['quantity'],
-                            'breakdown' => $calculation['breakdown'],
+                    }
+                }
+                
+                // Track components that have candidates but no allocation rules
+                $componentIdsWithRules = $componentsWithRules->pluck('id')->toArray();
+                foreach ($componentCandidates as $compData) {
+                    if (!in_array($compData->component_id, $componentIdsWithRules)) {
+                        $componentsWithoutRules[] = [
+                            'component_id' => $compData->component_id,
+                            'component_name' => $compData->component_name,
+                            'subject_code' => $compData->subject_code,
+                            'component_code' => $compData->component_code,
+                            'candidate_count' => $compData->candidate_count,
                         ];
-                    } catch (\Exception $e) {
-                        \Log::error('Error calculating allocation', [
-                            'component_stock_id' => $componentStock->id,
-                            'error' => $e->getMessage()
-                        ]);
+                    }
+                }
+                
+            } else {
+                // Specific component selected - original logic
+                \Log::info('Specific component selected - allocating for single component');
+                
+                foreach ($componentCandidates as $componentCandidate) {
+                    $component = Component::find($componentCandidate->component_id);
+                    
+                    if (!$component) {
+                        continue;
+                    }
+                    
+                    $numCandidates = $componentCandidate->candidate_count;
+                    
+                    // Get component stocks with allocation rules
+                    $componentStocks = ComponentStock::where('component_id', $component->id)
+                        ->where('is_active', true)
+                        ->with(['stockItem.stockType'])
+                        ->get();
+
+                    \Log::info('Component stocks found', [
+                        'component_id' => $component->id,
+                        'component_name' => $component->component_name,
+                        'candidates_registered' => $numCandidates,
+                        'stocks_count' => $componentStocks->count()
+                    ]);
+
+                    if ($componentStocks->isEmpty()) {
+                        \Log::warning('No allocation rules found for component', ['component_id' => $component->id]);
+                        continue;
+                    }
+
+                    foreach ($componentStocks as $componentStock) {
+                        try {
+                            // Calculate allocation based on actual candidates for this component
+                            $calculation = $componentStock->calculateAllocation(
+                                $numCandidates,
+                                $numInvigilators,
+                                []
+                            );
+
+                            $stockItem = $componentStock->stockItem;
+                            
+                            if (!$stockItem) {
+                                \Log::warning('Stock item not found', ['component_stock_id' => $componentStock->id]);
+                                continue;
+                            }
+                            
+                            $availableStock = $stockItem->stock_qty ?? 0;
+                            $canAllocate = $availableStock >= $calculation['quantity'];
+
+                            $allocations[] = [
+                                'component' => [
+                                    'id' => $component->id,
+                                    'component_code' => $component->component_code,
+                                    'component_name' => $component->component_name,
+                                    'subject_code' => $component->subject_code,
+                                    'full_code' => $component->subject_code . '-' . $component->component_code,
+                                    'candidates_registered' => $numCandidates,
+                                ],
+                                'stock_item' => [
+                                    'id' => $stockItem->id,
+                                    'name' => $stockItem->name,
+                                    'unit' => $stockItem->unit,
+                                    'stock_type' => $stockItem->stockType ? $stockItem->stockType->name : null,
+                                ],
+                                'component_stock' => [
+                                    'id' => $componentStock->id,
+                                    'rule_type' => $componentStock->rule_type,
+                                    'base_qty' => $componentStock->base_qty,
+                                    'multiplier' => $componentStock->multiplier,
+                                ],
+                                'required_qty' => $calculation['quantity'],
+                                'available_stock' => $availableStock, 
+                                'can_allocate' => $canAllocate,
+                                'remaining_stock' => $availableStock - $calculation['quantity'],
+                                'breakdown' => $calculation['breakdown'],
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::error('Error calculating allocation', [
+                                'component_stock_id' => $componentStock->id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
                     }
                 }
             }
             
-            \Log::info('Total allocations generated', ['count' => count($allocations)]);
+            \Log::info('Total allocations generated', [
+                'allocations_count' => count($allocations),
+                'components_without_rules_count' => count($componentsWithoutRules)
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -214,21 +521,28 @@ class CenterAllocationController extends Controller
                         'center_name' => $center->center_name,
                         'district' => $center->district,
                     ],
-                    'num_candidates' => $numCandidates,
+                    'level' => [
+                        'id' => $level->id,
+                        'description' => $level->description,
+                    ],
+                    'num_candidates' => $uniqueCandidates,
+                    'total_component_registrations' => $totalCandidates,
                     'num_invigilators' => $numInvigilators,
                     'allocations' => $allocations,
+                    'components_without_rules' => $componentsWithoutRules,
                     'session' => [
                         'id' => $session->id,
                         'session' => $session->session,
+                        'financial_year' => $validated['financial_year'],
                         'description' => $session->description ?? null,
                     ],
-                    'subject' => isset($validated['subject_code']) 
-                        ? Subject::find($validated['subject_code']) 
+                    'component' => isset($validated['component_id']) 
+                        ? Component::with('subject')->find($validated['component_id']) 
                         : null,
                 ]
             ]);
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (\ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
@@ -245,22 +559,7 @@ class CenterAllocationController extends Controller
                 'message' => 'Error generating report: ' . $e->getMessage()
             ]);
         }
-    
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'center' => $center,
-                'num_candidates' => $numCandidates,
-                'num_invigilators' => $numInvigilators,
-                'allocations' => $allocations,
-                'session' => Session::find($validated['session_id']),
-                'subject' => isset($validated['subject_code']) 
-                    ? Subject::find($validated['subject_code']) 
-                    : null,
-            ]
-        ]);
     }
-
     /**
      * Save allocation to database
      */
@@ -276,7 +575,7 @@ class CenterAllocationController extends Controller
             'allocations.*.breakdown' => 'nullable|array',
         ]);
 
-        DB::beginTransaction();
+        DB::beginTransaction(); 
         
         try {
             $savedAllocations = [];
@@ -340,7 +639,7 @@ class CenterAllocationController extends Controller
             $allocations = CenterStock::with([
                 'center',
                 'stockItem.stockType',
-                'component',
+                'component.subject',
                 'session'
             ])
             ->when($request->center_no, function($q) use ($request) {
@@ -362,7 +661,11 @@ class CenterAllocationController extends Controller
                     return $row->stockItem->name ?? '-';
                 })
                 ->addColumn('component_name', function($row) {
-                    return $row->component->component_name ?? '-';
+                    if ($row->component) {
+                        $fullCode = $row->component->subject_code . '-' . $row->component->component_code;
+                        return $row->component->component_name . ' (' . $fullCode . ')';
+                    }
+                    return '-';
                 })
                 ->addColumn('session_name', function($row) {
                     return $row->session->session ?? '-';
@@ -404,10 +707,11 @@ class CenterAllocationController extends Controller
 
         $centers = Center::orderBy('center_no')->get(['center_no', 'center_name']);
         $sessions = Session::orderBy('session')->get(['id', 'session']);
+        $levels = Level::where('is_active', true)->orderBy('id')->get();
 
-        return view('admin.stationery.allocation.view', compact('centers', 'sessions'));
+        return view('admin.stationery.allocation.view', compact('centers', 'sessions', 'levels'));
     }
-
+    //                             
     /**
      * Mark allocation as dispatched
      */
@@ -449,7 +753,7 @@ class CenterAllocationController extends Controller
                 'message' => 'Cannot cancel dispatched or received allocation'
             ]);
         }
-
+ 
         DB::beginTransaction();
         
         try {
@@ -458,7 +762,7 @@ class CenterAllocationController extends Controller
             
             $allocation->delete();
 
-            DB::commit();
+                        DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -479,7 +783,7 @@ class CenterAllocationController extends Controller
      */
     public function getBreakdown($id)
     {
-        $allocation = CenterStock::with(['stockItem', 'component'])
+        $allocation = CenterStock::with(['stockItem', 'component.subject'])
             ->findOrFail($id);
 
         return response()->json([
@@ -498,19 +802,5 @@ class CenterAllocationController extends Controller
     {
         // Assuming 1 invigilator per 25 candidates
         return (int) ceil($numCandidates / 25);
-    }
-
-    /**
-     * Helper: Get components for allocation
-     */
-    private function getComponentsForAllocation($validated)
-    {
-        $query = Component::query();
-
-        if (isset($validated['subject_code'])) {
-            $query->where('subject_code', $validated['subject_code']);
-        }
-
-        return $query->get();
     }
 }

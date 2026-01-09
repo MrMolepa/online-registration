@@ -1,28 +1,46 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.home') }}">
-                <i class="mdi mdi-home menu-icon"></i>
-                <span class="menu-title">Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.profile.index') }}">
-                <i class="mdi menu-icon mdi-account-circle"></i>
-                <span class="menu-title">Candidate Profile</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.profile.kin') }}">
-                <i class="mdi mdi-account-network menu-icon"></i>
-                <span class="menu-title">Next of Kin</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('candidate.payment') }}">
-                <i class="mdi mdi-cash-multiple  menu-icon"></i>
-                <span class="menu-title">Payments</span>
-            </a>
-        </li>
+        {{-- Dynamic Menu Items --}}
+        {{-- Dynamic Menu Items --}}
+        @foreach($dynamicMenus as $menu)
+            <li class="nav-item {{ isMenuActive($menu) ? 'active' : '' }}">
+                @if($menu->children && $menu->children->isNotEmpty())
+                    {{-- Parent Menu with Children --}}
+                    <a class="nav-link" 
+                       data-toggle="collapse" 
+                       href="#{{ getMenuCollapseId($menu) }}" 
+                       aria-expanded="{{ isMenuActive($menu) ? 'true' : 'false' }}" 
+                       aria-controls="{{ getMenuCollapseId($menu) }}">
+                        <i class="menu-icon {{ $menu->icon ?: 'mdi mdi-menu' }}"></i>
+                        <span class="menu-title">{{ $menu->name }}</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+
+                    <div class="collapse {{ isMenuActive($menu) ? 'show' : '' }}" 
+                         id="{{ getMenuCollapseId($menu) }}">
+                        <ul class="nav flex-column sub-menu">
+                            @foreach($menu->children as $child)
+                                <li class="nav-item">
+                                    <a class="nav-link {{ isActiveRoute($child->route) ? 'active' : '' }}" 
+                                       href="{{ $child->route ? route($child->route) : '#' }}">
+                                        @if($child->icon)
+                                            <i class="{{ $child->icon }}"></i>
+                                        @endif
+                                        {{ $child->name }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @else
+                    {{-- Single Menu Item --}}
+                    <a class="nav-link {{ isActiveRoute($menu->route) ? 'active' : '' }}" 
+                       href="{{ $menu->route ? route($menu->route) : '#' }}">
+                        <i class="menu-icon {{ $menu->icon ?: 'mdi mdi-menu' }}"></i>
+                        <span class="menu-title">{{ $menu->name }}</span>
+                    </a>
+                @endif
+            </li>
+        @endforeach
     </ul>
 </nav>
