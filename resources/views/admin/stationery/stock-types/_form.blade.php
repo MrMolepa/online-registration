@@ -1,6 +1,6 @@
 <!-- Stock Type Form Modal -->
 <div class="modal fade" id="stockTypeModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-compact">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">

@@ -1,6 +1,6 @@
 <!-- Menu Form Modal -->
 <div class="modal fade" id="menuModal" tabindex="-1" role="dialog" >
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
