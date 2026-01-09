@@ -15,31 +15,42 @@
                 
                 <div class="modal-body">
                     <!-- Stock Item Selection -->
-                    <div class="form-group">
-                        <label for="stock_item_id">Stock Item<span class="text-danger">*</span></label>
-                        <select class="form-control" id="stock_item_id" name="stock_item_id">
-                            <option value="">Select Stock Item</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
 
-                    <!-- Rule Type -->
-                    <div class="form-group">
-                        <label for="rule_type">Rule Type<span class="text-danger">*</span></label>
-                        <select class="form-control" id="rule_type" name="rule_type">
-                            <option value="per_candidate">Per Candidate</option>
-                            <option value="per_center">Per Center</option>
-                            <option value="fixed">Fixed Quantity</option>
-                            <option value="conditional">Conditional</option>
-                        </select>
-                        <small class="form-text text-muted">
-                            <strong>Per Candidate:</strong> Quantity based on number of candidates<br>
-                            <strong>Per Center:</strong> Quantity based on number of centers<br>
-                            <strong>Fixed:</strong> Same quantity regardless of candidates/centers<br>
-                            <strong>Conditional:</strong> Apply rule only if condition is met
-                        </small>
-                        <div class="invalid-feedback"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="stock_item_id">Stock Item<span class="text-danger">*</span></label>
+                                <select class="form-control" id="stock_item_id" name="stock_item_id">
+                                    <option value="">Select Stock Item</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- Rule Type -->
+                            <div class="form-group">
+                                <label for="rule_type">Rule Type<span class="text-danger">*</span></label>
+                                <select class="form-control" id="rule_type" name="rule_type">
+                                    <option value="per_candidate">Per Candidate</option>
+                                    <option value="per_center">Per Center</option>
+                                    <option value="fixed">Fixed Quantity</option>
+                                    <option value="conditional">Conditional</option>
+                                </select>
+                                {{-- <small class="form-text text-muted">
+                                    <strong>Per Candidate:</strong> Quantity based on number of candidates<br>
+                                    <strong>Per Center:</strong> Quantity based on number of centers<br>
+                                    <strong>Fixed:</strong> Same quantity regardless of candidates/centers<br>
+                                    <strong>Conditional:</strong> Apply rule only if condition is met
+                                </small> --}}
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
                     </div>
+                    
+                    
+
+                   
 
                     <!-- Conditional Field (Hidden by default) -->
                     <div class="form-group conditional-field" style="display: none;">
@@ -74,7 +85,7 @@
                             </div>
                         </div>
                     </div>
-
+                    <hr>
                     <div class="extras-section">
                         <h4>Extras (Optional)</h4>
                         <p class="text-muted">Add additional quantities on top of the base calculation</p>
@@ -124,7 +135,7 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-info mt-3">
+                    <div class="alert alert-info mt-4">
                         <i class="fa fa-info-circle"></i> <strong>Calculation Formula:</strong><br>
                         <code>Result = (Base Qty × Count × Multiplier) + Fixed Extras + (Candidates × Per Candidate) + (Base × Percent%)</code>
                     </div>

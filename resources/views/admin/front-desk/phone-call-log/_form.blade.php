@@ -1,6 +1,6 @@
 <!-- Phone Call Log Form Modal -->
 <div class="modal fade" id="phoneCallLogModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
@@ -25,22 +25,36 @@
                         <div class="invalid-feedback"></div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="row">
+                       <div class="form-group col-md-4">
+                            <label for="call_type">Call Type<span class="text-danger">*</span></label><br>
+                            <label class="radio-inline">
+                                <input type="radio" id="call_type_incoming" name="call_type" value="Incoming" checked> Incoming
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" id="call_type_outgoing" name="call_type" value="Outgoing"> Outgoing
+                            </label>
+                            <div class="invalid-feedback"></div>
+                        </div> 
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-6">
                         <label for="date">Date<span class="text-danger">*</span></label>
                         <input type="text" class="form-control datepicker" id="date" name="date" placeholder="Select date">
                         <div class="invalid-feedback"></div>
+                        </div>
+
+                        
+
+                        <div class="form-group col-md-6">
+                            <label for="call_duration">Call Duration</label>
+                            <input type="text" class="form-control" id="call_duration" name="call_duration" placeholder="e.g., 5 minutes">
+                            <div class="invalid-feedback"></div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="call_type">Call Type<span class="text-danger">*</span></label><br>
-                        <label class="radio-inline">
-                            <input type="radio" id="call_type_incoming" name="call_type" value="Incoming" checked> Incoming
-                        </label>
-                        <label class="radio-inline">
-                            <input type="radio" id="call_type_outgoing" name="call_type" value="Outgoing"> Outgoing
-                        </label>
-                        <div class="invalid-feedback"></div>
-                    </div>
+                    
 
                     <div class="form-group">
                         <label for="next_follow_up_date">Next Follow Up Date</label>
@@ -48,11 +62,7 @@
                         <div class="invalid-feedback"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="call_duration">Call Duration</label>
-                        <input type="text" class="form-control" id="call_duration" name="call_duration" placeholder="e.g., 5 minutes">
-                        <div class="invalid-feedback"></div>
-                    </div>
+                    
 
                     <div class="form-group">
                         <label for="description">Description</label>

@@ -20,7 +20,7 @@
                                     </button>
                                     
                                     <div class="mt-3">
-                                        <table class="table table-striped" id="visitorsBookTable">
+                                        <table class="table table-hover table-sm" id="visitorsBookTable">
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
