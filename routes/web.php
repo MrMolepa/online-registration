@@ -354,6 +354,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 
  Route::prefix('stationery')->name('stationery.')->group(function () {
+            // Stationery main index - maps /admin/stationery
+            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
             
             // ==================== Stock Types ====================
             Route::resource('stock-types', StockTypeController::class)

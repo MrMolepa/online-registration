@@ -38,7 +38,7 @@ class StockTypeController extends Controller
                 ->make(true);
         }
 
-        return view('admin.stationery.stock-types.index');
+        return view('admin.stationery.index');
     }
 
     public function store(Request $request)

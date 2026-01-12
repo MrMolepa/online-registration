@@ -98,7 +98,7 @@ class ComponentStockController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.stationery.components.stock', compact('components', 'stockItems'));
+        return view('admin.stationery.stock', compact('components', 'stockItems'));
     }
 
     /**
