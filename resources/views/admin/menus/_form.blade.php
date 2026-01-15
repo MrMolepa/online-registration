@@ -109,7 +109,7 @@ console.log('Menu modal opened, loading parent menus and guards.');
     // Load guards dynamically
     function loadGuards() {
         $.ajax({
-            url: '{{ route("admin.menus.guards") }}',
+            url: '{{ route("admin.menu-permissions.guards") }}',
             type: 'GET',
             success: function(response) {
                 if (response.success) {
