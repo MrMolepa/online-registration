@@ -57,7 +57,7 @@ class CenterAllocationController extends Controller
         $sessions = Session::when($financialYear, function($q) use ($financialYear) {
                 $q->where('financial_year', $financialYear);
             })
-            ->where('is_active', true)
+           
             ->orderBy('session')
             ->get();
         

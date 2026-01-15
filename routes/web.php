@@ -305,8 +305,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth:admin', 'PreventBackHistory'])->group(function () {
 
 
-        
-       // Menu Permission Routes (PIVOT-BASED)
+
+        // Menu Permission Routes (PIVOT-BASED)
         Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
 
 
@@ -353,11 +353,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
 
- Route::prefix('stationery')->name('stationery.')->group(function () {
+        Route::prefix('stationery')->name('stationery.')->group(function () {
+            Route::get('component-stock/sessions-by-filters', [ComponentStockController::class, 'getSessionsByFilters'])
+                ->name('component-stock.sessions-by-filters');
+            Route::get('component-stock/components-by-filters', [ComponentStockController::class, 'getComponentsByFilters'])
+                ->name('component-stock.components-by-filters');
+
             // Stationery main index - maps /admin/stationery
             Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
-            
-            // ==================== Stock Types ====================
+
+            // ==================== Stock Types =======================================
             Route::resource('stock-types', StockTypeController::class)
                 ->parameters(['stock-types' => 'stockType'])
                 ->except(['create']);
@@ -367,8 +372,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->name('stock-types.show');
             Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
                 ->name('stock-types.options');
-            
-            // ==================== Stock Items ====================
+
+            // ==================== Stock Items =======================================
             Route::resource('stock-items', StockItemController::class)
                 ->parameters(['stock-items' => 'stockItem'])
                 ->except(['create']);
@@ -377,9 +382,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
                 ->name('stock-items.show');
             Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
-                ->name('stock-items.options');   
-            
-           // ==================== Component Stocks ====================
+                ->name('stock-items.options');
+
+            // ==================== Component Stocks =============================================
             Route::get('component-stock', [ComponentStockController::class, 'index'])
                 ->name('component-stock.index');
             Route::post('component-stock/get-component', [ComponentStockController::class, 'getComponent'])
@@ -394,90 +399,86 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->name('component-stock.destroy');
             Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
-        
+
+            // // Component Stock filter routes
+            // Route::get('component-stock/sessions-by-filters', [ComponentStockController::class, 'getSessionsByFilters'])
+            //     ->name('admin.stationery.component-stock.sessions-by-filters');
+            // Route::get('component-stock/components-by-filters', [ComponentStockController::class, 'getComponentsByFilters'])
+            //     ->name('admin.stationery.component-stock.components-by-filters');
+
             Route::prefix('allocation')->name('allocation.')->group(function () {
-            // Main allocation page
-            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
-    
-            // Generate allocation report
-            Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
-    
-            // Save allocation
-            Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
-    
-           // View allocations
-            Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
-    
-            // Get breakdown details
-            Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
-    
-            // Mark as dispatched
-            Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
-    
-            // Cancel allocation
-            Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
-            
-            // Filter endpoints
-            Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
-            Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
-            Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
-            
+                // Main allocation page
+                Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+
+                // Generate allocation report
+                Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
+
+                // Save allocation
+                Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
+
+                // View allocations
+                Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
+
+                // Get breakdown details
+                Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
+
+                // Mark as dispatched
+                Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
+
+                // Cancel allocation
+                Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
+
+                // Filter endpoints
+                Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
+                Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
+                Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
+
             });
-            });
+        });
 
-// Route::prefix('visitors')->name('visitors.')->group(function () {
-    
-// });
-// Route::get('/visitors/data', [VisitorController::class, 'data'])->name('visitors.data');
-//     Route::resource('visitors', VisitorController::class);
-//     Route::post('/visitors/store', [VisitorController::class, 'store'])->name('visitors.store');
-//     Route::get('/visitors/{id}/edit', [VisitorController::class, 'edit'])->name('visitors.edit');
-//     Route::put('/visitors/{id}', [VisitorController::class, 'update'])->name('visitors.update');
-//     Route::delete('/visitors/{id}', [VisitorController::class, 'destroy'])->name('visitors.destroy');
+        Route::prefix('front-desk/phone-call-log')->name('front-desk.phone-call-log.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'store'])->name('store');
+            Route::get('{phoneCallLog}/edit', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'edit'])->name('edit');
+            Route::put('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'update'])->name('update');
+            Route::delete('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'destroy'])->name('destroy');
+        });
 
-Route::prefix('front-desk/phone-call-log')->name('front-desk.phone-call-log.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'index'])->name('index');
-        Route::post('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'store'])->name('store');
-        Route::get('{phoneCallLog}/edit', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'edit'])->name('edit');
-        Route::put('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'update'])->name('update');
-        Route::delete('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'destroy'])->name('destroy');
-    });
+        Route::prefix('front-desk/postal-dispatch')->name('front-desk.postal-dispatch.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'store'])->name('store');
+            Route::get('{postalDispatch}/edit', [App\Http\Controllers\Admin\PostalDispatchController::class, 'edit'])->name('edit');
+            Route::put('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'update'])->name('update');
+            Route::delete('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'destroy'])->name('destroy');
+        });
 
-Route::prefix('front-desk/postal-dispatch')->name('front-desk.postal-dispatch.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'index'])->name('index');
-        Route::post('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'store'])->name('store');
-        Route::get('{postalDispatch}/edit', [App\Http\Controllers\Admin\PostalDispatchController::class, 'edit'])->name('edit');
-        Route::put('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'update'])->name('update');
-        Route::delete('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'destroy'])->name('destroy');
-    });
+        Route::prefix('front-desk/visitors-book')->name('front-desk.visitors-book.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'store'])->name('store');
+            Route::get('{visitor}/edit', [App\Http\Controllers\Admin\VisitorBookController::class, 'edit'])->name('edit');
+            Route::put('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'update'])->name('update');
+            Route::delete('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'destroy'])->name('destroy');
+        });
 
-Route::prefix('front-desk/visitors-book')->name('front-desk.visitors-book.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'index'])->name('index');
-        Route::post('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'store'])->name('store');
-        Route::get('{visitor}/edit', [App\Http\Controllers\Admin\VisitorBookController::class, 'edit'])->name('edit');
-        Route::put('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'update'])->name('update');
-        Route::delete('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'destroy'])->name('destroy');
-    });
+        Route::prefix('front-desk')->name('front-desk.')->group(function () {
+            Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([
+                'postal-receive' => 'postalReceive'
+            ])->except(['create']);
 
-Route::prefix('front-desk')->name('front-desk.')->group(function () {
-        Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([
-            'postal-receive' => 'postalReceive'
-        ])->except(['create']);
-        
-        // Override edit and show routes to return JSON
-        Route::get('postal-receive/{postalReceive}/edit', [App\Http\Controllers\Admin\PostalReceiveController::class, 'edit'])->name('postal-receive.edit');
-        Route::get('postal-receive/{postalReceive}', [App\Http\Controllers\Admin\PostalReceiveController::class, 'show'])->name('postal-receive.show');
+            // Override edit and show routes to return JSON
+            Route::get('postal-receive/{postalReceive}/edit', [App\Http\Controllers\Admin\PostalReceiveController::class, 'edit'])->name('postal-receive.edit');
+            Route::get('postal-receive/{postalReceive}', [App\Http\Controllers\Admin\PostalReceiveController::class, 'show'])->name('postal-receive.show');
 
-        Route::resource('enquiry', App\Http\Controllers\Admin\EnquiryController::class)->parameters([
-            'enquiry' => 'enquiry'
-        ])->except(['create']);
-        
-        // Override edit and show routes to return JSON
-        Route::get('enquiry/{enquiry}/edit', [App\Http\Controllers\Admin\EnquiryController::class, 'edit'])->name('enquiry.edit');
-        Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
+            Route::resource('enquiry', App\Http\Controllers\Admin\EnquiryController::class)->parameters([
+                'enquiry' => 'enquiry'
+            ])->except(['create']);
 
-    });
-        
+            // Override edit and show routes to return JSON
+            Route::get('enquiry/{enquiry}/edit', [App\Http\Controllers\Admin\EnquiryController::class, 'edit'])->name('enquiry.edit');
+            Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
+
+        });
+
         //'middleware' => 'admin'
 
         Route::get('/sms', [SmsController::class, 'index'])->name('sms.index');
@@ -494,7 +495,7 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         Route::put('/centers/update-sessions/{id}', [CentersController::class, 'updateSessions'])->name('centers.updateSessions');
         Route::put('/centers/update-level/{id}', [CentersController::class, 'updateLevels'])->name('centers.updateLevels');
         Route::put('/centers/update-subjects/{id}', [CentersController::class, 'updateSubjects'])->name('centers.updateSubjects');
-        
+
         // invitations
         Route::prefix('invitations')->name('invitations.')->group(function () {
             // Invitations
@@ -550,19 +551,7 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
             // Workflow Instances
             Route::post('/start', [WorkflowInstanceController::class, 'start'])->name('instances.start');
             Route::get('/instances/{instance}', [WorkflowInstanceController::class, 'show'])->name('instances.show');
-
-            // Approvals (stay within the current admin/workflows group)
-            // Route::prefix('approvals')->name('approvals.')->group(function () {
-            //     Route::get('/', [ApprovalController::class, 'index'])->name('index');
-            //     Route::post('/{instance}/process', [ApprovalController::class, 'process'])->name('process');
-            //     Route::get('/{instance}/history', [ApprovalController::class, 'history'])->name('history');
-            // });
         });
-
-
-
-
-
 
         // invigilation
         Route::prefix('invigilations')->name('invigilations.')->group(function () {
@@ -840,13 +829,6 @@ Route::prefix('front-desk')->name('front-desk.')->group(function () {
         // ******************Page menus*********************
         Route::post('page-menus/updateOrder', [MenuController::class, 'updateOrder'])->name('page-menus.updateOrder');
         Route::resource('page-menus', MenuController::class);
-        
-
-
-        
-
-
-
         // *************Publications Publication ************
         Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
         Route::get('/publications-display', [PublicationController::class, 'displayPublications'])->name('publications.display');
