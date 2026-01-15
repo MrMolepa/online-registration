@@ -1,6 +1,6 @@
 <!-- Menu Form Modal -->
 <div class="modal fade" id="menuModal" tabindex="-1" role="dialog" >
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
@@ -109,7 +109,7 @@ console.log('Menu modal opened, loading parent menus and guards.');
     // Load guards dynamically
     function loadGuards() {
         $.ajax({
-            url: '{{ route("admin.menus.guards") }}',
+            url: '{{ route("admin.menu-permissions.guards") }}',
             type: 'GET',
             success: function(response) {
                 if (response.success) {

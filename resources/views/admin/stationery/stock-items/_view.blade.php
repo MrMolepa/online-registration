@@ -49,15 +49,7 @@
                         </table>
                     </div>
                 </div>
-                
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <h4>Linked Components</h4>
-                        <ul id="view_components" class="list-group">
-                            <!-- Components will be populated here -->
-                        </ul>
-                    </div>
-                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

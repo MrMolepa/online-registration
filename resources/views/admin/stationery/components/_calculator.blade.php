@@ -20,8 +20,8 @@
 
                 <div class="form-group">
                     <label for="calc_candidates">Number of Candidates<span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="calc_candidates" 
-                           placeholder="e.g., 50" min="1">
+                    <input type="number" class="form-control" id="calc_candidates" placeholder="e.g., 50"
+                        min="1">
                 </div>
 
                 <button type="button" class="btn btn-primary" id="calculateTestBtn">
@@ -57,17 +57,24 @@
         list-style-type: none;
         padding-left: 0;
     }
-    
+
     #calc_breakdown li {
         padding: 8px;
         margin-bottom: 5px;
         background-color: #f5f5f5;
         border-left: 3px solid #337ab7;
     }
-    
+
     #calc_breakdown li:last-child {
         background-color: #d9edf7;
         border-left-color: #31708f;
         font-weight: bold;
     }
+
+    #calculatorModal .invalid-feedback {
+        color: #f80d09ff !important;
+        display: block;
+    }
+
+    ;
 </style>

@@ -12,6 +12,7 @@ class ComponentStock extends Model
     protected $table = 'stationery_component_stocks';
 
     protected $fillable = [
+        'component_key',
         'component_id',
         'stock_item_id',
         'base_qty',
@@ -38,6 +39,28 @@ class ComponentStock extends Model
     public function component()
     {
         return $this->belongsTo(Component::class, 'component_id');
+    }
+
+    /**
+     * Resolve component by parsing `component_key` (helper)
+     */
+    public function resolveComponentFromKey()
+    {
+        if (empty($this->component_key)) {
+            return null;
+        }
+
+        $parts = explode('-', $this->component_key);
+        if (count($parts) < 2) {
+            return null;
+        }
+
+        $subject = ltrim($parts[0], "0");
+        $compCode = ltrim($parts[1], "0");
+
+        return Component::where('subject_code', $subject)
+            ->where('component_code', $compCode)
+            ->first();
     }
 
     /**

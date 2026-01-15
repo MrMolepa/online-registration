@@ -43,7 +43,7 @@ class CenterAllocationController extends Controller
 
         $subjects = Subject::orderBy('subject_name')->get(['subject_code', 'subject_name']);
 
-        return view('admin.stationery.allocation.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
+        return view('admin.stationery.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
     }
 
     /**
@@ -57,7 +57,7 @@ class CenterAllocationController extends Controller
         $sessions = Session::when($financialYear, function($q) use ($financialYear) {
                 $q->where('financial_year', $financialYear);
             })
-            ->where('is_active', true)
+           
             ->orderBy('session')
             ->get();
         
@@ -572,6 +572,7 @@ class CenterAllocationController extends Controller
             'allocations.*.component_id' => 'required|exists:components,id',
             'allocations.*.stock_item_id' => 'required|exists:stationery_stock_items,id',
             'allocations.*.allocated_qty' => 'required|numeric|min:0',
+            'allocations.*.num_candidates' => 'nullable|integer|min:0',
             'allocations.*.breakdown' => 'nullable|array',
         ]);
 
@@ -595,13 +596,14 @@ class CenterAllocationController extends Controller
                 // Create or update allocation
                 $allocation = CenterStock::updateOrCreate(
                     [
-                        'center_id' => $validated['center_no'],
+                        'center_no' => $validated['center_no'],
                         'session_id' => $validated['session_id'],
                         'component_id' => $allocationData['component_id'],
                         'stock_item_id' => $allocationData['stock_item_id'],
                     ],
                     [
                         'quantity_allocated' => $allocationData['allocated_qty'],
+                        'num_candidates' => $allocationData['num_candidates'] ?? 0,
                         'allocation_breakdown' => $allocationData['breakdown'] ?? [],
                         'status' => 'allocated',
                     ]
@@ -643,7 +645,7 @@ class CenterAllocationController extends Controller
                 'session'
             ])
             ->when($request->center_no, function($q) use ($request) {
-                $q->where('center_id', $request->center_no);
+                $q->where('center_no', $request->center_no);
             })
             ->when($request->session_id, function($q) use ($request) {
                 $q->where('session_id', $request->session_id);

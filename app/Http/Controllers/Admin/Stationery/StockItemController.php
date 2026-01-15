@@ -53,7 +53,7 @@ class StockItemController extends Controller
                 ->make(true);
         }
 
-        return view('admin.stationery.stock-items.index');
+        return view('admin.stationery.index');//
     }
 
     public function store(Request $request)
@@ -129,7 +129,7 @@ class StockItemController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot delete stock item "' . $stockItem->name . '". It is linked to ' . $rulesCount . ' allocation rule(s). Please delete the rules first.'
-                ], 422);
+                ]);
             }
 
             // Check if stock item has center allocations
@@ -139,7 +139,7 @@ class StockItemController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Cannot delete stock item "' . $stockItem->name . '". It has ' . $allocationsCount . ' center allocation(s).'
-                ], 422);
+                ]);
             }
 
             // Store name for success message
@@ -159,7 +159,7 @@ class StockItemController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete stock item due to database constraints. It may be in use.'
-            ], 500);
+            ]);
             
         } catch (\Exception $e) {
             \Log::error('Error deleting stock item: ' . $e->getMessage());
@@ -167,7 +167,7 @@ class StockItemController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error deleting stock item: ' . $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
