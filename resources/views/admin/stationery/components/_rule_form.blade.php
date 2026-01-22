@@ -138,8 +138,7 @@
                                     <label for="extras_percent_candidates">Candidate % Extras</label>
                                     <input type="number" step="0.01" class="form-control"
                                         id="extras_percent_candidates" name="extras_percent_candidates"
-                                        placeholder="e.g., 5" max="100" disabled>
-                                    <small class="form-text text-muted">Not currently implemented</small>
+                                        placeholder="e.g., 5" max="100">
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>

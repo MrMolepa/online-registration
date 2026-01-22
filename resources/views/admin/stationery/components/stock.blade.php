@@ -32,7 +32,7 @@
                                                 data-code="{{ $componentKey }}"
                                                 data-name="{{ $comp->component_name }}"
                                                 data-subject="{{ $subjectName }}">
-                                            {{ $comp->component_name }} ({{ $componentKey }}) - {{ $subjectName }}
+                                           ({{ $componentKey }}) - {{ $comp->component_name }}  - {{ $subjectName }}
                                         </option>
                                     @endforeach
                                 </select>

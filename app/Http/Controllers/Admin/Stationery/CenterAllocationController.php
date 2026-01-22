@@ -43,7 +43,7 @@ class CenterAllocationController extends Controller
 
         $subjects = Subject::orderBy('subject_name')->get(['subject_code', 'subject_name']);
 
-        return view('admin.stationery.allocation.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
+        return view('admin.stationery.index', compact('levels', 'financialYears', 'sessions', 'centers', 'components', 'subjects'));
     }
 
     /**
@@ -57,7 +57,7 @@ class CenterAllocationController extends Controller
         $sessions = Session::when($financialYear, function($q) use ($financialYear) {
                 $q->where('financial_year', $financialYear);
             })
-            ->where('is_active', true)
+           
             ->orderBy('session')
             ->get();
         

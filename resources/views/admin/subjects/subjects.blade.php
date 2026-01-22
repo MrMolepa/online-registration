@@ -83,7 +83,7 @@
                                                         <th>Discipline</th>
                                                         <th>Practical Fee </th>
                                                         <th>Delf Fee </th>
-                                                        <th>Sync to  </th>
+                                                        <th>Sync to </th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>
@@ -746,6 +746,7 @@
                                                         <th>ID</th>
                                                         <th>Name</th>
                                                         <th>Display Name</th>
+                                                        <th>Level</th>
                                                         <th>Created At</th>
                                                         <th>Updated At</th>
                                                         <th>Action</th>
@@ -1450,7 +1451,15 @@
                                 <input type="text" class="form-control" name="display_name" id="display_name"
                                     value="" />
                             </div>
-
+                            <div class="form-group">
+                                <label for="level_id" class="control-label">Level</label>
+                                <select id="level_id" name="level_id" class="form-control">
+                                    <option value="">Please Select Level</option>
+                                    @foreach ($levels as $level)
+                                        <option value="{{ $level->id }}"> {{ $level->level }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </form>
 
                     </div>
@@ -1691,7 +1700,7 @@
             });
             $.ajax({
                 type: "GET",
-                url:  actionUrl ,
+                url: actionUrl,
                 success: function(data) {
                     toastr.success(data.success);
                 },
