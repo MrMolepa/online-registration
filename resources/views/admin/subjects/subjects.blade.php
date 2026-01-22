@@ -746,6 +746,7 @@
                                                         <th>ID</th>
                                                         <th>Name</th>
                                                         <th>Display Name</th>
+                                                        <th>Level</th>
                                                         <th>Created At</th>
                                                         <th>Updated At</th>
                                                         <th>Action</th>

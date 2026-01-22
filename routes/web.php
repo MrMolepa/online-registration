@@ -50,6 +50,7 @@ use App\Http\Controllers\Admin\ServiceRequirementContoller;
 use App\Http\Controllers\Admin\ServiceSaleContolller;
 use App\Http\Controllers\Service\ServiceController;
 
+
 //Workflow
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowInstanceController;
@@ -61,6 +62,11 @@ use App\Http\Controllers\Admin\Stationery\StockTypeController;
 use App\Http\Controllers\Admin\Stationery\StockItemController;
 use App\Http\Controllers\Admin\Stationery\ComponentStockController;
 use App\Http\Controllers\Admin\Stationery\CenterAllocationController;
+
+//Subject Groups
+use App\Http\Controllers\Admin\SubjectGroupController;
+use App\Http\Controllers\Admin\SubjectGroupRuleController;
+use App\Http\Controllers\Admin\SubjectManagementController;
 
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
@@ -305,6 +311,39 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth:admin', 'PreventBackHistory'])->group(function () {
 
 
+        // Unified Subject Management Page (Single page with tabs)
+        Route::get('subject-management', [SubjectManagementController::class, 'index'])
+            ->name('subject-management.index');
+
+        // Subject Groups
+        Route::resource('subject-groups', SubjectGroupController::class)->names([
+            'index' => 'subject-groups.index',
+            'create' => 'subject-groups.create',
+            'store' => 'subject-groups.store',
+            'show' => 'subject-groups.show',
+            'edit' => 'subject-groups.edit',
+            'update' => 'subject-groups.update',
+            'destroy' => 'subject-groups.destroy',
+        ]);
+        Route::get('subject-group-rules/ajax/get-groups', [SubjectGroupRuleController::class, 'getGroups'])
+        ->name('subject-group-rules.getGroups');
+
+        // Subject Group Rules Resource
+        Route::resource('subject-group-rules', SubjectGroupRuleController::class)->names([
+            'index' => 'subject-group-rules.index',
+            'create' => 'subject-group-rules.create',
+            'store' => 'subject-group-rules.store',
+            'show' => 'subject-group-rules.show',
+            'edit' => 'subject-group-rules.edit',
+            'update' => 'subject-group-rules.update',
+            'destroy' => 'subject-group-rules.destroy',
+        ]);
+
+        // AJAX Validation Endpoint
+        Route::post('candidates/validate-subjects', [CandidateValidationController::class, 'validateSubjects'])
+            ->name('candidates.validateSubjects');
+
+
 
         // Menu Permission Routes (PIVOT-BASED)
         Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
@@ -346,10 +385,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
             Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
             Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-            // Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
-            Route::get('/ajax/sidebar', function () {
-                return view('admin.partials.sidebar')->render();
-            })->middleware(['auth:admin']);
         });
 
 
@@ -399,12 +434,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->name('component-stock.destroy');
             Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
-
-            // // Component Stock filter routes
-            // Route::get('component-stock/sessions-by-filters', [ComponentStockController::class, 'getSessionsByFilters'])
-            //     ->name('admin.stationery.component-stock.sessions-by-filters');
-            // Route::get('component-stock/components-by-filters', [ComponentStockController::class, 'getComponentsByFilters'])
-            //     ->name('admin.stationery.component-stock.components-by-filters');
 
             Route::prefix('allocation')->name('allocation.')->group(function () {
                 // Main allocation page
@@ -615,6 +644,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('users/password', [UserController::class, 'updatePassword'])->name('users.updatepassword');
         Route::put('/users/profile/{user}', [UserController::class, 'updateProfile'])->name('users.updateprofile');
         Route::post('users/change-status', [UserController::class, 'changeUserStatus'])->name('users.changeuserstatus');
+        Route::post('users/change-sponsor-status', [UserController::class, 'changeSponsorStatus'])->name('users.changeSponsorStatus');
+        Route::post('users/change-candidate-status', [UserController::class, 'changeCandidateStatus'])->name('users.changeCandidateStatus');
+        Route::post('/users/change-candidate-password', [UserController::class, 'changeCandidatePassword'])->name('users.changeCandidatePassword');
+
         Route::post('/users/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/add', [UserController::class, 'store'])->name('users.store');
         Route::post('/users/change-password', [UserController::class, 'changePassword'])->name('users.changepassword');
@@ -683,10 +716,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/candidates-entries/autocompleteSearchCenter', [CandidateEntryController::class, 'autocompleteSearchCenter'])->name('candidates.entries.autocompleteSearchCenter');
 
-
-
-
-
         // ************TimeTables*********************************
         Route::get('/timetable', [TimeTableController::class, 'index'])->name('timetable.index');
         Route::post('/timetable-update', [TimeTableController::class, 'update'])->name('timetable.update');
@@ -712,9 +741,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/over-print', [OverPrintController::class, 'print'])->name('over-print.print');
             Route::post('/over-print-pdf', [OverPrintController::class, 'overPrint'])->name('over-print.pdf');
         });
-
-
-
 
 
         // ****************Fees Charges**********************
@@ -751,8 +777,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
         //
 
-
-
         Route::get('/Collection/{id}', [SponsorController::class, 'editSponsorCollection'])->name('sponsors.editSponsorCollection');
         Route::put('/Collection/{id}', [SponsorController::class, 'updateSponsorCollection'])->name('sponsors.updateSponsorCollection');
         Route::get('/All/Collection', [SponsorController::class, 'getSponsorAllCollection'])->name('sponsors.getSponsorAllCollection');
@@ -761,8 +785,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // ******************funders *******************
         Route::resource('sponsors', SponsorController::class);
 
-
-
         Route::get('/payments-verification', [PaymentVerificationController::class, 'index'])->name('payments-verification.index');
         Route::get('/payments-verification-center/{center_no}', [PaymentVerificationController::class, 'center_proof_payments'])->name('payments-verification.center');
         Route::get('/verification-center-edit/{id}', [PaymentVerificationController::class, 'editProofPaymentCenter'])->name('payments-verification.center.edit');
@@ -770,9 +792,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/verification-center-delete/{id}', [PaymentVerificationController::class, 'deleteProofPaymentCenter'])->name('payments-verification.center.delete');
         Route::post('/center-charges/{id}', [PaymentVerificationController::class, 'centerCharges'])->name('payments-verification.centercharges');
         // candidates
-
-
-
 
         Route::post('/payments-verification-candidate-search', [PaymentVerificationController::class, 'searchCandidate'])->name('payments-verification.searchcandidate');
         Route::post('/payments-verification-store', [PaymentVerificationController::class, 'storeCandidate'])->name('payments-verification.storecandidate');
