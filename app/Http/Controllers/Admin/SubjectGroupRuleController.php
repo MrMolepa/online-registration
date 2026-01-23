@@ -35,6 +35,7 @@ class SubjectGroupRuleController extends Controller
                 ->get(['id', 'group_code', 'group_name', 'level_id']);
 
             Log::info('Groups found: ' . $groups->count());
+            
 
             return response()->json([
                 'success' => true,
@@ -47,7 +48,7 @@ class SubjectGroupRuleController extends Controller
                 'success' => false,
                 'groups' => [],
                 'error' => $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
@@ -129,7 +130,6 @@ class SubjectGroupRuleController extends Controller
 
             $rule = SubjectGroupRule::create([
                 'rule_name' => $request->rule_name,
-                'description' => $request->description,
                 'level_id' => $request->level_id,
                 'type' => $request->type,
                 'rules' => $rulesData,
@@ -148,7 +148,7 @@ class SubjectGroupRuleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error creating rule: ' . $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 
@@ -156,67 +156,104 @@ class SubjectGroupRuleController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(Request $request, $id)
-    {
-        $rule = SubjectGroupRule::with('level')->findOrFail($id);
-        $levels = Level::where('is_active', true)->get();
-        $groups = SubjectGroup::where('is_active', true)
-            ->where('level_id', $rule->level_id)
-            ->with('subjects')
-            ->get();
+{
+    $rule = SubjectGroupRule::with('level')->findOrFail($id);
+    $levels = Level::where('is_active', true)->get();
+    $groups = SubjectGroup::where('is_active', true)
+        ->where('level_id', $rule->level_id)
+        ->with('subjects')
+        ->get();
 
-        if ($request->ajax()) {
-            return response()->json([
-                'rule' => $rule,
-                'levels' => $levels,
-                'groups' => $groups
-            ]);
-        }
-
-        return view('admin.subject-group-rules.edit', compact('rule', 'levels', 'groups'));
+    // Ensure rules is properly formatted
+    $rulesData = $rule->rules;
+    if (is_string($rulesData)) {
+        $rulesData = json_decode($rulesData, true);
     }
+    
+    // Ensure all required keys exist
+    $formattedRules = [
+        'min_subjects' => $rulesData['min_subjects'] ?? null,
+        'max_subjects' => $rulesData['max_subjects'] ?? null,
+        'required_groups' => $rulesData['required_groups'] ?? [],
+        'forbidden_groups' => $rulesData['forbidden_groups'] ?? [],
+        'group_constraints' => $rulesData['group_constraints'] ?? [],
+    ];
+
+    $ruleData = [
+        'id' => $rule->id,
+        'rule_name' => $rule->rule_name,
+        'level_id' => $rule->level_id,
+        'type' => $rule->type,
+        'is_active' => $rule->is_active,
+        'rules' => $formattedRules,
+    ];
+
+    if ($request->ajax()) {
+        return response()->json([
+            'success' => true,
+            'rule' => $ruleData,
+            'levels' => $levels,
+            'groups' => $groups
+        ]);
+    }
+
+    return view('admin.subject-group-rules.edit', compact('rule', 'levels', 'groups'));
+}
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'rule_name' => 'required|string|max:255',
-            'level_id' => 'required|exists:levels,id',
-            'type' => 'required|in:1,2,3',
-            'rules' => 'required|json',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'rule_name' => 'required|string|max:255',
+        'level_id' => 'required|exists:levels,id',
+        'type' => 'required|in:1,2,3',
+        'rules' => 'required|json',
+    ]);
 
-        if ($validator->fails()) {
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        $rule = SubjectGroupRule::findOrFail($id);
+        
+        $rulesData = json_decode($request->rules, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'message' => 'Invalid JSON format for rules'
             ], 422);
         }
+        
+        $rule->update([
+            'rule_name' => $request->rule_name,
+            'level_id' => $request->level_id,
+            'type' => $request->type,
+            'rules' => $rulesData,
+            'is_active' => $request->has('is_active') ? 1 : 0,
+        ]);
 
-        try {
-            $rule = SubjectGroupRule::findOrFail($id);
-            $rule->update([
-                'rule_name' => $request->rule_name,
-                'description' => $request->description,
-                'level_id' => $request->level_id,
-                'type' => $request->type,
-                'rules' => json_decode($request->rules, true),
-                'is_active' => $request->has('is_active') ? 1 : 0,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Rule updated successfully',
-                'rule' => $rule
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error updating rule: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Rule updated successfully',
+            'rule' => $rule
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error updating rule: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error updating rule: ' . $e->getMessage()
+        ]);
     }
+}
+
+    
 
     /**
      * Remove the specified resource from storage.
@@ -233,7 +270,7 @@ class SubjectGroupRuleController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error deleting rule: ' . $e->getMessage()
-            ], 500);
+            ]);
         }
     }
 }
