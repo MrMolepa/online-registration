@@ -13,46 +13,55 @@
                     <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
 
                     <!-- Basic Information -->
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Rule Name *</label>
-                                <input type="text" name="rule_name" id="rule_name" class="form-control">
-                                <span class="help-block text-danger" id="error_rule_name"></span>
-                            </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">Basic Information</h4>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Level *</label>
-                                <select name="level_id" id="level_id" class="form-control">
-                                    <option value="">Select Level</option>
-                                    @foreach ($levels as $level)
-                                        <option value="{{ $level->id }}">{{ $level->level }}</option>
-                                    @endforeach
-                                </select>
-                                <span class="help-block text-danger" id="error_level_id"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Registration Type *</label>
-                                <select name="type" id="type" class="form-control">
-                                    <option value="">Select Type</option>
-                                    <option value="1">Full Registration</option>
-                                    <option value="2">Partial Registration</option>
-                                    <option value="3">Private Registration</option>
-                                </select>
-                                <span class="help-block text-danger" id="error_type"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="is_active" id="is_active" value="1" checked> Active
-                                </label>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Rule Name *</label>
+                                        <input type="text" name="rule_name" id="rule_name" class="form-control">
+                                        <span class="help-block text-danger" id="error_rule_name"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Level *</label>
+                                        <select name="level_id" id="level_id" class="form-control">
+                                            <option value="">Select Level</option>
+                                            @foreach ($levels as $level)
+                                                <option value="{{ $level->id }}">{{ $level->level }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span class="help-block text-danger" id="error_level_id"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Registration Type *</label>
+                                        <select name="type" id="type" class="form-control">
+                                            <option value="">Select Type</option>
+                                            <option value="1">Full Registration</option>
+                                            <option value="2">Partial Registration</option>
+                                            <option value="3">Private Registration</option>
+                                        </select>
+                                        <span class="help-block text-danger" id="error_type"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" name="is_active" id="is_active" value="1" checked>
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
 
                     <!-- Rule Builder Section -->
                     <h4>Rule Configuration</h4>
@@ -426,24 +435,26 @@
             });
 
             var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;">' +
-                '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
+                '<div class="pull-right text-center">' +
+                '<label style="font-size: 12px; margin-bottom: 6px;">Remove</label><br>' +
+                '<button type="button" class="btn btn-xs btn-danger" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
                 '<i class="fa fa-trash"></i></button>' +
+                '</div>' +
                 '<div class="row">' +
                 '<div class="col-md-5">' +
                 '<label>Group</label>' +
                 '<select class="form-control rule-input required-group-code">' + groupOptions + '</select>' +
                 '</div>' +
-                '<div class="col-md-5">' +
+                '<div class="col-md-3">' +
                 '<label>Min Count</label>' +
                 '<input type="number" class="form-control rule-input required-group-min" min="1" value="1">' +
                 '</div>' +
-                '<div class="col-md-5">' +
+                '<div class="col-md-3">' +
                 '<label>Max Count</label>' +
                 '<input type="number" class="form-control rule-input required-group-max" min="1" placeholder="No limit">' +
                 '</div>' +
                 '</div>' +
                 '</div>';
-
             $('#required-groups-container').append(html);
             updateJsonPreview();
         }
@@ -461,15 +472,22 @@
             });
 
             var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;">' +
-                '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
-                '<i class="fa fa-trash"></i></button>' +
+                '<div class="row">' +
+                '<div class="col-md-10">' +
+                '<label>Group</label>' +
                 '<select class="form-control rule-input forbidden-group-code">' + groupOptions + '</select>' +
+                '</div>' +
+                '<div class="col-md-2 text-center">' +
+                '<label style="font-size: 12px; margin-bottom: 6px;">Remove</label><br>' +
+                '<button type="button" class="btn btn-xs btn-danger" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
+                '<i class="fa fa-trash"></i></button>' +
+                '</div>' +
+                '</div>' +
                 '</div>';
 
             $('#forbidden-groups-container').append(html);
             updateJsonPreview();
         }
-
         function addConstraint() {
             if (availableGroups.length === 0) {
                 toastr.warning('Please select a level first');
@@ -484,18 +502,25 @@
 
             var html = '<div class="panel panel-default" id="' + id + '">' +
                 '<div class="panel-heading">' +
-                '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
+                '<div class="row">' +
+                '<div class="col-md-10">' +
+                '<strong>Constraint ' + constraintsCounter + '</strong>' +
+                '</div>' +
+                '<div class="col-md-2 text-center">' +
+                '<label style="font-size: 11px; margin-bottom: 2px; display: block;">Remove</label>' +
+                '<button type="button" class="btn btn-xs btn-danger" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
                 '<i class="fa fa-trash"></i></button>' +
-                'Constraint ' + constraintsCounter +
+                '</div>' +
+                '</div>' +
                 '</div>' +
                 '<div class="panel-body">' +
                 '<div class="form-group">' +
                 '<label>Constraint Type</label>' +
                 '<select class="form-control rule-input constraint-type" onchange="updateConstraintFields(this)">' +
                 '<option value="">Select Type</option>' +
-                '<option value="at_least_one_from_multiple">At Least One From Multiple</option>' +
-                '<option value="mutually_exclusive">Mutually Exclusive</option>' +
-                '<option value="conditional_required">Conditional Required</option>' +
+                '<option value="at_least_one_from_multiple">At Least One From Multiple</option>' +//"At least one from multiple" - Pick from either Group A OR Group B
+                '<option value="mutually_exclusive">Mutually Exclusive</option>' + //"Mutually exclusive" - Can't pick from both Group A AND Group B
+                '<option value="conditional_required">Conditional Required</option>' + // "Conditional required" - IF you pick from Group A, THEN you must pick from Group B
                 '<option value="min_total_from_groups">Min Total From Groups</option>' +
                 '</select>' +
                 '</div>' +

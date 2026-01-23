@@ -33,7 +33,7 @@
 
         var subjectGroupsTable;
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Initialize Select2 for Add Modal
             $('#subjects_select').select2({
                 placeholder: 'Select subjects',
@@ -51,26 +51,26 @@
             initializeGroupsDataTable();
 
             // Auto-filter on dropdown change
-            $('#filter_level').on('change', function() {
+            $('#filter_level').on('change', function () {
                 subjectGroupsTable.ajax.reload();
             });
 
             // Reset Select2 when add modal is closed
-            $('#add-group-modal').on('hidden.bs.modal', function() {
+            $('#add-group-modal').on('hidden.bs.modal', function () {
                 $('#subjects_select').val(null).trigger('change');
                 $('#addGroupForm')[0].reset();
                 clearErrorMessages('#addGroupForm');
             });
 
             // Reset Select2 when edit modal is closed
-            $('#edit-group-modal').on('hidden.bs.modal', function() {
+            $('#edit-group-modal').on('hidden.bs.modal', function () {
                 $('#edit_subjects_select').val(null).trigger('change');
                 $('#editGroupForm')[0].reset();
                 clearErrorMessages('#editGroupForm');
             });
 
             // Add group
-            $('#addGroupForm').on('submit', function(e) {
+            $('#addGroupForm').on('submit', function (e) {
                 e.preventDefault();
 
                 // Clear previous errors
@@ -89,7 +89,7 @@
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.errors) {
                             printErrorMsg('#addGroupForm', response.errors);
                             $submitBtn.prop('disabled', false).html(
@@ -105,7 +105,7 @@
                                 '<i class="fa fa-save"></i> Save');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         $submitBtn.prop('disabled', false).html(
                             '<i class="fa fa-save"></i> Save');
 
@@ -124,7 +124,7 @@
             });
 
             // Edit button - Open modal with data
-            $(document).on('click', '.editBtn', function() {
+            $(document).on('click', '.editBtn', function () {
                 var groupId = $(this).data('id');
                 var url = $(this).data('url');
 
@@ -137,7 +137,7 @@
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(data) {
+                    success: function (data) {
                         console.log('Data received:', data); // Debug line
 
                         // Populate form fields
@@ -160,14 +160,14 @@
                         // Show modal
                         $('#edit-group-modal').modal('show');
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('AJAX Error:', xhr); // Debug line
                         toastr.error('Failed to load group data');
                     }
                 });
             });
             // Update group
-            $('#editGroupForm').on('submit', function(e) {
+            $('#editGroupForm').on('submit', function (e) {
                 e.preventDefault();
 
                 // Clear previous errors
@@ -187,7 +187,7 @@
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.errors) {
                             printErrorMsg('#editGroupForm', response.errors);
                             $submitBtn.prop('disabled', false).html(
@@ -202,7 +202,7 @@
                                 '<i class="fa fa-save"></i> Update');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         $submitBtn.prop('disabled', false).html(
                             '<i class="fa fa-save"></i> Update');
 
@@ -218,7 +218,7 @@
             });
 
             // Delete button
-            $(document).on('click', '#subject_groups_table .deleteBtn', function() {
+            $(document).on('click', '#subject_groups_table .deleteBtn', function () {
                 if (!confirm('Are you sure you want to delete this group?')) return;
 
                 var url = $(this).data('url');
@@ -232,11 +232,11 @@
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    success: function(data) {
+                    success: function (data) {
                         toastr.success(data.success || 'Group deleted successfully');
                         subjectGroupsTable.ajax.reload();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         toastr.error('An error occurred while deleting.');
                         console.error('Error:', xhr);
                     }
@@ -254,45 +254,45 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('admin.subject-groups.index') }}",
-                    data: function(d) {
+                    data: function (d) {
                         d.level_id = $('#filter_level').val();
                     }
                 },
                 columns: [{
-                        data: 'group_code',
-                        name: 'group_code'
-                    },
-                    {
-                        data: 'group_name',
-                        name: 'group_name'
-                    },
-                    {
-                        data: 'level',
-                        name: 'level'
-                    },
-                    {
-                        data: 'subjects',
-                        name: 'subjects',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'is_active',
-                        name: 'is_active'
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false
-                    }
+                    data: 'group_code',
+                    name: 'group_code'
+                },
+                {
+                    data: 'group_name',
+                    name: 'group_name'
+                },
+                {
+                    data: 'level',
+                    name: 'level'
+                },
+                {
+                    data: 'subjects',
+                    name: 'subjects',
+                    orderable: false,
+                    searchable: false
+                },
+                {
+                    data: 'is_active',
+                    name: 'is_active'
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    searchable: false
+                }
                 ]
             });
         }
 
         function printErrorMsg(parent, errors) {
             $(parent + ' .help-block').text('').removeClass('text-danger');
-            $.each(errors, function(key, value) {
+            $.each(errors, function (key, value) {
                 var errorMsg = Array.isArray(value) ? value[0] : value;
                 $(parent + ' [name="' + key + '"]').next('.help-block').text(errorMsg).addClass('text-danger');
 
@@ -309,5 +309,5 @@
             $(formSelector + ' .help-block').text('').removeClass('text-danger');
             $(formSelector + ' .form-group').removeClass('has-error');
         }
-    </script>
+</script>
 @endpush
