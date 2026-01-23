@@ -1,6 +1,6 @@
 {{-- Edit Validation Rule Modal --}}
 <div class="modal fade" id="editRuleModal" tabindex="-1" role="dialog" aria-labelledby="editRuleModalLabel">
-    <div class="modal-dialog modal-lg" role="document" style="width: 90%; max-width: 1200px;">
+    <div class="modal-dialog modal-md" role="document" style="width: 50%;">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -9,7 +9,7 @@
                 <h4 class="modal-title" id="editRuleModalLabel">Edit Validation Rule</h4>
             </div>
             <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <form id="editRuleForm">
+                <form id="editRuleForm" onsubmit="return false;">
                     @csrf
                     @method('PUT')
                     
@@ -25,25 +25,6 @@
                                 <span class="help-block text-danger"></span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="is_active" id="edit_is_active" value="1"> Active
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label>Description</label>
-                                <textarea name="description" id="edit_description" class="form-control" rows="3"></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Level *</label>
@@ -65,9 +46,14 @@
                                 <span class="help-block text-danger"></span>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="is_active" id="edit_is_active" value="1"> Active
+                                </label>
+                            </div>
+                        </div>
                     </div>
-
-                    <hr>
 
                     <!-- Rule Builder Section -->
                     <h4>Rule Configuration</h4>
@@ -116,7 +102,7 @@
                             <h4 class="panel-title">Required Groups</h4>
                         </div>
                         <div class="panel-body">
-                            <button type="button" class="btn btn-sm btn-success" id="edit-add-required-group">
+                            <button type="button" class="btn btn-sm btn-success" onclick="addEditRequiredGroup()">
                                 <i class="fa fa-plus"></i> Add Required Group
                             </button>
                             <div id="edit-required-groups-container" style="margin-top: 15px;">
@@ -131,7 +117,7 @@
                             <h4 class="panel-title">Forbidden Groups</h4>
                         </div>
                         <div class="panel-body">
-                            <button type="button" class="btn btn-sm btn-danger" id="edit-add-forbidden-group">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="addEditForbiddenGroup()">
                                 <i class="fa fa-plus"></i> Add Forbidden Group
                             </button>
                             <div id="edit-forbidden-groups-container" style="margin-top: 15px;">
@@ -146,7 +132,7 @@
                             <h4 class="panel-title">Advanced Constraints</h4>
                         </div>
                         <div class="panel-body">
-                            <button type="button" class="btn btn-sm btn-primary" id="edit-add-constraint">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addEditConstraint()">
                                 <i class="fa fa-plus"></i> Add Constraint
                             </button>
                             <div id="edit-constraints-container" style="margin-top: 15px;">
@@ -160,7 +146,7 @@
                         <div class="panel-heading">
                             <h4 class="panel-title">
                                 JSON Preview
-                                <button type="button" class="btn btn-xs btn-default pull-right" id="edit-toggle-json">
+                                <button type="button" class="btn btn-xs btn-default pull-right" onclick="toggleEditJsonPreview()">
                                     <i class="fa fa-eye"></i> Show/Hide
                                 </button>
                             </h4>
@@ -178,7 +164,7 @@
                 <button type="button" class="btn btn-default" data-dismiss="modal">
                     <i class="fa fa-times"></i> Cancel
                 </button>
-                <button type="submit" form="editRuleForm" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" onclick="submitEditRule()">
                     <i class="fa fa-save"></i> Update Rule
                 </button>
             </div>
@@ -192,288 +178,271 @@ var editExistingRules = {};
 var editRequiredGroupsCounter = 0;
 var editForbiddenGroupsCounter = 0;
 var editConstraintsCounter = 0;
+var updateRuleBaseUrl = "{{ route('admin.subject-group-rules.index') }}";
+var csrfToken = "{{ csrf_token() }}";
+
+function submitEditRule() {
+    console.log('=== submitEditRule called ===');
+    
+    var ruleId = document.getElementById('edit_rule_id').value;
+    console.log('Rule ID:', ruleId);
+    
+    if (!ruleId) {
+        toastr.error('Rule ID is missing');
+        return;
+    }
+    
+    // Clear previous errors
+    var helpBlocks = document.querySelectorAll('#editRuleForm .help-block');
+    helpBlocks.forEach(function(block) {
+        block.textContent = '';
+    });
+    
+    // Build rules JSON  
+    var rulesJson = buildEditRulesJson();
+    console.log('Rules JSON:', rulesJson);
+    
+    // Prepare form data
+    var formData = {
+        _token: csrfToken,
+        _method: 'PUT',
+        rule_name: document.getElementById('edit_rule_name').value,
+        level_id: document.getElementById('edit_level_id').value,
+        type: document.getElementById('edit_type').value,
+        is_active: document.getElementById('edit_is_active').checked ? 1 : 0,
+        rules: JSON.stringify(rulesJson)
+    };
+
+    console.log('Form data:', formData);
+    console.log('Submitting to:', updateRuleBaseUrl + '/' + ruleId);
+
+    // Get button
+    var btnUpdate = event.target;
+    var originalHtml = btnUpdate.innerHTML;
+    btnUpdate.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating...';
+    btnUpdate.disabled = true;
+
+    // Use jQuery ajax
+    $.ajax({
+        url: updateRuleBaseUrl + '/' + ruleId,
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(response) {
+            console.log('=== SUCCESS ===');
+            console.log('Response:', response);
+            
+            btnUpdate.innerHTML = originalHtml;
+            btnUpdate.disabled = false;
+            
+            if (response.success) {
+                toastr.success(response.message || 'Rule updated successfully');
+                $('#editRuleModal').modal('hide');
+                
+                if (typeof rulesTable !== 'undefined' && rulesTable) {
+                    console.log('Reloading table...');
+                    rulesTable.ajax.reload(null, false);
+                } else {
+                    console.log('Table not found, reloading page...');
+                    window.location.reload();
+                }
+            } else if (response.errors) {
+                console.log('Validation errors:', response.errors);
+                for (var field in response.errors) {
+                    var fieldElement = document.getElementById('edit_' + field);
+                    if (fieldElement) {
+                        var helpBlock = fieldElement.closest('.form-group').querySelector('.help-block');
+                        if (helpBlock) {
+                            helpBlock.textContent = response.errors[field][0];
+                        }
+                    }
+                }
+                toastr.error('Please correct the errors');
+            } else {
+                toastr.error(response.message || 'Error updating rule');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('=== ERROR ===');
+            console.error('Status:', xhr.status);
+            console.error('Response:', xhr.responseText);
+            console.error('Error:', error);
+            
+            btnUpdate.innerHTML = originalHtml;
+            btnUpdate.disabled = false;
+            
+            var errorMessage = 'Error updating rule';
+            
+            if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                console.log('Validation errors:', xhr.responseJSON.errors);
+                for (var field in xhr.responseJSON.errors) {
+                    var fieldElement = document.getElementById('edit_' + field);
+                    if (fieldElement) {
+                        var helpBlock = fieldElement.closest('.form-group').querySelector('.help-block');
+                        if (helpBlock) {
+                            helpBlock.textContent = xhr.responseJSON.errors[field][0];
+                        }
+                    }
+                }
+                errorMessage = 'Please correct validation errors';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            
+            toastr.error(errorMessage);
+        }
+    });
+}
 
 function populateEditModal(data) {
-    // Reset counters
+    console.log('Populating edit modal with data:', data);
+    
     editRequiredGroupsCounter = 0;
     editForbiddenGroupsCounter = 0;
     editConstraintsCounter = 0;
 
-    // Set basic fields
-    $('#edit_rule_id').val(data.rule.id);
-    $('#edit_rule_name').val(data.rule.rule_name);
-    $('#edit_description').val(data.rule.description);
-    $('#edit_is_active').prop('checked', data.rule.is_active);
-    $('#edit_type').val(data.rule.type);
-    $('#edit_min_subjects').val(data.rule.rules.min_subjects || '');
-    $('#edit_max_subjects').val(data.rule.rules.max_subjects || '');
+    document.getElementById('edit_rule_id').value = data.rule.id;
+    document.getElementById('edit_rule_name').value = data.rule.rule_name;
+    document.getElementById('edit_is_active').checked = data.rule.is_active == 1;
+    document.getElementById('edit_type').value = data.rule.type;
 
-    // Populate levels dropdown
     var levelOptions = '<option value="">Select Level</option>';
     data.levels.forEach(function(level) {
         var selected = level.id === data.rule.level_id ? 'selected' : '';
         levelOptions += '<option value="' + level.id + '" ' + selected + '>' + level.level + '</option>';
     });
-    $('#edit_level_id').html(levelOptions);
+    document.getElementById('edit_level_id').innerHTML = levelOptions;
 
-    // Store available groups and existing rules
     editAvailableGroups = data.groups;
-    editExistingRules = data.rule.rules;
+    editExistingRules = data.rule.rules || {};
 
-    // Display available groups
+    document.getElementById('edit_min_subjects').value = editExistingRules.min_subjects || '';
+    document.getElementById('edit_max_subjects').value = editExistingRules.max_subjects || '';
+
     displayEditAvailableGroups();
+    document.getElementById('edit-required-groups-container').innerHTML = '';
+    document.getElementById('edit-forbidden-groups-container').innerHTML = '';
+    document.getElementById('edit-constraints-container').innerHTML = '';
+    
+    var helpBlocks = document.querySelectorAll('#editRuleForm .help-block');
+    helpBlocks.forEach(function(block) {
+        block.textContent = '';
+    });
 
-    // Clear previous dynamic content
-    $('#edit-required-groups-container').empty();
-    $('#edit-forbidden-groups-container').empty();
-    $('#edit-constraints-container').empty();
-    $('#editRuleForm .help-block').text('');
-
-    // Load existing rules
-    loadEditExistingRules();
-
-    // Update JSON preview
-    updateEditJsonPreview();
+    setTimeout(function() {
+        loadEditExistingRules();
+        updateEditJsonPreview();
+    }, 100);
 }
 
 function displayEditAvailableGroups() {
+    var container = document.getElementById('edit-available-groups-container');
     if (editAvailableGroups.length === 0) {
-        $('#edit-available-groups-container').html(
-            '<div class="alert alert-warning">No subject groups found for this level.</div>'
-        );
+        container.innerHTML = '<div class="alert alert-warning">No subject groups found for this level.</div>';
         return;
     }
 
-    var html = '<table class="table table-sm table-bordered"><thead><tr>' +
-               '<th>Group Code</th><th>Group Name</th><th>Subjects</th></tr></thead><tbody>';
-    
+    var html = '<table class="table table-sm table-bordered"><thead><tr><th>Group Code</th><th>Group Name</th><th>Subjects</th></tr></thead><tbody>';
     editAvailableGroups.forEach(function(group) {
         var subjects = group.subjects.map(s => s.subject_code + ' - ' + s.subject_name).join(', ');
-        html += '<tr>' +
-                '<td><strong>' + group.group_code + '</strong></td>' +
-                '<td>' + group.group_name + '</td>' +
-                '<td><small>' + subjects + '</small></td>' +
-                '</tr>';
+        html += '<tr><td><strong>' + group.group_code + '</strong></td><td>' + group.group_name + '</td><td><small>' + subjects + '</small></td></tr>';
     });
-    
     html += '</tbody></table>';
-    $('#edit-available-groups-container').html(html);
+    container.innerHTML = html;
 }
 
 function loadEditExistingRules() {
-    // Load required groups
-    if (editExistingRules.required_groups && editExistingRules.required_groups.length > 0) {
+    if (editExistingRules.required_groups && Array.isArray(editExistingRules.required_groups)) {
         editExistingRules.required_groups.forEach(function(group) {
             addEditRequiredGroup(group);
         });
     }
-
-    // Load forbidden groups
-    if (editExistingRules.forbidden_groups && editExistingRules.forbidden_groups.length > 0) {
+    if (editExistingRules.forbidden_groups && Array.isArray(editExistingRules.forbidden_groups)) {
         editExistingRules.forbidden_groups.forEach(function(groupCode) {
             addEditForbiddenGroup(groupCode);
         });
     }
-
-    // Load constraints
-    if (editExistingRules.group_constraints && editExistingRules.group_constraints.length > 0) {
+    if (editExistingRules.group_constraints && Array.isArray(editExistingRules.group_constraints)) {
         editExistingRules.group_constraints.forEach(function(constraint) {
             addEditConstraint(constraint);
         });
     }
 }
 
-$(document).ready(function() {
-    // Reset edit form when modal is closed
-    $('#editRuleModal').on('hidden.bs.modal', function() {
-        $('#editRuleForm')[0].reset();
-        $('#editRuleForm .help-block').text('');
-        $('#edit-available-groups-container').html('<p class="text-muted">Loading groups...</p>');
-        $('#edit-required-groups-container').empty();
-        $('#edit-forbidden-groups-container').empty();
-        $('#edit-constraints-container').empty();
-        $('#edit-json-preview-container').hide();
-        $('#edit-json-preview').text('');
-        editAvailableGroups = [];
-        editExistingRules = {};
-        editRequiredGroupsCounter = 0;
-        editForbiddenGroupsCounter = 0;
-        editConstraintsCounter = 0;
-    });
+function addEditRequiredGroup(existingData) {
+    if (editAvailableGroups.length === 0) {
+        toastr.warning('No available groups loaded');
+        return;
+    }
 
-    // Toggle JSON preview
-    $(document).on('click', '#edit-toggle-json', function() {
-        $('#edit-json-preview-container').slideToggle();
-        updateEditJsonPreview();
-    });
-
-    // Add required group
-    $(document).on('click', '#edit-add-required-group', function() {
-        addEditRequiredGroup();
-    });
-
-    // Add forbidden group
-    $(document).on('click', '#edit-add-forbidden-group', function() {
-        addEditForbiddenGroup();
-    });
-
-    // Add constraint
-    $(document).on('click', '#edit-add-constraint', function() {
-        addEditConstraint();
-    });
-
-    // Update JSON on any change
-    $(document).on('change input', '#edit_min_subjects, #edit_max_subjects, #editRuleModal .rule-input', function() {
-        updateEditJsonPreview();
-    });
-
-    // Form submission
-    $(document).on('submit', '#editRuleForm', function(e) {
-        e.preventDefault();
-        
-        var ruleId = $('#edit_rule_id').val();
-        
-        // Build and set JSON
-        var rulesJson = buildEditRulesJson();
-        $('#edit-rules-json').val(JSON.stringify(rulesJson));
-
-        var formData = $(this).serialize();
-
-        $.ajax({
-            url: "{{ route('admin.subject-group-rules.update', ':id') }}".replace(':id', ruleId),
-            method: "POST",
-            data: formData,
-            success: function(data) {
-                if (data.errors) {
-                    printErrorMsg('#editRuleForm', data.errors);
-                } else {
-                    toastr.success(data.success);
-                    $('#editRuleModal').modal('hide');
-                    if (rulesTable) {
-                        rulesTable.ajax.reload();
-                    }
-                }
-            },
-            error: function(xhr) {
-                toastr.error('Error updating rule. Please check your inputs.');
-            }
-        });
-    });
-});
-
-function addEditRequiredGroup(existingData = null) {
+    existingData = existingData || null;
     var id = 'edit-req-' + (++editRequiredGroupsCounter);
     var groupOptions = '<option value="">Select Group</option>';
     editAvailableGroups.forEach(function(group) {
         var selected = existingData && existingData.group_code === group.group_code ? 'selected' : '';
         groupOptions += '<option value="' + group.group_code + '" ' + selected + '>' + group.group_code + ' - ' + group.group_name + '</option>';
     });
-
-    var minCount = existingData ? existingData.min_count : 1;
+    var minCount = existingData && existingData.min_count ? existingData.min_count : 1;
     var maxCount = existingData && existingData.max_count ? existingData.max_count : '';
-
-    var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;">' +
-               '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateEditJsonPreview();">' +
-               '<i class="fa fa-trash"></i></button>' +
-               '<div class="row">' +
-               '<div class="col-md-4">' +
-               '<label>Group</label>' +
-               '<select class="form-control rule-input edit-required-group-code">' + groupOptions + '</select>' +
-               '</div>' +
-               '<div class="col-md-4">' +
-               '<label>Min Count</label>' +
-               '<input type="number" class="form-control rule-input edit-required-group-min" min="1" value="' + minCount + '">' +
-               '</div>' +
-               '<div class="col-md-4">' +
-               '<label>Max Count (Optional)</label>' +
-               '<input type="number" class="form-control rule-input edit-required-group-max" min="1" value="' + maxCount + '" placeholder="No limit">' +
-               '</div>' +
-               '</div>' +
-               '</div>';
-
-    $('#edit-required-groups-container').append(html);
+    var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;"><button type="button" class="btn btn-xs btn-danger pull-right" onclick="document.getElementById(\'' + id + '\').remove(); updateEditJsonPreview();"><i class="fa fa-trash"></i></button><div class="row"><div class="col-md-5"><label>Group</label><select class="form-control rule-input edit-required-group-code">' + groupOptions + '</select></div><div class="col-md-3"><label>Min Count</label><input type="number" class="form-control rule-input edit-required-group-min" min="1" value="' + minCount + '"></div><div class="col-md-3"><label>Max Count (Optional)</label><input type="number" class="form-control rule-input edit-required-group-max" min="1" value="' + maxCount + '" placeholder="No limit"></div></div></div>';
+    document.getElementById('edit-required-groups-container').insertAdjacentHTML('beforeend', html);
     updateEditJsonPreview();
 }
 
-function addEditForbiddenGroup(existingGroupCode = null) {
+function addEditForbiddenGroup(existingGroupCode) {
+    if (editAvailableGroups.length === 0) {
+        toastr.warning('No available groups loaded');
+        return;
+    }
+
+    existingGroupCode = existingGroupCode || null;
     var id = 'edit-forb-' + (++editForbiddenGroupsCounter);
     var groupOptions = '<option value="">Select Group</option>';
     editAvailableGroups.forEach(function(group) {
         var selected = existingGroupCode === group.group_code ? 'selected' : '';
         groupOptions += '<option value="' + group.group_code + '" ' + selected + '>' + group.group_code + ' - ' + group.group_name + '</option>';
     });
-
-    var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;">' +
-               '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateEditJsonPreview();">' +
-               '<i class="fa fa-trash"></i></button>' +
-               '<select class="form-control rule-input edit-forbidden-group-code">' + groupOptions + '</select>' +
-               '</div>';
-
-    $('#edit-forbidden-groups-container').append(html);
+    var html = '<div class="well well-sm" id="' + id + '" style="margin-bottom: 10px;"><button type="button" class="btn btn-xs btn-danger pull-right" onclick="document.getElementById(\'' + id + '\').remove(); updateEditJsonPreview();"><i class="fa fa-trash"></i></button><select class="form-control rule-input edit-forbidden-group-code">' + groupOptions + '</select></div>';
+    document.getElementById('edit-forbidden-groups-container').insertAdjacentHTML('beforeend', html);
     updateEditJsonPreview();
 }
 
-function addEditConstraint(existingData = null) {
+function addEditConstraint(existingData) {
+    if (editAvailableGroups.length === 0) {
+        toastr.warning('No available groups loaded');
+        return;
+    }
+
+    existingData = existingData || null;
     var id = 'edit-const-' + (++editConstraintsCounter);
     var groupOptions = '<option value="">Select Group</option>';
     editAvailableGroups.forEach(function(group) {
         groupOptions += '<option value="' + group.group_code + '">' + group.group_code + ' - ' + group.group_name + '</option>';
     });
-
     var selectedType = existingData ? existingData.type : '';
     var message = existingData && existingData.message ? existingData.message : '';
-
-    var typeOptions = '<option value="">Select Type</option>' +
-                     '<option value="at_least_one_from_multiple" ' + (selectedType === 'at_least_one_from_multiple' ? 'selected' : '') + '>At Least One From Multiple</option>' +
-                     '<option value="mutually_exclusive" ' + (selectedType === 'mutually_exclusive' ? 'selected' : '') + '>Mutually Exclusive</option>' +
-                     '<option value="conditional_required" ' + (selectedType === 'conditional_required' ? 'selected' : '') + '>Conditional Required</option>' +
-                     '<option value="min_total_from_groups" ' + (selectedType === 'min_total_from_groups' ? 'selected' : '') + '>Min Total From Groups</option>';
-
-    var html = '<div class="panel panel-default" id="' + id + '">' +
-               '<div class="panel-heading">' +
-               '<button type="button" class="btn btn-xs btn-danger pull-right" onclick="$(\'#' + id + '\').remove(); updateEditJsonPreview();">' +
-               '<i class="fa fa-trash"></i></button>' +
-               'Constraint ' + editConstraintsCounter +
-               '</div>' +
-               '<div class="panel-body">' +
-               '<div class="form-group">' +
-               '<label>Constraint Type</label>' +
-               '<select class="form-control rule-input edit-constraint-type" onchange="updateEditConstraintFields(this)">' +
-               typeOptions +
-               '</select>' +
-               '</div>' +
-               '<div class="edit-constraint-fields"></div>' +
-               '<div class="form-group">' +
-               '<label>Custom Message (Optional)</label>' +
-               '<input type="text" class="form-control rule-input edit-constraint-message" value="' + message + '" placeholder="Error message">' +
-               '</div>' +
-               '</div>' +
-               '</div>';
-
-    $('#edit-constraints-container').append(html);
-
-    // If there's existing data, populate the fields
-    if (existingData) {
+    var typeOptions = '<option value="">Select Type</option><option value="at_least_one_from_multiple" ' + (selectedType === 'at_least_one_from_multiple' ? 'selected' : '') + '>At Least One From Multiple</option><option value="mutually_exclusive" ' + (selectedType === 'mutually_exclusive' ? 'selected' : '') + '>Mutually Exclusive</option><option value="conditional_required" ' + (selectedType === 'conditional_required' ? 'selected' : '') + '>Conditional Required</option><option value="min_total_from_groups" ' + (selectedType === 'min_total_from_groups' ? 'selected' : '') + '>Min Total From Groups</option>';
+    var html = '<div class="panel panel-default" id="' + id + '"><div class="panel-heading"><button type="button" class="btn btn-xs btn-danger pull-right" onclick="document.getElementById(\'' + id + '\').remove(); updateEditJsonPreview();"><i class="fa fa-trash"></i></button>Constraint ' + editConstraintsCounter + '</div><div class="panel-body"><div class="form-group"><label>Constraint Type</label><select class="form-control rule-input edit-constraint-type" onchange="updateEditConstraintFields(this)">' + typeOptions + '</select></div><div class="edit-constraint-fields"></div><div class="form-group"><label>Custom Message (Optional)</label><input type="text" class="form-control rule-input edit-constraint-message" value="' + message + '" placeholder="Error message"></div></div></div>';
+    document.getElementById('edit-constraints-container').insertAdjacentHTML('beforeend', html);
+    if (existingData && selectedType) {
         setTimeout(function() {
-            var panel = $('#' + id);
-            updateEditConstraintFields(panel.find('.edit-constraint-type')[0], existingData);
-        }, 100);
+            var panel = document.getElementById(id);
+            var select = panel.querySelector('.edit-constraint-type');
+            updateEditConstraintFields(select, existingData);
+        }, 50);
     }
-
     updateEditJsonPreview();
 }
 
-function updateEditConstraintFields(selectElement, existingData = null) {
-    var type = $(selectElement).val();
-    var container = $(selectElement).closest('.panel-body').find('.edit-constraint-fields');
+function updateEditConstraintFields(selectElement, existingData) {
+    existingData = existingData || null;
+    var type = selectElement.value;
+    var container = selectElement.closest('.panel-body').querySelector('.edit-constraint-fields');
     var groupOptions = '<option value="">Select Group</option>';
-    
     editAvailableGroups.forEach(function(group) {
         groupOptions += '<option value="' + group.group_code + '">' + group.group_code + ' - ' + group.group_name + '</option>';
     });
-
     var html = '';
-
     switch(type) {
         case 'at_least_one_from_multiple':
         case 'mutually_exclusive':
@@ -483,120 +452,81 @@ function updateEditConstraintFields(selectElement, existingData = null) {
                 var selected = selectedGroups.includes(group.group_code) ? 'selected' : '';
                 multipleOptions += '<option value="' + group.group_code + '" ' + selected + '>' + group.group_code + ' - ' + group.group_name + '</option>';
             });
-            html = '<div class="form-group">' +
-                   '<label>Groups (Select multiple)</label>' +
-                   '<select class="form-control rule-input edit-constraint-groups" multiple size="5">' + multipleOptions + '</select>' +
-                   '</div>';
+            html = '<div class="form-group"><label>Groups (Select multiple - Hold Ctrl/Cmd to select multiple)</label><select class="form-control rule-input edit-constraint-groups" multiple size="5">' + multipleOptions + '</select></div>';
             break;
-
         case 'conditional_required':
-            var ifGroup = existingData ? existingData.if_group : '';
-            var thenGroup = existingData ? existingData.then_group : '';
-            var minCount = existingData ? existingData.min_count : 1;
-            
+            var ifGroup = existingData && existingData.if_group ? existingData.if_group : '';
+            var thenGroup = existingData && existingData.then_group ? existingData.then_group : '';
+            var minCount = existingData && existingData.min_count ? existingData.min_count : 1;
             var ifGroupOptions = groupOptions.replace('value="' + ifGroup + '"', 'value="' + ifGroup + '" selected');
             var thenGroupOptions = groupOptions.replace('value="' + thenGroup + '"', 'value="' + thenGroup + '" selected');
-            
-            html = '<div class="row">' +
-                   '<div class="col-md-6">' +
-                   '<label>If Group</label>' +
-                   '<select class="form-control rule-input edit-constraint-if-group">' + ifGroupOptions + '</select>' +
-                   '</div>' +
-                   '<div class="col-md-6">' +
-                   '<label>Then Group</label>' +
-                   '<select class="form-control rule-input edit-constraint-then-group">' + thenGroupOptions + '</select>' +
-                   '</div>' +
-                   '</div>' +
-                   '<div class="form-group">' +
-                   '<label>Min Count</label>' +
-                   '<input type="number" class="form-control rule-input edit-constraint-min-count" value="' + minCount + '" min="1">' +
-                   '</div>';
+            html = '<div class="row"><div class="col-md-6"><label>If Group</label><select class="form-control rule-input edit-constraint-if-group">' + ifGroupOptions + '</select></div><div class="col-md-6"><label>Then Group</label><select class="form-control rule-input edit-constraint-then-group">' + thenGroupOptions + '</select></div></div><div class="form-group"><label>Min Count</label><input type="number" class="form-control rule-input edit-constraint-min-count" value="' + minCount + '" min="1"></div>';
             break;
-
         case 'min_total_from_groups':
             var selectedGroups = existingData && existingData.groups ? existingData.groups : [];
-            var minTotal = existingData ? existingData.min_total : 1;
+            var minTotal = existingData && existingData.min_total ? existingData.min_total : 1;
             var multipleOptions = '';
             editAvailableGroups.forEach(function(group) {
                 var selected = selectedGroups.includes(group.group_code) ? 'selected' : '';
                 multipleOptions += '<option value="' + group.group_code + '" ' + selected + '>' + group.group_code + ' - ' + group.group_name + '</option>';
             });
-            html = '<div class="form-group">' +
-                   '<label>Groups (Select multiple)</label>' +
-                   '<select class="form-control rule-input edit-constraint-groups" multiple size="5">' + multipleOptions + '</select>' +
-                   '</div>' +
-                   '<div class="form-group">' +
-                   '<label>Minimum Total</label>' +
-                   '<input type="number" class="form-control rule-input edit-constraint-min-total" value="' + minTotal + '" min="1">' +
-                   '</div>';
+            html = '<div class="form-group"><label>Groups (Select multiple - Hold Ctrl/Cmd to select multiple)</label><select class="form-control rule-input edit-constraint-groups" multiple size="5">' + multipleOptions + '</select></div><div class="form-group"><label>Minimum Total</label><input type="number" class="form-control rule-input edit-constraint-min-total" value="' + minTotal + '" min="1"></div>';
             break;
     }
-
-    container.html(html);
+    container.innerHTML = html;
     updateEditJsonPreview();
 }
 
 function buildEditRulesJson() {
     var rules = {};
-
-    // Subject count constraints
-    var minSubjects = parseInt($('#edit_min_subjects').val());
-    var maxSubjects = parseInt($('#edit_max_subjects').val());
+    var minSubjects = parseInt(document.getElementById('edit_min_subjects').value);
+    var maxSubjects = parseInt(document.getElementById('edit_max_subjects').value);
     if (minSubjects) rules.min_subjects = minSubjects;
     if (maxSubjects) rules.max_subjects = maxSubjects;
-
-    // Required groups
     rules.required_groups = [];
-    $('.edit-required-group-code').each(function() {
-        var groupCode = $(this).val();
+    var reqGroups = document.querySelectorAll('.edit-required-group-code');
+    reqGroups.forEach(function(select) {
+        var groupCode = select.value;
         if (groupCode) {
-            var minCount = parseInt($(this).closest('.well').find('.edit-required-group-min').val()) || 1;
-            var maxCount = parseInt($(this).closest('.well').find('.edit-required-group-max').val());
-            
-            var group = {
-                group_code: groupCode,
-                min_count: minCount
-            };
+            var well = select.closest('.well');
+            var minCount = parseInt(well.querySelector('.edit-required-group-min').value) || 1;
+            var maxCount = parseInt(well.querySelector('.edit-required-group-max').value);
+            var group = {group_code: groupCode, min_count: minCount};
             if (maxCount) group.max_count = maxCount;
-            
             rules.required_groups.push(group);
         }
     });
-
-    // Forbidden groups
     rules.forbidden_groups = [];
-    $('.edit-forbidden-group-code').each(function() {
-        var groupCode = $(this).val();
-        if (groupCode) {
-            rules.forbidden_groups.push(groupCode);
-        }
+    var forbGroups = document.querySelectorAll('.edit-forbidden-group-code');
+    forbGroups.forEach(function(select) {
+        var groupCode = select.value;
+        if (groupCode) rules.forbidden_groups.push(groupCode);
     });
-
-    // Group constraints
     rules.group_constraints = [];
-    $('.edit-constraint-type').each(function() {
-        var type = $(this).val();
+    var constTypes = document.querySelectorAll('.edit-constraint-type');
+    constTypes.forEach(function(select) {
+        var type = select.value;
         if (!type) return;
-
-        var panel = $(this).closest('.panel-body');
-        var constraint = { type: type };
-        var message = panel.find('.edit-constraint-message').val();
+        var panel = select.closest('.panel-body');
+        var constraint = {type: type};
+        var message = panel.querySelector('.edit-constraint-message').value;
         if (message) constraint.message = message;
-
         switch(type) {
             case 'at_least_one_from_multiple':
             case 'mutually_exclusive':
-                var groups = panel.find('.edit-constraint-groups').val() || [];
-                if (groups.length > 0) {
-                    constraint.groups = groups;
-                    rules.group_constraints.push(constraint);
+                var groupsSelect = panel.querySelector('.edit-constraint-groups');
+                if (groupsSelect) {
+                    var groups = Array.from(groupsSelect.selectedOptions).map(opt => opt.value);
+                    if (groups.length > 0) {
+                        constraint.groups = groups;
+                        rules.group_constraints.push(constraint);
+                    }
                 }
                 break;
-
             case 'conditional_required':
-                var ifGroup = panel.find('.edit-constraint-if-group').val();
-                var thenGroup = panel.find('.edit-constraint-then-group').val();
-                var minCount = parseInt(panel.find('.edit-constraint-min-count').val()) || 1;
+                var ifGroup = panel.querySelector('.edit-constraint-if-group').value;
+                var thenGroup = panel.querySelector('.edit-constraint-then-group').value;
+                var minCount = parseInt(panel.querySelector('.edit-constraint-min-count').value) || 1;
                 if (ifGroup && thenGroup) {
                     constraint.if_group = ifGroup;
                     constraint.then_group = thenGroup;
@@ -604,24 +534,42 @@ function buildEditRulesJson() {
                     rules.group_constraints.push(constraint);
                 }
                 break;
-
             case 'min_total_from_groups':
-                var groups = panel.find('.edit-constraint-groups').val() || [];
-                var minTotal = parseInt(panel.find('.edit-constraint-min-total').val()) || 1;
-                if (groups.length > 0) {
-                    constraint.groups = groups;
-                    constraint.min_total = minTotal;
-                    rules.group_constraints.push(constraint);
+                var groupsSelect = panel.querySelector('.edit-constraint-groups');
+                if (groupsSelect) {
+                    var groups = Array.from(groupsSelect.selectedOptions).map(opt => opt.value);
+                    var minTotal = parseInt(panel.querySelector('.edit-constraint-min-total').value) || 1;
+                    if (groups.length > 0) {
+                        constraint.groups = groups;
+                        constraint.min_total = minTotal;
+                        rules.group_constraints.push(constraint);
+                    }
                 }
                 break;
         }
     });
-
     return rules;
 }
 
 function updateEditJsonPreview() {
     var rules = buildEditRulesJson();
-    $('#edit-json-preview').text(JSON.stringify(rules, null, 2));
+    document.getElementById('edit-json-preview').textContent = JSON.stringify(rules, null, 2);
 }
+
+function toggleEditJsonPreview() {
+    var container = document.getElementById('edit-json-preview-container');
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        updateEditJsonPreview();
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// Event delegation for dynamically added elements
+$(document).ready(function() {
+    $(document).on('change', '#editRuleModal .rule-input', function() {
+        updateEditJsonPreview();
+    });
+});
 </script>

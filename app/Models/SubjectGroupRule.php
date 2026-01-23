@@ -12,7 +12,6 @@ class SubjectGroupRule extends Model
 
     protected $fillable = [
         'rule_name',
-        'description',
         'level_id',
         'type',
         'rules',
