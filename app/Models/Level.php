@@ -18,15 +18,15 @@ class Level extends Model
         'private_registration',
     ];
 
-
-
+    public function disciplines()
+    {
+        return $this->hasMany(Discipline::class, 'level_id');
+    }
 
     public function fees()
     {
         return $this->belongsToMany(Subject::class, 'fee_level', 'level_id', 'fee_id');
     }
-
-
 
     public function centers()
     {

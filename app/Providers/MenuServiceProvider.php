@@ -1,18 +1,17 @@
 <?php
 
+
 namespace App\Providers;
 
+
 use App\Models\Menu;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+
 class MenuServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
     public function register(): void
     {
         //
@@ -20,23 +19,69 @@ class MenuServiceProvider extends ServiceProvider
 
 
 
-public function boot()
-{
-    view()->composer(
-    ['admin.partials.sidebar', 'school.partials.sidebar', 'candidate.partials.sidebar'],
-    function ($view) {
 
-        $user = auth()->user();
-        if (!$user) {
-            return;
+    private function getUserGuard($guard, $user)
+    {
+
+
+
+
+
+
+        if ($guard == 'candidate') {
+            $all_candidate_user = DB::table('candidate_users')
+                ->where('id', $user->id)
+                ->pluck('id')->toArray();
+            $user_type = get_class($user);
+            $user_roles = DB::table('role_user')
+                ->whereIn('user_id', $all_candidate_user)
+                ->where('user_type', $user_type)
+                ->first();
+
+
+            if (!$user_roles) {
+                $user->syncRoles([9]); // Assign 'Candidate' role by default
+            }
         }
-
-        //  direct
-     $directPermissionIds = $user->permissions->pluck('id')->toArray();
+    }
 
 
-    //permissions ONLY from roles (not direct)
-        $permissionIds = $user->roles
+    public function boot()
+    {
+        view()->composer(
+            [
+                'admin.partials.sidebar',
+                'school.partials.sidebar',
+                'candidate.partials.sidebar',
+                'sponsor.partials.sidebar',
+                'web.partials.sidebar',
+            ],
+            function ($view) {
+
+
+                /* -------------------------------------------------
+                 | 1. Resolve authenticated user & guard
+                 ------------------------------------------------- */
+                $guard = Auth::getDefaultDriver();
+                $user  = Auth::guard($guard)->user();
+                $this->getUserGuard($guard,  $user);
+
+
+                if (!$user) {
+                    return;
+                }
+
+
+                /* -------------------------------------------------
+                 | 2. Collect ALL user permission IDs
+                 |    (direct + via roles)
+                 ------------------------------------------------- */
+                $directPermissionIds = $user->permissions
+                    ->pluck('id')
+                    ->toArray();
+
+
+                $rolePermissionIds = $user->roles
                     ->load('permissions')
                     ->pluck('permissions')
                     ->flatten()
@@ -45,127 +90,100 @@ public function boot()
                     ->toArray();
 
 
-$merged = array_merge($directPermissionIds,  $permissionIds);
-
-        // 2. Get all menu IDs this user has access to
-        $allowedMenuIds = DB::table('menu_permission')
-            ->whereIn('permission_id',$merged)
-            ->pluck('menu_id')
-            ->toArray();
-
-        // 3. Load allowed parent menus
-        $parents = Menu::whereNull('parent_id')
-            ->whereIn('id', $allowedMenuIds)  // only allowed parents
-            ->orderBy('order', 'asc')
-            ->get();
-
-        // 4. For each allowed parent → load ALL its children (no filtering)
-        $parents->load(['children' => function ($q) {
-            $q->orderBy('order', 'asc');
-        }]);
+                $permissionIds = array_unique(
+                    array_merge($directPermissionIds, $rolePermissionIds)
+                );
 
 
+                if (empty($permissionIds)) {
+                    $view->with('dynamicMenus', collect());
+                    return;
+                }
 
 
+                /* -------------------------------------------------
+                 | 3. Get menu IDs allowed by permission
+                 ------------------------------------------------- */
+                $allowedMenuIds = DB::table('menu_permission')
+                    ->whereIn('permission_id', $permissionIds)
+                    ->pluck('menu_id')
+                    ->unique()
+                    ->toArray();
 
 
-
-        // 5. Filter: show parents that either:
-        //    - have children
-        //    - OR are single menus
-        $finalMenus = $parents->filter(function ($menu) {
-            return $menu->children->isNotEmpty() || is_null($menu->parent_id);
-        });
-
-        $view->with('dynamicMenus', $finalMenus);
-    });
-}
+                if (empty($allowedMenuIds)) {
+                    $view->with('dynamicMenus', collect());
+                    return;
+                }
 
 
-    /**
-     * Get menus authorized for the current user
-     */
-    private function getAuthorizedMenus()
-    {
-        if (!Auth::check()) {
-            return collect([]);
-        }
+                /* -------------------------------------------------
+                 | 4. Load parent menus
+                 |    - Parent is allowed OR
+                 |    - Any child is allowed
+                 ------------------------------------------------- */
+                $parents = Menu::query()
+                    ->whereNull('parent_id')
+                    ->where('guard_name', $guard)
+                    ->where('is_active', true)
+                    ->where(function ($q) use ($allowedMenuIds) {
+                        $q->whereIn('id', $allowedMenuIds)
+                            ->orWhereHas('children', function ($q2) use ($allowedMenuIds) {
+                                $q2->whereIn('id', $allowedMenuIds);
+                            });
+                    })
+                    ->orderBy('order')
+                    ->get();
 
-        $user = Auth::user();
-        $guardName = Auth::getDefaultDriver();
 
-        // Get all active parent menus with their children
-        $menus = Menu::where('is_active', true)
-            ->where('guard_name', $guardName)
-            ->whereNull('parent_id')
-            ->with(['children' => function ($query) use ($guardName) {
-                $query->where('is_active', true)
-                    ->where('guard_name', $guardName)
-                    ->orderBy('order');
-            }])
-            ->orderBy('order')
-            ->get();
+                /* -------------------------------------------------
+                 | 5. Load children (inherit parent permission)
+                 ------------------------------------------------- */
+                $parents->load([
+                    'children' => function ($q) use ($guard) {
+                        $q->where('guard_name', $guard)
+                            ->where('is_active', true)
+                            ->orderBy('order');
+                    }
+                ]);
 
-        // Filter menus based on user permissions
-        return $menus->filter(function ($menu) use ($user) {
-            return $this->userCanAccessMenu($menu, $user);
-        })->map(function ($menu) use ($user) {
-            // Filter children as well
-            if ($menu->children->isNotEmpty()) {
-                $filteredChildren = $menu->children->filter(function ($child) use ($user) {
-                    return $this->userCanAccessMenu($child, $user);
+
+                /* -------------------------------------------------
+                 | 6. Apply inheritance logic
+                 ------------------------------------------------- */
+                $finalMenus = $parents->map(function ($menu) use ($allowedMenuIds) {
+
+
+                    // 🔹 Parent has permission → ALL children visible
+                    if (in_array($menu->id, $allowedMenuIds)) {
+                        return $menu;
+                    }
+
+
+                    // 🔹 Parent NOT permitted → filter children
+                    $filteredChildren = $menu->children->filter(function ($child) use ($allowedMenuIds) {
+                        return in_array($child->id, $allowedMenuIds);
+                    });
+
+
+                    $menu->setRelation('children', $filteredChildren);
+
+
+                    return $menu;
+                })->filter(function ($menu) use ($allowedMenuIds) {
+                    // Keep menu if:
+                    // - Parent permitted
+                    // - OR it has visible children
+                    return in_array($menu->id, $allowedMenuIds)
+                        || $menu->children->isNotEmpty();
                 });
-                $menu->setRelation('children', $filteredChildren);// Update children relation
+
+
+                /* -------------------------------------------------
+                 | 7. Share with views
+                 ------------------------------------------------- */
+                $view->with('dynamicMenus', $finalMenus);
             }
-            return $menu;
-        })->filter(function ($menu) {
-            // Remove parent menus that have no accessible children
-            if ($menu->children->isNotEmpty()) {
-                return $menu->children->count() > 0;
-            }
-            return true;
-        });
-    }
-
-    /**
-     * Check if user can access a menu item
-     */
-    private function userCanAccessMenu($menu, $user)// this method checks if the user has access to the menu based on permissions
-    {
-        // Get menu permissions for this menu
-        $menuPermissions = $menu->permissions()// Fetch permissions
-            ->with(['role', 'permission'])// 
-            ->get();
-
-        // If no permissions assigned, menu is accessible to all
-        if ($menuPermissions->isEmpty()) {
-            return false;
-        }
-
-        // Get user's roles
-        $userRoles = $user->roles->pluck('id')->toArray();
-
-        // Get user's permissions (both direct and through roles)
-        $userPermissions = $user->permissions->pluck('id')->toArray();// Direct permissions
-
-        // Also get permissions through roles
-        $rolePermissions = $user->roles->flatMap(function ($role) {
-            return $role->permissions->pluck('id');// Permissions from each role
-        })->toArray();
-
-        // Merge all permissions
-        $allUserPermissions = array_unique(array_merge($userPermissions, $rolePermissions));// Merged permissions array
-
-        // Check if user has any of the required role + permission combinations
-        foreach ($menuPermissions as $menuPermission) {
-            $hasRole = in_array($menuPermission->role_id, $userRoles);// Check role
-            $hasPermission = in_array($menuPermission->permission_id, $allUserPermissions);// Check in merged permissions
-
-            if ($hasRole && $hasPermission) {
-                return true;
-            }
-        }
-
-        return false;
+        );
     }
 }

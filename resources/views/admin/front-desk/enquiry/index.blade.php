@@ -68,12 +68,6 @@
             }
         });
 
-        // Initialize datepicker
-        $('.datepicker').datepicker({
-            format: 'yyyy-mm-dd',
-            autoclose: true
-        });
-
         let table = $('#enquiryTable').DataTable({
             processing: true,
             serverSide: true,
@@ -121,12 +115,7 @@
             
             // Set default active status
             $('#is_active').prop('checked', true);
-            
-            // Re-initialize datepickers after form reset
-            $('.datepicker').datepicker({
-                format: 'yyyy-mm-dd',
-                autoclose: true
-            });
+
             
             $('#enquiryModal').modal('show');
         });
@@ -149,11 +138,6 @@
                         $('.invalid-feedback').text('');
                         $('#enquiryForm').attr('action', response.url);
                         
-                        // Re-initialize datepickers
-                        $('.datepicker').datepicker({
-                            format: 'yyyy-mm-dd',
-                            autoclose: true
-                        });
                         
                         $('#enquiryModal').modal('show');
                     } else {

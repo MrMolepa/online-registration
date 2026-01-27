@@ -50,6 +50,7 @@ use App\Http\Controllers\Admin\ServiceRequirementContoller;
 use App\Http\Controllers\Admin\ServiceSaleContolller;
 use App\Http\Controllers\Service\ServiceController;
 
+
 //Workflow
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\WorkflowInstanceController;
@@ -61,6 +62,11 @@ use App\Http\Controllers\Admin\Stationery\StockTypeController;
 use App\Http\Controllers\Admin\Stationery\StockItemController;
 use App\Http\Controllers\Admin\Stationery\ComponentStockController;
 use App\Http\Controllers\Admin\Stationery\CenterAllocationController;
+
+//Subject Groups
+use App\Http\Controllers\Admin\SubjectGroupController;
+use App\Http\Controllers\Admin\SubjectGroupRuleController;
+use App\Http\Controllers\Admin\SubjectManagementController;
 
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
@@ -302,27 +308,96 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('password/reset/{token}', 'App\Http\Controllers\Admin\Auth\ResetPasswordController@showResetForm')->name('password.reset');
         Route::post('password/reset', 'App\Http\Controllers\Admin\Auth\ResetPasswordController@reset')->name('password.update');
     });
-
-
-
-
     Route::middleware(['auth:admin', 'PreventBackHistory'])->group(function () {
 
+
+        // Unified Subject Management Page (Single page with tabs)
+        Route::get('subject-management', [SubjectManagementController::class, 'index'])
+            ->name('subject-management.index');
+
+        // Subject Groups
+        Route::resource('subject-groups', SubjectGroupController::class)->names([
+            'index' => 'subject-groups.index',
+            'create' => 'subject-groups.create',
+            'store' => 'subject-groups.store',
+            'show' => 'subject-groups.show',
+            'edit' => 'subject-groups.edit',
+            'update' => 'subject-groups.update',
+            'destroy' => 'subject-groups.destroy',
+        ]);
+        Route::get('subject-group-rules/ajax/get-groups', [SubjectGroupRuleController::class, 'getGroups'])
+        ->name('subject-group-rules.getGroups');
+
+        // Subject Group Rules Resource
+        Route::resource('subject-group-rules', SubjectGroupRuleController::class)->names([
+            'index' => 'subject-group-rules.index',
+            'create' => 'subject-group-rules.create',
+            'store' => 'subject-group-rules.store',
+            'show' => 'subject-group-rules.show',
+            'edit' => 'subject-group-rules.edit',
+            'update' => 'subject-group-rules.update',
+            'destroy' => 'subject-group-rules.destroy',
+        ]);
+
+        // AJAX Validation Endpoint
+        Route::post('candidates/validate-subjects', [CandidateValidationController::class, 'validateSubjects'])
+            ->name('candidates.validateSubjects');
 
 
 
         // Menu Permission Routes (PIVOT-BASED)
         Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
 
+
             Route::get('/guards', [MenuPermissionController::class, 'getGuards'])
                 ->name('guards');
+
 
             // (Optional) Only keep if you really need a list page
             // Route::get('/', [MenuPermissionController::class, 'index'])->name('index');
 
- Route::prefix('stationery')->name('stationery.')->group(function () {
-            
-            // ==================== Stock Types ====================
+
+            // Assign permission to menu
+            Route::post('/', [MenuPermissionController::class, 'store'])
+                ->name('store');
+
+
+            //Detach permission from menu (NO model binding)
+            Route::delete('/', [MenuPermissionController::class, 'destroy'])
+                ->name('destroy');
+
+
+            // Get permissions for a specific menu
+            Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])
+                ->name('menu');
+        });
+
+
+
+
+        Route::prefix('menus')->name('menus.')->group(function () {
+            // Main Menu Routes
+            Route::get('/', [MenuController::class, 'index'])->name('index');
+            Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
+            Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
+            Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
+            Route::post('/', [MenuController::class, 'store'])->name('store');
+            Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
+            Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
+            Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
+        });
+
+
+        Route::prefix('stationery')->name('stationery.')->group(function () {
+            Route::get('component-stock/sessions-by-filters', [ComponentStockController::class, 'getSessionsByFilters'])
+                ->name('component-stock.sessions-by-filters');
+            Route::get('component-stock/components-by-filters', [ComponentStockController::class, 'getComponentsByFilters'])
+                ->name('component-stock.components-by-filters');
+
+            // Stationery main index - maps /admin/stationery
+            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+
+            // ==================== Stock Types =======================================
             Route::resource('stock-types', StockTypeController::class)
                 ->parameters(['stock-types' => 'stockType'])
                 ->except(['create']);
@@ -332,8 +407,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->name('stock-types.show');
             Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
                 ->name('stock-types.options');
-            
-            // ==================== Stock Items ====================
+
+            // ==================== Stock Items =======================================
             Route::resource('stock-items', StockItemController::class)
                 ->parameters(['stock-items' => 'stockItem'])
                 ->except(['create']);
@@ -342,9 +417,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
                 ->name('stock-items.show');
             Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
-                ->name('stock-items.options');   
-            
-           // ==================== Component Stocks ====================
+                ->name('stock-items.options');
+
+            // ==================== Component Stocks =============================================
             Route::get('component-stock', [ComponentStockController::class, 'index'])
                 ->name('component-stock.index');
             Route::post('component-stock/get-component', [ComponentStockController::class, 'getComponent'])
@@ -359,101 +434,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->name('component-stock.destroy');
             Route::post('component-stock/test', [ComponentStockController::class, 'testCalculation'])
                 ->name('component-stock.test');
-        
+
             Route::prefix('allocation')->name('allocation.')->group(function () {
-            // Main allocation page
-            Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
-    
-            // Generate allocation report
-            Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
-    
-            // Save allocation
-            Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
-    
-           // View allocations
-            Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
-    
-            // Get breakdown details
-            Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
-    
-            // Mark as dispatched
-            Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
-    
-            // Cancel allocation
-            Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
-            
-            // Filter endpoints
-            Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
-            Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
-            Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
-            
+                // Main allocation page
+                Route::get('/', [CenterAllocationController::class, 'index'])->name('index');
+
+                // Generate allocation report
+                Route::post('/generate', [CenterAllocationController::class, 'generateReport'])->name('generate');
+
+                // Save allocation
+                Route::post('/save', [CenterAllocationController::class, 'saveAllocation'])->name('save');
+
+                // View allocations
+                Route::get('/view', [CenterAllocationController::class, 'viewAllocations'])->name('view');
+
+                // Get breakdown details
+                Route::get('/{id}/breakdown', [CenterAllocationController::class, 'getBreakdown'])->name('breakdown');
+
+                // Mark as dispatched
+                Route::post('/{id}/dispatch', [CenterAllocationController::class, 'markDispatched'])->name('dispatch');
+
+                // Cancel allocation
+                Route::delete('/{id}/cancel', [CenterAllocationController::class, 'cancelAllocation'])->name('cancel');
+
+                // Filter endpoints
+                Route::get('/sessions-by-filters', [CenterAllocationController::class, 'getSessionsByFilters'])->name('sessions-by-filters');
+                Route::get('/centers-by-filters', [CenterAllocationController::class, 'getCentersByFilters'])->name('centers-by-filters');
+                Route::get('/components-by-filters', [CenterAllocationController::class, 'getComponentsByFilters'])->name('components-by-filters');
+
             });
-            });
-            // Assign permission to menu
-            Route::post('/', [MenuPermissionController::class, 'store'])
-                ->name('store');
-
-            // ❗ Detach permission from menu (NO model binding)
-            Route::delete('/', [MenuPermissionController::class, 'destroy'])
-                ->name('destroy');
-
-            // Get permissions for a specific menu
-            Route::get('/menu/{menu}', [MenuPermissionController::class, 'getByMenu'])
-                ->name('menu');
         });
-
-
-        Route::prefix('menus')->name('menus.')->group(function () {
-            // Main Menu Routes
-            Route::get('/', [MenuController::class, 'index'])->name('index');
-            Route::get('/options', [MenuController::class, 'getMenuOptions'])->name('options');
-            Route::get('/tree', [MenuController::class, 'getMenuTree'])->name('tree');
-            Route::post('/reorder', [MenuController::class, 'reorder'])->name('reorder');
-            Route::post('/', [MenuController::class, 'store'])->name('store');
-            Route::get('/{menu}', [MenuController::class, 'edit'])->name('edit');
-            Route::put('/{menu}', [MenuController::class, 'update'])->name('update');
-            Route::delete('/{menu}', [MenuController::class, 'destroy'])->name('destroy');
-            // Route::get('/sidebar/refresh', [MenuController::class, 'refreshSidebar'])->name('sidebar.refresh');
-            Route::get('/ajax/sidebar', function () {
-                return view('admin.partials.sidebar')->render();
-            })->middleware(['auth:admin']);
-        });
-
-
-        Route::prefix('stationery')->name('stationery.')->group(function () {
-
-            // ==================== Stock Types ====================
-            Route::resource('stock-types', StockTypeController::class)
-                ->parameters(['stock-types' => 'stockType'])
-                ->except(['create']);
-            Route::get('stock-types/{stockType}/edit', [StockTypeController::class, 'edit'])
-                ->name('stock-types.edit');
-            Route::get('stock-types/{stockType}', [StockTypeController::class, 'show'])
-                ->name('stock-types.show');
-            Route::get('stock-types-options', [StockTypeController::class, 'getOptions'])
-                ->name('stock-types.options');
-
-            // ==================== Stock Items ====================
-            Route::resource('stock-items', StockItemController::class)
-                ->parameters(['stock-items' => 'stockItem'])
-                ->except(['create']);
-            Route::get('stock-items/{stockItem}/edit', [StockItemController::class, 'edit'])
-                ->name('stock-items.edit');
-            Route::get('stock-items/{stockItem}', [StockItemController::class, 'show'])
-                ->name('stock-items.show');
-            Route::get('stock-items-options', [StockItemController::class, 'getOptions'])
-                ->name('stock-items.options');
-        });
-
-        // Route::prefix('visitors')->name('visitors.')->group(function () {
-
-        // });
-        // Route::get('/visitors/data', [VisitorController::class, 'data'])->name('visitors.data');
-        //     Route::resource('visitors', VisitorController::class);
-        //     Route::post('/visitors/store', [VisitorController::class, 'store'])->name('visitors.store');
-        //     Route::get('/visitors/{id}/edit', [VisitorController::class, 'edit'])->name('visitors.edit');
-        //     Route::put('/visitors/{id}', [VisitorController::class, 'update'])->name('visitors.update');
-        //     Route::delete('/visitors/{id}', [VisitorController::class, 'destroy'])->name('visitors.destroy');
 
         Route::prefix('front-desk/phone-call-log')->name('front-desk.phone-call-log.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'index'])->name('index');
@@ -495,6 +505,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Override edit and show routes to return JSON
             Route::get('enquiry/{enquiry}/edit', [App\Http\Controllers\Admin\EnquiryController::class, 'edit'])->name('enquiry.edit');
             Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
+
         });
 
         //'middleware' => 'admin'
@@ -513,14 +524,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/centers/update-sessions/{id}', [CentersController::class, 'updateSessions'])->name('centers.updateSessions');
         Route::put('/centers/update-level/{id}', [CentersController::class, 'updateLevels'])->name('centers.updateLevels');
         Route::put('/centers/update-subjects/{id}', [CentersController::class, 'updateSubjects'])->name('centers.updateSubjects');
-
-        // center sidebar
-        Route::middleware(['auth:center'])->group(function () {
-
-            Route::get('/center/sidebar', function () {
-                return view('center.partials.sidebar');
-            });
-        });
 
         // invitations
         Route::prefix('invitations')->name('invitations.')->group(function () {
@@ -577,19 +580,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Workflow Instances
             Route::post('/start', [WorkflowInstanceController::class, 'start'])->name('instances.start');
             Route::get('/instances/{instance}', [WorkflowInstanceController::class, 'show'])->name('instances.show');
-
-            // Approvals (stay within the current admin/workflows group)
-            // Route::prefix('approvals')->name('approvals.')->group(function () {
-            //     Route::get('/', [ApprovalController::class, 'index'])->name('index');
-            //     Route::post('/{instance}/process', [ApprovalController::class, 'process'])->name('process');
-            //     Route::get('/{instance}/history', [ApprovalController::class, 'history'])->name('history');
-            // });
         });
-
-
-
-
-
 
         // invigilation
         Route::prefix('invigilations')->name('invigilations.')->group(function () {
@@ -653,6 +644,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('users/password', [UserController::class, 'updatePassword'])->name('users.updatepassword');
         Route::put('/users/profile/{user}', [UserController::class, 'updateProfile'])->name('users.updateprofile');
         Route::post('users/change-status', [UserController::class, 'changeUserStatus'])->name('users.changeuserstatus');
+        Route::post('users/change-sponsor-status', [UserController::class, 'changeSponsorStatus'])->name('users.changeSponsorStatus');
+        Route::post('users/change-candidate-status', [UserController::class, 'changeCandidateStatus'])->name('users.changeCandidateStatus');
+        Route::post('/users/change-candidate-password', [UserController::class, 'changeCandidatePassword'])->name('users.changeCandidatePassword');
+
         Route::post('/users/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/add', [UserController::class, 'store'])->name('users.store');
         Route::post('/users/change-password', [UserController::class, 'changePassword'])->name('users.changepassword');
@@ -721,10 +716,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::get('/candidates-entries/autocompleteSearchCenter', [CandidateEntryController::class, 'autocompleteSearchCenter'])->name('candidates.entries.autocompleteSearchCenter');
 
-
-
-
-
         // ************TimeTables*********************************
         Route::get('/timetable', [TimeTableController::class, 'index'])->name('timetable.index');
         Route::post('/timetable-update', [TimeTableController::class, 'update'])->name('timetable.update');
@@ -750,9 +741,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/over-print', [OverPrintController::class, 'print'])->name('over-print.print');
             Route::post('/over-print-pdf', [OverPrintController::class, 'overPrint'])->name('over-print.pdf');
         });
-
-
-
 
 
         // ****************Fees Charges**********************
@@ -787,23 +775,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // ******************Center charges *******************
             Route::resource('center-charges', CenterChargesController::class);
         });
-
-        Route::middleware(['auth:center'])->prefix('center')->name('center.')->group(function () {
-
-    Route::get('/', fn () => view('center.home'))->name('home');
-    Route::get('/candidates', fn () => view('center.candidates'))->name('candidates.index');
-    Route::get('/users', fn () => view('center.users'))->name('users.index');
-    Route::get('/reports', fn () => view('center.reports'))->name('reports.index');
-    Route::get('/payments', fn () => view('center.payments'))->name('payments.index');
-    Route::get('/documents', fn () => view('center.documents'))->name('documents.index');
-    Route::get('/invigilators', fn () => view('center.invigilators'))->name('invigilators.index');
-    Route::get('/help', fn () => view('center.help'))->name('help.index');
-
-});
-
         //
-
-
 
         Route::get('/Collection/{id}', [SponsorController::class, 'editSponsorCollection'])->name('sponsors.editSponsorCollection');
         Route::put('/Collection/{id}', [SponsorController::class, 'updateSponsorCollection'])->name('sponsors.updateSponsorCollection');
@@ -813,8 +785,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // ******************funders *******************
         Route::resource('sponsors', SponsorController::class);
 
-
-
         Route::get('/payments-verification', [PaymentVerificationController::class, 'index'])->name('payments-verification.index');
         Route::get('/payments-verification-center/{center_no}', [PaymentVerificationController::class, 'center_proof_payments'])->name('payments-verification.center');
         Route::get('/verification-center-edit/{id}', [PaymentVerificationController::class, 'editProofPaymentCenter'])->name('payments-verification.center.edit');
@@ -822,9 +792,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/verification-center-delete/{id}', [PaymentVerificationController::class, 'deleteProofPaymentCenter'])->name('payments-verification.center.delete');
         Route::post('/center-charges/{id}', [PaymentVerificationController::class, 'centerCharges'])->name('payments-verification.centercharges');
         // candidates
-
-
-
 
         Route::post('/payments-verification-candidate-search', [PaymentVerificationController::class, 'searchCandidate'])->name('payments-verification.searchcandidate');
         Route::post('/payments-verification-store', [PaymentVerificationController::class, 'storeCandidate'])->name('payments-verification.storecandidate');
@@ -881,13 +848,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // ******************Page menus*********************
         Route::post('page-menus/updateOrder', [MenuController::class, 'updateOrder'])->name('page-menus.updateOrder');
         Route::resource('page-menus', MenuController::class);
-
-
-
-
-
-
-
         // *************Publications Publication ************
         Route::get('/publications', [PublicationController::class, 'index'])->name('publications.index');
         Route::get('/publications-display', [PublicationController::class, 'displayPublications'])->name('publications.display');
@@ -989,6 +949,8 @@ Route::group(['prefix' => 'center', 'as' => 'center.',], function () {
 
         Route::get('/invitations/{type}', [SchoolInvitationController::class, 'index'])->name('invitations.index');
         Route::post('/invitations/action', [SchoolInvitationController::class, 'process'])->name('invitations.process');
+
+
     });
 });
 

@@ -12,7 +12,12 @@ class Discipline extends Model
 
     protected $fillable = [
         'name',
-        'display_name'
+        'display_name',
+        'level_id'
     ];
 
+    public function level()
+    {
+        return $this->belongsTo(Level::class, 'level_id');
+    }
 }

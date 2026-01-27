@@ -189,7 +189,7 @@
 
                         toastr.success(response.message);
 
-                        // 🔥 Reload sidebar dynamically
+                        // Reload sidebar dynamically
                         reloadSidebar();
                     }
                 },
@@ -199,7 +199,7 @@
                         $.each(errors, function(key, value) {
                             $(`#${key}`).addClass('is-invalid');
                             $(`#${key}`).siblings('.invalid-feedback').text(value[0]);
-                            // ✅ Show toast immediately
+                            // Show toast immediately
                             toastr.error(value[0]);
                         });
                     } else {

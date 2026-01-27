@@ -14,6 +14,7 @@
     <!-- End plugin css for this page -->
     <!-- inject:css -->
     <link rel="stylesheet" href="{{ asset('candidates/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('candidates/css/login-overrides.css') }}">
     <!-- endinject -->
 
     <!-- CSRF Token -->

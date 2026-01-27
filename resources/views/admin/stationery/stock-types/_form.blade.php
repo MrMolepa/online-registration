@@ -1,6 +1,6 @@
 <!-- Stock Type Form Modal -->
 <div class="modal fade" id="stockTypeModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-compact">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
@@ -23,6 +23,7 @@
                         <label for="description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="4" placeholder="Enter description (optional)"></textarea>
                         <div class="invalid-feedback"></div>
+                        
                     </div>
                     
                     <div class="mb-3">

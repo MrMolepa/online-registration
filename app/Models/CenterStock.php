@@ -12,10 +12,11 @@ class CenterStock extends Model
     protected $table = 'stationery_center_stock';
 
     protected $fillable = [
-        'center_id',
+        'center_no',
         'stock_item_id',
         'component_id',
         'session_id',
+        'num_candidates',
         'quantity_allocated',
         'quantity_dispatched',
         'dispatch_date',
@@ -31,6 +32,7 @@ class CenterStock extends Model
         'dispatch_date' => 'date',
         'received_date' => 'date',
         'allocation_breakdown' => 'array',
+        'num_candidates' => 'integer',
     ];
 
     /**
@@ -38,7 +40,7 @@ class CenterStock extends Model
      */
     public function center()
     {
-        return $this->belongsTo(Center::class, 'center_id', 'center_no');
+        return $this->belongsTo(Center::class, 'center_no');
     }
 
     /**

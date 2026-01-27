@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Component;
 use App\Models\ComponentStock;
 use App\Models\StockItem;
+use App\Models\Session;
+use App\Models\Level;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class ComponentStockController extends Controller
 {
@@ -17,24 +20,33 @@ class ComponentStockController extends Controller
     public function index(Request $request)
     {
         // Handle DataTables AJAX request
-        if ($request->ajax() && $request->has('component_id')) {
-            $componentStocks = ComponentStock::where('component_id', $request->component_id)
+        if ($request->ajax() && ($request->has('component_key') || $request->has('component_id'))) {
+            $inputComponent = $request->component_key ?? $request->component_id;
+            // Resolve numeric id to padded key if necessary
+            if (is_numeric($inputComponent)) {
+                $comp = Component::find($inputComponent);
+                if ($comp) {
+                    $inputComponent = str_pad($comp->subject_code, 4, '0', STR_PAD_LEFT) . '-' . str_pad($comp->component_code, 2, '0', STR_PAD_LEFT);
+                }
+            }
+
+            $componentStocks = ComponentStock::where('component_key', $inputComponent)
                 ->with(['stockItem.stockType'])
                 ->get();
-            
+
             return DataTables::of($componentStocks)
-                ->addColumn('stock_item_id', function($row) {
+                ->addColumn('stock_item_id', function ($row) {
                     return $row->stock_item_id;
                 })
-                ->addColumn('stock_item_name', function($row) {
+                ->addColumn('stock_item_name', function ($row) {
                     return $row->stockItem ? $row->stockItem->name : 'N/A';
                 })
-                ->addColumn('stock_type_name', function($row) {
-                    return $row->stockItem && $row->stockItem->stockType 
-                        ? $row->stockItem->stockType->name 
+                ->addColumn('stock_type_name', function ($row) {
+                    return $row->stockItem && $row->stockItem->stockType
+                        ? $row->stockItem->stockType->name
                         : 'N/A';
                 })
-                ->addColumn('rule_display', function($row) {
+                ->addColumn('rule_display', function ($row) {
                     $labels = [
                         'per_candidate' => '<span class="label label-info">Per Candidate</span>',
                         'per_center' => '<span class="label label-success">Per Center</span>',
@@ -43,26 +55,29 @@ class ComponentStockController extends Controller
                     ];
                     return $labels[$row->rule_type] ?? $row->rule_type;
                 })
-                ->addColumn('formula_summary', function($row) {
+                ->addColumn('formula_summary', function ($row) {
                     $summary = "Base: {$row->base_qty} × Multiplier: {$row->multiplier}";
-                    
+
                     $extras = [];
-                    if ($row->extras_fixed > 0) $extras[] = "Fixed: +{$row->extras_fixed}";
-                    if ($row->extras_per_candidate > 0) $extras[] = "Per Candidate: +{$row->extras_per_candidate}";
-                    if ($row->extras_percentage > 0) $extras[] = "Percent: +{$row->extras_percentage}%";
-                    
+                    if ($row->extras_fixed > 0)
+                        $extras[] = "Fixed: +{$row->extras_fixed}";
+                    if ($row->extras_per_candidate > 0)
+                        $extras[] = "Per Candidate: +{$row->extras_per_candidate}";
+                    if ($row->extras_percentage > 0)
+                        $extras[] = "Percent: +{$row->extras_percentage}%";
+
                     if (!empty($extras)) {
                         $summary .= "<br><small>" . implode(", ", $extras) . "</small>";
                     }
-                    
+
                     return $summary;
                 })
-                ->addColumn('test_calculation', function($row) {
+                ->addColumn('test_calculation', function ($row) {
                     $result = $row->calculateAllocation(50, 0, []);
                     $testQty = $result['quantity'];
                     return '<span class="text-primary"><strong>' . $testQty . '</strong></span> <small>(for 50 candidates)</small>';
                 })
-                ->addColumn('actions', function($row) {
+                ->addColumn('actions', function ($row) {
                     return '
                         <button class="btn btn-primary btn-sm edit-rule-btn" 
                             data-id="' . $row->id . '" 
@@ -83,13 +98,105 @@ class ComponentStockController extends Controller
         $components = Component::with('subject')
             ->orderBy('component_code')
             ->get();
-            
+
         $stockItems = StockItem::where('is_active', true)
             ->with('stockType')
             ->orderBy('name')
             ->get();
 
-        return view('admin.stationery.components.stock', compact('components', 'stockItems'));
+        $levels = Level::where('is_active', true)->orderBy('id')->get();
+
+        // Get all financial years from sessions
+        $financialYears = Session::whereNotNull('financial_year')
+            ->distinct()
+            ->orderBy('financial_year', 'desc')
+            ->pluck('financial_year');
+
+        return view('admin.stationery.stock', compact('components', 'stockItems', 'levels', 'financialYears'));
+    }
+
+    /**
+     * Get sessions filtered by level and financial year - AJAX endpoint
+     */
+    public function getSessionsByFilters(Request $request)
+    {
+        $level = $request->level;
+        $financialYear = $request->financial_year;
+
+        $sessions = Session::when($financialYear, function ($q) use ($financialYear) {
+            $q->where('financial_year', $financialYear);
+        })
+            ->orderBy('session')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'sessions' => $sessions
+        ]);
+    }
+
+    /**
+     * Get components filtered by level, financial year and session - AJAX endpoint
+     */
+    public function getComponentsByFilters(Request $request)
+    {
+        $level_id = $request->level;
+        $financialYear = $request->financial_year;
+        $session_id = $request->session_id;
+
+
+        $session = Session::find($session_id);
+        // Get level details
+        $level = Level::find($level_id);
+
+        // Get components that have candidates registered in this level, session, and financial year
+        $components = DB::table('center_candidate as cc')
+            ->select(
+                'c.id',
+                'c.component_name',
+                'c.subject_code',
+                'c.component_code',
+                't.subject_name',
+               
+            )
+
+            ->join('candidate_subject as cs', function ($join) use ($level, $financialYear, $session) {
+                $join->on('cc.candidate_no', '=', 'cs.candidate_no')
+                    ->on('cc.session', '=', 'cs.session')
+                    ->on('cc.financial_year', '=', 'cs.financial_year')
+                    ->on('cc.level', '=', 'cs.level')
+                    ->where('cc.level', $level->level)
+                    ->where('cc.financial_year', $financialYear)
+                    ->where('cc.session', $session->session);
+            })
+            ->join('timetable as t', 'cs.subject_code', '=', 't.subject_code')
+            ->join('components as c', function ($join) {
+                $join->on('t.subject_code', '=', 'c.subject_code')
+                    ->on('t.paper_no', '=', 'c.component_code');
+            })->where('cc.level', $level->level)
+                    ->where('cc.financial_year', $financialYear)
+                    ->where('cc.session', $session->session)
+            ->groupBy(
+                'c.id',
+                'c.subject_code',
+                'c.component_name',
+                'c.component_code',
+            )
+            ->orderBy('c.subject_code')
+            ->orderBy('c.component_code')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'components' => $components
+        ]);
+
+
+
+        return response()->json([
+            'success' => true,
+            'components' => $components
+        ]);
     }
 
     /**
@@ -98,10 +205,36 @@ class ComponentStockController extends Controller
     public function getComponent(Request $request)
     {
         $validated = $request->validate([
-            'component_id' => 'required|exists:components,id'
+            'component_key' => 'nullable|string',
+            'component_id' => 'nullable|integer'
         ]);
 
-        $component = Component::with('subject')->findOrFail($validated['component_id']);
+        return response()->json([
+            'success' => true,
+            'data' => $request->all()
+        ]);
+
+
+
+        $component = null;
+        if (!empty($validated['component_key'])) {
+            // parse key like 0001-01
+            $parts = explode('-', $validated['component_key']);
+            if (count($parts) >= 2) {
+                $subject = ltrim($parts[0], '0');
+                $compCode = ltrim($parts[1], '0');
+                $component = Component::with('subject')
+                    ->where('subject_code', $subject)
+                    ->where('component_code', $compCode)
+                    ->first();
+            }
+        } elseif (!empty($validated['component_id'])) {
+            $component = Component::with('subject')->find($validated['component_id']);
+        }
+
+        if (!$component) {
+            return response()->json(['success' => false, 'message' => 'Component not found']);
+        }
 
         return response()->json([
             'success' => true,
@@ -115,7 +248,7 @@ class ComponentStockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'component_id' => 'required|exists:components,id',
+            'component_key' => 'required|string',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'rule_type' => 'required|in:per_candidate,per_center,fixed,conditional',
             'base_quantity' => 'required|numeric|min:0',
@@ -124,9 +257,23 @@ class ComponentStockController extends Controller
             'extras_percent' => 'nullable|numeric|min:0|max:100',
             'extras_per_candidate' => 'nullable|numeric|min:0',
         ]);
+        // resolve provided key to a canonical padded key and ensure component exists
+        $parts = explode('-', $validated['component_key']);
+        if (count($parts) < 2) {
+            return response()->json(['success' => false, 'message' => 'Invalid component key']);
+        }
+        $subject = ltrim($parts[0], '0');
+        $compCode = ltrim($parts[1], '0');
+        $comp = Component::where('subject_code', $subject)->where('component_code', $compCode)->first();
+        if (!$comp) {
+            return response()->json(['success' => false, 'message' => 'Component not found']);
+        }
+
+        $canonicalKey = str_pad($comp->subject_code, 4, '0', STR_PAD_LEFT) . '-' . str_pad($comp->component_code, 2, '0', STR_PAD_LEFT);
 
         $data = [
-            'component_id' => $validated['component_id'],
+            'component_key' => $canonicalKey,
+            'component_id' => $comp->id,
             'stock_item_id' => $validated['stock_item_id'],
             'rule_type' => $validated['rule_type'],
             'base_qty' => $validated['base_quantity'],
@@ -138,7 +285,7 @@ class ComponentStockController extends Controller
         ];
 
         // Check if rule already exists
-        $existing = ComponentStock::where('component_id', $validated['component_id'])
+        $existing = ComponentStock::where('component_key', $canonicalKey)
             ->where('stock_item_id', $validated['stock_item_id'])
             ->first();
 
@@ -146,7 +293,7 @@ class ComponentStockController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An allocation rule already exists for this stock item. Please edit the existing rule.'
-            ], 422);
+            ]);
         }
 
         $componentStock = ComponentStock::create($data);
@@ -163,9 +310,14 @@ class ComponentStockController extends Controller
      */
     public function edit(ComponentStock $componentStock)
     {
+        $componentStock->load('stockItem.stockType', 'component');
+        $component = $componentStock->component ?? $componentStock->resolveComponentFromKey();
+        // ensure we return a component_id field for the frontend but store the key
+        $componentStock->component_id = $componentStock->component_key;
         return response()->json([
             'success' => true,
-            'data' => $componentStock->load('stockItem.stockType', 'component')
+            'data' => $componentStock,
+            'component' => $component
         ]);
     }
 
@@ -175,7 +327,7 @@ class ComponentStockController extends Controller
     public function update(Request $request, ComponentStock $componentStock)
     {
         $validated = $request->validate([
-            'component_id' => 'required|exists:components,id',
+            'component_key' => 'required|string',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'rule_type' => 'required|in:per_candidate,per_center,fixed,conditional',
             'base_quantity' => 'required|numeric|min:0',
@@ -184,9 +336,21 @@ class ComponentStockController extends Controller
             'extras_percent' => 'nullable|numeric|min:0|max:100',
             'extras_per_candidate' => 'nullable|numeric|min:0',
         ]);
+        $parts = explode('-', $validated['component_key']);
+        if (count($parts) < 2) {
+            return response()->json(['success' => false, 'message' => 'Invalid component key']);
+        }
+        $subject = ltrim($parts[0], '0');
+        $compCode = ltrim($parts[1], '0');
+        $comp = Component::where('subject_code', $subject)->where('component_code', $compCode)->first();
+        if (!$comp) {
+            return response()->json(['success' => false, 'message' => 'Component not found']);
+        }
+        $canonicalKey = str_pad($comp->subject_code, 4, '0', STR_PAD_LEFT) . '-' . str_pad($comp->component_code, 2, '0', STR_PAD_LEFT);
 
         $data = [
-            'component_id' => $validated['component_id'],
+            'component_key' => $canonicalKey,
+            'component_id' => $comp->id,
             'stock_item_id' => $validated['stock_item_id'],
             'rule_type' => $validated['rule_type'],
             'base_qty' => $validated['base_quantity'],
@@ -197,9 +361,11 @@ class ComponentStockController extends Controller
         ];
 
         // Check for duplicate rules
-        if ($componentStock->stock_item_id != $validated['stock_item_id'] || 
-            $componentStock->component_id != $validated['component_id']) {
-            $existing = ComponentStock::where('component_id', $validated['component_id'])
+        if (
+            $componentStock->stock_item_id != $validated['stock_item_id'] ||
+            $componentStock->component_key != $canonicalKey
+        ) {
+            $existing = ComponentStock::where('component_key', $canonicalKey)
                 ->where('stock_item_id', $validated['stock_item_id'])
                 ->where('id', '!=', $componentStock->id)
                 ->first();
@@ -208,16 +374,20 @@ class ComponentStockController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'An allocation rule already exists for this stock item.'
-                ], 422);
+                ]);
             }
         }
 
         $componentStock->update($data);
 
+        $fresh = $componentStock->fresh()->load('stockItem.stockType', 'component');
+        $component = $componentStock->component ?? $componentStock->resolveComponentFromKey();
+
         return response()->json([
             'success' => true,
             'message' => 'Allocation rule updated successfully',
-            'data' => $componentStock->fresh()->load('stockItem.stockType', 'component')
+            'data' => $fresh,
+            'component' => $component
         ]);
     }
 
@@ -239,14 +409,29 @@ class ComponentStockController extends Controller
      */
     public function testCalculation(Request $request)
     {
+
         $validated = $request->validate([
-            'component_id' => 'required|exists:components,id',
+            'component_key' => 'required|string',
             'stock_item_id' => 'required|exists:stationery_stock_items,id',
             'candidates' => 'required|integer|min:1',
             'centers' => 'nullable|integer|min:1'
         ]);
 
-        $componentStock = ComponentStock::where('component_id', $validated['component_id'])
+        $parts = explode('-', $validated['component_key']);
+        if (count($parts) < 2) {
+            return response()->json(['success' => false, 'message' => 'Invalid component key']);
+        }
+
+        $subject = ltrim($parts[0], '0');
+        $compCode = ltrim($parts[1], '0');
+        $comp = Component::where('subject_code', $subject)->where('component_code', $compCode)->first();
+        if (!$comp) {
+            return response()->json(['success' => false, 'message' => 'Component not found']);
+        }
+
+        $canonicalKey = str_pad($comp->subject_code, 4, '0', STR_PAD_LEFT) . '-' . str_pad($comp->component_code, 2, '0', STR_PAD_LEFT);
+
+        $componentStock = ComponentStock::where('component_key', $canonicalKey)
             ->where('stock_item_id', $validated['stock_item_id'])
             ->first();
 
@@ -254,7 +439,7 @@ class ComponentStockController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'No allocation rule found for this stock item and component'
-            ], 404);
+            ]);
         }
 
         $result = $componentStock->calculateAllocation(
@@ -267,8 +452,8 @@ class ComponentStockController extends Controller
             'success' => true,
             'quantity' => $result['quantity'],
             'breakdown' => $this->getCalculationBreakdown(
-                $componentStock, 
-                $validated['candidates'], 
+                $componentStock,
+                $validated['candidates'],
                 $validated['centers'] ?? 1
             )
         ]);
@@ -280,7 +465,7 @@ class ComponentStockController extends Controller
     private function getCalculationBreakdown($rule, $candidates, $centers)
     {
         $breakdown = [];
-        
+
         // Step 1: Base calculation
         switch ($rule->rule_type) {
             case 'per_candidate':
