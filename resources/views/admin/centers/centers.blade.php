@@ -157,21 +157,28 @@
                                             @push('scripts')
                                                 <script>
                                                     $(function() {
-                                                        var allCenters = $('#all-centers').DataTable({
+                                                        var centers = $('#centers').DataTable({
                                                             processing: true,
                                                             serverSide: true,
-                                                            scrollY: 500,
-                                                            scrollX: true,
-                                                            scrollCollapse: true,
                                                             deferRender: true,
+                                                            scrollY: 500,
+                                                            scrollCollapse: true,
+                                                            scrollX: true,
                                                             "lengthMenu": [
                                                                 [20, 50, 100, 200, 400, -1],
                                                                 [20, 50, 100, 200, 400, "All"]
                                                             ],
                                                             ajax: {
-                                                                url: "{{ route('admin.centers.allCenters') }}",
+                                                                url: "{{ route('admin.centers.index') }}",
                                                                 data: function(d) {
                                                                     d.level = $("#filters #level").val()
+                                                                },
+                                                                error: function(xhr, error, code) {
+                                                                    console.error('DataTables Ajax Error');
+                                                                    console.log('Status:', xhr.status);
+                                                                    console.log('Status Text:', xhr.statusText);
+                                                                    console.log('Response Text:', xhr.responseText);
+                                                                    alert('Error loading data. Check console for details.');
                                                                 }
                                                             },
                                                             columns: [{
@@ -184,40 +191,34 @@
                                                                     name: 'center_name',
                                                                     searchable: true
                                                                 },
-
-
                                                                 {
-                                                                    data: 'levels',
-                                                                    name: 'levels',
+                                                                    data: 'email',
+                                                                    name: 'email',
                                                                     searchable: false,
                                                                     sortable: false
                                                                 },
                                                                 {
-                                                                    data: 'sessions',
-                                                                    name: 'sessions',
+                                                                    data: 'centre_account_password',
+                                                                    name: 'centre_account_password',
                                                                     searchable: false,
                                                                     sortable: false
                                                                 },
                                                                 {
-                                                                    data: 'subjects',
-                                                                    name: 'subjects',
+                                                                    data: 'role',
+                                                                    name: 'role',
                                                                     searchable: false,
                                                                     sortable: false
                                                                 },
-
-
                                                                 {
                                                                     data: 'action',
                                                                     name: 'action',
                                                                     searchable: false,
                                                                     sortable: false
-
                                                                 }
-
                                                             ]
-
                                                         });
-                                                        $("#all-centers").css("width", "98.5%");
+
+                                                        $("#centers").css("width", "98.5%");
                                                     });
                                                 </script>
                                             @endpush
@@ -394,7 +395,8 @@
                                     <option value="{{ $catergory->id }}">{{ $catergory->name }}</option>
                                 @endforeach
                             </select>
-                        </div>                  </form>
+                        </div>
+                    </form>
                     <div class="clearfix"></div>
                 </div>
                 <div class="modal-footer">
@@ -696,23 +698,23 @@
 
 
 
-         /****  Print errors*******/
-         function printErrorMsg(parent, msg) {
-                $(`${parent} input, ${parent} select, ${parent} textarea`).each(function(index) {
-                    $(`${parent} .help-block`).remove();
-                    $(`${parent} .has-error`).removeClass('has-error');
-                    // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
-                });
-                $.each(msg, function(key, errors) {
-                    for (const error in errors) {
-                        const value = errors[error];
-                        $(`${parent} [name='${key}']`).parent().addClass('has-error');
-                        $(`<span class='help-block'>${value}</span>`).insertAfter(
-                            `${parent} [name='${key}']`)
+        /****  Print errors*******/
+        function printErrorMsg(parent, msg) {
+            $(`${parent} input, ${parent} select, ${parent} textarea`).each(function(index) {
+                $(`${parent} .help-block`).remove();
+                $(`${parent} .has-error`).removeClass('has-error');
+                // console.log(input.attr('type') + 'Name: ' + input.attr('name') + '  Value: ' + input.val());
+            });
+            $.each(msg, function(key, errors) {
+                for (const error in errors) {
+                    const value = errors[error];
+                    $(`${parent} [name='${key}']`).parent().addClass('has-error');
+                    $(`<span class='help-block'>${value}</span>`).insertAfter(
+                        `${parent} [name='${key}']`)
 
-                    }
-                });
-            }
+                }
+            });
+        }
         /****  Print errors End*******/
 
         function resetErrorMsg(parent) {

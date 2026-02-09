@@ -1,31 +1,49 @@
 <?php
+// app/Models/Permission.php
 
 namespace App\Models;
 
-use Laratrust\Models\LaratrustPermission;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
-class Permission extends LaratrustPermission
+class Permission extends Model
 {
+    use HasFactory, LogsActivity;
 
-    use LogsActivity;
-
-    public $guarded = [];
-    protected  $fillable = [
-        'name', 'display_name', 'description'
+    protected $fillable = [
+        'name',
+        'display_name',
+        'description'
     ];
-    protected static $recordEvents = ['created', 'updated', 'deleted'];
 
-    protected static $logOnlyDirty = true;
-    protected static $submitEmptyLogs = false;
-
-
-    protected static $logAttributes = [
-        'name', 'display_name', 'description'
-    ];
-    
-     public function menus()
+    /**
+     * Get the roles that have this permission
+     * Note: No withTimestamps() since permission_role table doesn't have timestamps
+     */
+    public function roles()
     {
-        return $this->belongsToMany(Menu::class, 'menu_permission');
+        return $this->belongsToMany(Role::class, 'permission_role');
+    }
+
+    /**
+     * Get users who have this permission explicitly assigned
+     */
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'permission_user')
+                    ->withPivot('allowed');
+    }
+
+    /**
+     * Activity log options
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'display_name', 'description'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

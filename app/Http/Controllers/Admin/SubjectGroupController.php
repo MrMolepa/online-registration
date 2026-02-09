@@ -108,8 +108,8 @@ class SubjectGroupController extends Controller
                     $deleteUrl = route('admin.subject-groups.destroy', $row->id);
 
                     $html = "
-                     <button type='button' class='btn btn-sm btn-primary editBtn' data-id='{$row->id}' data-url='{$editUrl}'>Edit </button>
-                     <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='{$deleteUrl}'>Delete</button>";
+                     <button type='button' class='btn btn-sm btn-primary editBtn' data-id='{$row->id}' data-url='{$editUrl}'><i class='fas fa-edit'></i> Edit</button>
+                     <button type='button' class='btn btn-sm btn-danger deleteBtn' data-url='{$deleteUrl}'><i class='fas fa-trash'></i> Delete</button>";
                     return $html;
                 })
                 ->rawColumns(['group_code', 'group_name', 'level', 'subjects', 'is_active', 'action'])

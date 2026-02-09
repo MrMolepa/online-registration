@@ -326,7 +326,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'destroy' => 'subject-groups.destroy',
         ]);
         Route::get('subject-group-rules/ajax/get-groups', [SubjectGroupRuleController::class, 'getGroups'])
-        ->name('subject-group-rules.getGroups');
+            ->name('subject-group-rules.getGroups');
 
         // Subject Group Rules Resource
         Route::resource('subject-group-rules', SubjectGroupRuleController::class)->names([
@@ -651,6 +651,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/users/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/add', [UserController::class, 'store'])->name('users.store');
         Route::post('/users/change-password', [UserController::class, 'changePassword'])->name('users.changepassword');
+
+        // User Permission Management Routes 
+        Route::get('users/{id}/permissions/data', [UserController::class, 'getUserPermissions'])
+            ->name('users.permissions.data');
+
+        Route::post('users/{id}/permissions/assign', [UserController::class, 'assignUserPermission'])
+            ->name('users.permissions.assign');
+
+        Route::delete('users/{userId}/permissions/{permissionId}/revoke', [UserController::class, 'revokeUserPermission'])
+            ->name('users.permissions.revoke');
+
+        Route::post('users/{id}/role/update', [UserController::class, 'updateUserRole'])
+            ->name('users.role.update');
 
         Route::resource('sponsor-users', SponsorUserController::class);
 
