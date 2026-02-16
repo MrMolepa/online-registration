@@ -34,6 +34,70 @@
                                 </div>
                             @endif
                             
+                            <!-- Statistics Cards - Now visible on ALL tabs -->
+                            <div class="row mb-4">
+                                <div class="col-md-3">
+                                    <div class="panel panel-headline">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <i class="fa fa-users fa-3x text-primary"></i>
+                                                </div>
+                                                <div class="col-md-9 text-right">
+                                                    <h3 class="mb-0" id="total-registrations">0</h3>
+                                                    <p class="text-muted">Total Registrations</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="panel panel-headline">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <i class="fa fa-check-circle fa-3x text-success"></i>
+                                                </div>
+                                                <div class="col-md-9 text-right">
+                                                    <h3 class="mb-0" id="paid-registrations">0</h3>
+                                                    <p class="text-muted">Paid</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="panel panel-headline">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <i class="fa fa-clock-o fa-3x text-warning"></i>
+                                                </div>
+                                                <div class="col-md-9 text-right">
+                                                    <h3 class="mb-0" id="pending-registrations">0</h3>
+                                                    <p class="text-muted">Pending Payment</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="panel panel-headline">
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <i class="fa fa-money fa-3x text-info"></i>
+                                                </div>
+                                                <div class="col-md-9 text-right">
+                                                    <h3 class="mb-0" id="total-revenue">M0.00</h3>
+                                                    <p class="text-muted">Total Revenue</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="custom-tabs-line tabs-line-bottom left-aligned">
                                 <ul class="nav" role="tablist">
                                     <li class="active">
@@ -110,6 +174,26 @@ $(document).ready(function() {
         registrations: false,
         payments: false
     };
+
+    // Update statistics - now called on page load to show on all tabs
+    function updateStatistics() {
+        $.ajax({
+            url: "{{ route('admin.fun-walk-registration.statistics') }}",
+            type: 'GET',
+            success: function(response) {
+                $('#total-registrations').text(response.total || 0);
+                $('#paid-registrations').text(response.paid || 0);
+                $('#pending-registrations').text(response.pending || 0);
+                $('#total-revenue').text('M' + parseFloat(response.revenue || 0).toFixed(2));
+            },
+            error: function(xhr) {
+                console.error('Error loading statistics:', xhr);
+            }
+        });
+    }
+
+    // Load statistics on page load
+    updateStatistics();
 
     // Initialize Fun Walks table immediately (first tab)
     initFunWalksTab();
@@ -275,26 +359,6 @@ $(document).ready(function() {
 
     // ==================== REGISTRATIONS TAB ====================
     function initRegistrationsTab() {
-        // Update statistics
-        function updateStatistics() {
-            $.ajax({
-                url: "{{ route('admin.fun-walk-registration.statistics') }}",
-                type: 'GET',
-                success: function(response) {
-                    $('#total-registrations').text(response.total || 0);
-                    $('#paid-registrations').text(response.paid || 0);
-                    $('#pending-registrations').text(response.pending || 0);
-                    $('#total-revenue').text('M' + parseFloat(response.revenue || 0).toFixed(2));
-                },
-                error: function(xhr) {
-                    console.error('Error loading statistics:', xhr);
-                }
-            });
-        }
-
-        // Initial statistics load
-        updateStatistics();
-
         let registrationTable = $('#funWalkRegistrationTable').DataTable({
             processing: true,
             serverSide: true,
