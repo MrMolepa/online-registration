@@ -237,7 +237,7 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
 
         $validated = $request->validate([
-            'permissions' => 'required|array',
+            'permissions' => 'required|array', 
             'permissions.*' => 'exists:permissions,id',
         ]);
 

@@ -61,7 +61,7 @@ class InvitationController extends Controller
                     $q->where('level', $request->level);
                 }
                 if ($request->filled('session')) {
-                    $q->where('session', $request->session);
+                    $q->where('session', $request->input('session'));
                 }
                 if ($request->filled('role')) {
                     $q->where('role_id', $request->role);
@@ -203,9 +203,9 @@ class InvitationController extends Controller
                 'recipient_id' => $recipient->id,
                 'role_id' => $request->role_id,
                 'center_no'   => $request->center_no,
-                'session' => $request->session,
-                'level' => $request->level,
-                'financial_year' => $request->financial_year,
+                'session' => $request->input('session'),
+                'level' => $request->input('level'),
+                'financial_year' => $request->input('financial_year'),
             ],
             [
                 'status'         => 'pending',
@@ -323,7 +323,7 @@ class InvitationController extends Controller
                             'recipient_id'   => $recipient->id,
                             'role_id'        => $rowData['role_id'],
                             'center_no' => $rowData['center_no'],
-                            'session'        => $rowData['session'],
+                            'session'        => $rowData['session'] ?? null,
                             'level'          => $rowData['level'],
                             'financial_year' => $rowData['financial_year'],
                         ],
@@ -405,7 +405,7 @@ class InvitationController extends Controller
             $query->where('level', $request->level);
         }
         if ($request->filled('session')) {
-            $query->where('session', $request->session);
+            $query->where('session', $request->input('session'));
         }
         if ($request->filled('role')) {
             $query->where('role_id', $request->role);
@@ -587,7 +587,7 @@ class InvitationController extends Controller
             ->whereIn('recipient_id', $request->recipients)
             ->where('level', $request->level)
             ->where('financial_year', $request->financial_year)
-            ->where('session', $request->session)
+            ->where('session', $request->input('session'))
             ->latest('sent_at')
             ->get()
             ->unique('recipient_id'); // ensure only 1 per recipient (latest)
@@ -676,7 +676,7 @@ class InvitationController extends Controller
         // 2️⃣ Update existing invitation
         $invitation->update([
             'role_id'        => $request->role_id,
-            'session'        => $request->session,
+            'session'        => $request->input('session'),
             'financial_year' => $request->financial_year,
             'level' => $request->level,
             'center_no'  => $request->center_no,

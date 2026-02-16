@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RegistrationController;
+use App\Models\FunWalk;
 
 
 use App\Http\Controllers\Admin\CandidateRegistrationController;
@@ -19,6 +20,16 @@ use App\Http\Controllers\Admin\CandidateRegistrationController;
 */
 
 Route::post('/callback-ecocash', [RegistrationController::class, 'ecoCashCallBackUrl']);
+
+// Fun Walk payment callbacks
+use App\Http\Controllers\Admin\FunWalkPaymentController;
+Route::post('/fun-walk/ecocash-callback', [FunWalkPaymentController::class, 'ecoCashCallback']);
+Route::post('/fun-walk/mpesa-callback', [FunWalkPaymentController::class, 'mpesaCallback']);
+
+// Fun Walk API endpoint
+Route::get('/fun-walks', function () {
+    return FunWalk::where('status', 'active')->get(['id', 'title', 'date', 'location', 'price']);
+});
 
 
 

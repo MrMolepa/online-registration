@@ -68,6 +68,11 @@ use App\Http\Controllers\Admin\SubjectGroupController;
 use App\Http\Controllers\Admin\SubjectGroupRuleController;
 use App\Http\Controllers\Admin\SubjectManagementController;
 
+// Fun Walk
+use App\Http\Controllers\Admin\FunWalk\FunWalkController;
+use App\Http\Controllers\Admin\FunWalk\FunWalkRegistrationController;
+use App\Http\Controllers\Admin\FunWalk\FunWalkPaymentController;
+
 // ********************Center******************************
 use App\Http\Controllers\Admin\CandidateProfileController;
 use App\Http\Controllers\Admin\CandidateRegistrationController;
@@ -338,8 +343,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'update' => 'subject-group-rules.update',
             'destroy' => 'subject-group-rules.destroy',
         ]);
+//FUN WALKS
+        Route::get('/fun-walk-payments/unpaid-registrations', [FunWalkPaymentController::class, 'getUnpaidRegistrations'])
+            ->name('fun-walk-payments.unpaid-registrations');
+        Route::post('/fun-walk-payments/process', [FunWalkPaymentController::class, 'processPayment'])
+            ->name('fun-walk-payments.process');
+        Route::post('/fun-walk/process-payment', [FunWalkPaymentController::class, 'processPayment'])->name('fun-walk.process-payment');
+        Route::get('/fun-walk/payment-success', [FunWalkPaymentController::class, 'paymentSuccess'])->name('fun-walk.payment-success');
+        Route::resource('fun-walk-payments', FunWalkPaymentController::class)->names([
+            'index' => 'fun-walk-payments.index',
+            'store' => 'fun-walk-payments.store',
+            'show' => 'fun-walk-payments.show',
+            'create' => 'fun-walk-payments.create',
+            'edit' => 'fun-walk-payments.edit',
+            'update' => 'fun-walk-payments.update',
+            'destroy' => 'fun-walk-payments.destroy',
+        ]);
 
-        // AJAX Validation Endpoint
         Route::post('candidates/validate-subjects', [CandidateValidationController::class, 'validateSubjects'])
             ->name('candidates.validateSubjects');
 
@@ -488,6 +508,41 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'update'])->name('update');
             Route::delete('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'destroy'])->name('destroy');
         });
+
+        // Fun Walk Management (Tabbed Interface)
+        Route::get('/fun-walk-management', [FunWalkController::class, 'management'])
+            ->name('fun-walk-management');
+
+        Route::prefix('fun-walk')->name('fun-walk.')->group(function () {
+            Route::get('/', [FunWalkController::class, 'index'])->name('index');
+            Route::post('/', [FunWalkController::class, 'store'])->name('store');
+            Route::get('{funWalk}/edit', [FunWalkController::class, 'edit'])->name('edit');
+            Route::put('{funWalk}', [FunWalkController::class, 'update'])->name('update');
+            Route::delete('{funWalk}', [FunWalkController::class, 'destroy'])->name('destroy');
+        });
+
+
+
+        Route::prefix('fun-walk-registration')->name('fun-walk-registration.')->group(function () {
+            Route::get('/', [FunWalkRegistrationController::class, 'index'])->name('index');
+            Route::post('/', [FunWalkRegistrationController::class, 'store'])->name('store');
+            Route::get('{funWalkRegistration}/edit', [FunWalkRegistrationController::class, 'edit'])->name('edit');
+            Route::put('{funWalkRegistration}', [FunWalkRegistrationController::class, 'update'])->name('update');
+            Route::delete('{funWalkRegistration}', [FunWalkRegistrationController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::get('fun-walk-registration', [FunWalkRegistrationController::class, 'index'])
+            ->name('fun-walk-registration.index');
+        Route::get('fun-walk-registration/statistics', [FunWalkRegistrationController::class, 'statistics'])
+            ->name('fun-walk-registration.statistics');
+        Route::get('fun-walk-registration/{id}', [FunWalkRegistrationController::class, 'show'])
+            ->name('fun-walk-registration.show');
+        Route::get('fun-walk-registration/{id}/edit', [FunWalkRegistrationController::class, 'edit'])
+            ->name('fun-walk-registration.edit');
+        Route::put('fun-walk-registration/{id}', [FunWalkRegistrationController::class, 'update'])
+            ->name('fun-walk-registration.update');
+        Route::delete('fun-walk-registration/{id}', [FunWalkRegistrationController::class, 'destroy'])
+            ->name('fun-walk-registration.destroy');
 
         Route::prefix('front-desk')->name('front-desk.')->group(function () {
             Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([

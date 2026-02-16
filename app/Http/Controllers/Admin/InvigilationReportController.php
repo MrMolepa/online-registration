@@ -101,10 +101,10 @@ class InvigilationReportController extends Controller
     {
         if ($request->file_type == "pdf") {
         // variable contains requests
-        $session = empty($request->session) ? 'November' : $request->session;
-        $year = empty($request->year) ? '2024-2025' : $request->year;
-        $center = $request->center_no;
-        $district = $request->district_id;
+        $session = empty($request->input('session')) ? 'November' : $request->input('session');
+        $year = empty($request->input('year')) ? '2024-2025' : $request->input('year');
+        $center = $request->input('center_no');
+        $district = $request->input('district_id');
         // Set query
         $invigilation_contracts = DB::table('invigilator_profile')::with('invigilation_roles.invigilation_types', 'invigilator_paymentamount', 'districts');
 
