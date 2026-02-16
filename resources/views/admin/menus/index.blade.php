@@ -40,24 +40,10 @@
                                                 <li><a href="#tree-view" role="tab" data-toggle="tab"
                                                         id="tree-view-btn">Tree View (Drag & Drop)</a></li>
                                             </ul>
-                                            <!-- Guard Filter -->
-
-
-                                            {{-- <div class="pull-right" style="width: 200px;">
-                                            <label for="guardFilterSelect" style="font-size: 12px;">Filter by Guard:</label>
-                                            <select class="form-control input-sm" id="guardFilterSelect">
-                                                <option value="">All Guards</option>
-                                                <option value="admin">Admin</option>
-                                                <option value="candidate">Candidate</option>
-                                                <option value="sponsor">Sponsor</option>
-                                                <option value="web">Web</option>
-                                            </select>
-                                        </div> --}}
-
 
                                             <div class="pull-right"
                                                 style="width: 300px; display: flex; align-items: center; gap: 6px;">
-                                                <label for="guardFilterSelect" style="font-size: 12px; margin-bottom: 0;">
+                                                <label for="guardFilterSelect" style="font-size: 10px; margin-bottom: 0;">
                                                     Filter by Guard:
                                                 </label>
                                                 <select class="form-control input-sm" id="guardFilterSelect"

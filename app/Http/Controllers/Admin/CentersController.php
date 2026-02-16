@@ -27,198 +27,127 @@ class CentersController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
-    {
+   public function index(Request $request)
+{
+    ini_set('memory_limit', '-1');
+    set_time_limit(-1);
 
-        ini_set('memory_limit', '-1');
-        set_time_limit(-1);
-
-
-
-        // $center = Center::with('subjects')->where('center_no', '=', "LS505")->first();
-        //  $arrayS= json_decode($center->sessions, TRUE);
-        // dd($arrayS);
-
-
-
-
-
-
-        $allSessionSubjects = DB::table('sessions')
-            ->select(
-                'subjects.subject_code',
-                'subject_option.option_code',
-                'subjects.subject_name',
-                'subjects.short_name',
-                'subjects.level',
-                'sessions.id',
-                'sessions.session'
-            )
-            ->join('session_subject', 'sessions.id', '=', 'session_subject.session_id')
-            ->join('subjects', 'subjects.subject_code', '=', 'session_subject.subject_code')
-            ->join('subject_option', 'subject_option.subject_code', '=', 'subjects.subject_code')
-            ->where('sessions.id', '=', 4)
-            ->get();
-        $allSubjectArray = $allSessionSubjects->pluck('subject_code')->toArray();
-        $doubleOptionsSubjes = array_values(array_unique(array_diff_assoc($allSubjectArray, array_unique($allSubjectArray))));
-        // dd($doubleOptionsSubjes);
-
-        // dd( $centers->subjects->pluck('subject_code')->toArray(),  );
-
-
-
-
-
-
-
-
-
-
-
-        //   ->whereHas('subjects', function ($query) use (  $level) {
-        //     $query->where('level', '=',   );
-        // })->first();
-
-
-        // Center Accounts
-        // $centers = Center::where('center_no', 'LIKE', '1%')->get();
-        // foreach ($centers as  $center) {
-        //         $password = bin2hex(random_bytes(3));
-        //         $user =  User::firstOrNew(array('center_no' => $center->center_no));
-        //         $user->user_type = 'center';
-        //         $user->occupation = $center->district;
-        //         $user->username = $center->center_no;
-        //         $user->center_no = $center->center_no;
-        //         $user->centre_account_password = $password;
-        //         $user->center_name = $center->center_name;
-        //         $user->email = $center->center_no."@ecol.org.ls";
-        //         $user->password = Hash::make($password);
-        //         $user->save();
-        //         $user->syncRoles([3]);
-        // }
-
-
-
-
-
-        // Sync Level Center
-        //  $centers = Center::where('center_no', 'LIKE', '1%')->get();
-        // foreach ($centers as  $center) {
-        //     $center->levels()->sync([4]);
-        // }
-
-
-
-
-
-
-
-
-
-        //  Sync Subject Center G7
-        //   $centers = Center::where('center_no', 'LIKE', '1%')->get();
-        //     foreach ($centers as  $center) {
-        //         $level_id = Level::where('level','=',$center->level)->first()->id;
-        //         $subjects = Subject::with('selectedLevel')->whereHas('selectedLevel', function ($query) use ($level_id) {
-        //             $query->where('levels.id', '=', $level_id);
-        //         })->pluck('subject_code')->toArray();
-        //          $center->subjects()->sync($subjects);
-        //     }
-
-
-        // Sync Subject Center
-        // foreach ($centers as  $center) {
-        //     // $center_subjects = DB::table('center_subjects')
-        //     // ->where('center_no', '=', $center->center_no)
-        //     // ->where('financial_year', '=', '2023-2024')
-        //     // ->where('session', '=', 'November')
-        //     // ->pluck('subject_code')->toArray();
-        //     // $center->subjects()->sync($center_subjects);
-        //     // $center->levels()->sync([1]);
-        // }
-
-        // $center_subjects = DB::table('center_subjects')
-        //     ->where('center_no', 'like', 'LS%')
-        //     ->where('financial_year', '=', '2023-2024')
-        //     ->take(10)
-        //     ->get();
-
-
-        // dd($centers->first());
-        // dd(   $center_subjects);
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if ($request->ajax()) {
-            $centers = Center::with('users', 'users.roles');
-            if ($request->level) {
-                $level = Level::where('id', '=', $request->level)->first();
-                $centers  = $centers->where('level', '=', $level->level);
+    if ($request->ajax()) {
+        try {
+            // Build the query - load users with their role
+            $query = Center::with(['users' => function($q) {
+                $q->where('user_type', 'center')->with('role'); // Changed 'roles' to 'role'
+            }]);
+            
+            // Apply level filter if provided
+            if ($request->has('level') && $request->level) {
+                $level = Level::find($request->level);
+                if ($level) {
+                    $query->where('level', $level->level);
+                }
             }
-            $centers->whereHas('users', function ($query) {
-                $query->where('user_type', '=', 'center');
-            })->get();
-            return DataTables::of($centers)
-                ->editColumn('center_no', function ($row) {
-                    return  $row->center_no;
+            
+            // Only get centers that have center users
+            $query->whereHas('users', function ($q) {
+                $q->where('user_type', 'center');
+            });
+            
+            return DataTables::eloquent($query)
+                ->addColumn('center_no', function ($row) {
+                    return $row->center_no ?? '';
                 })
-                ->editColumn('center_name', function ($row) {
-                    return  $row->center_name;
+                ->addColumn('center_name', function ($row) {
+                    return $row->center_name ?? '';
                 })
-                ->editColumn('role', function ($row) {
-                    $roles = Role::whereIn('name', ['center-admin', 'ldtc-centers', 'center-editor'])->get();
-                    // $rolename = $row->users[0]->roles[0]->display_name;
-                    $actionUrl = route('admin.centers.changerole', $row->center_no);
-                    $html = "
-                    <select class='edit-role form-control' data-url='$actionUrl' name='role'>";
-                    foreach ($roles as $role) {
-                        $center_role=isset($row->users[0]->roles[0]->id)?$row->users[0]->roles[0]->id :"";
-
-                        $selected = $role->id == $center_role ? "selected" : " ";
-                        $html .= "<option value='$role->id'  $selected>$role->display_name</option>";
+                ->addColumn('email', function ($row) {
+                    $email = '';
+                    if ($row->users && $row->users->isNotEmpty()) {
+                        $email = $row->users->first()->email ?? '';
                     }
+                    return "<span class='editSpan period'>{$email}</span>
+                            <input class='editInput period form-control' type='text' name='email' value='{$email}' style='display:none;'>";
+                })
+                ->addColumn('centre_account_password', function ($row) {
+                    if ($row->users && $row->users->isNotEmpty()) {
+                        return $row->users->first()->centre_account_password ?? '';
+                    }
+                    return '';
+                })
+                ->addColumn('role', function ($row) {
+                    if (!$row->users || $row->users->isEmpty()) {
+                        return 'No user assigned';
+                    }
+                    
+                    $user = $row->users->first();
+                    
+                    // Get the single role for this user (changed from roles to role)
+                    $userRole = $user->role; // This is now a single Role object, not a collection
+                    
+                    $roles = Role::whereIn('name', ['center-admin', 'ldtc-centers', 'center-editor'])->get();
+                    $actionUrl = route('admin.centers.changerole', $row->center_no);
+                    
+                    $html = "<select class='edit-role form-control' data-url='{$actionUrl}' name='role'>";
+                    
+                    // Changed to check the role_id directly
+                    $currentRoleId = $userRole ? $userRole->id : null;
+                    
+                    foreach ($roles as $role) {
+                        $selected = ($role->id == $currentRoleId) ? 'selected' : '';
+                        $html .= "<option value='{$role->id}' {$selected}>{$role->display_name}</option>";
+                    }
+                    
                     $html .= "</select>";
-                    return     $html;
+                    return $html;
                 })
-                ->editColumn('email', function ($row) {
-                    $email = $row->users[0]->email;
-                    $html = "<span class='editSpan period'>$email </span>
-                    <input class='editInput period form-control' type='text' name='email' value='$email '>";
-                    return     $html;
-                })->editColumn('centre_account_password', function ($row) {
-                    return    $row->users[0]->centre_account_password;
-                })
-                ->editColumn('action', function ($row) {
-                    $status = $row->users[0]->status;
-                    $icon = $status == 0 ? "<i class='fa fa-unlock' aria-hidden='true'></i>" : "<i class='fa fa-lock' aria-hidden='true'></i>";
+                ->addColumn('action', function ($row) {
+                    if (!$row->users || $row->users->isEmpty()) {
+                        return '<span class="text-danger">No user</span>';
+                    }
+                    
+                    $user = $row->users->first();
+                    $status = $user->status ?? 0;
+                    $icon = $status == 0 
+                        ? "<i class='fa fa-unlock' aria-hidden='true'></i>" 
+                        : "<i class='fa fa-lock' aria-hidden='true'></i>";
                     $iconReset = "<i class='fa fa-key' aria-hidden='true'></i>";
-                    $html = "<button type='button' title='edit' class='btn btn-sm btn-primary editBtn-account'  data-url='" . route('admin.centers.edit', $row->center_no) . "' > Edit</button>
-                             <button data-url='' class='btn btn-sm btn-info editStatusBtn'>  $icon </button>
-                             <button  data-url='" . route('admin.centers.resetCenterPassword', $row->users[0]->id) . "' class='btn btn-sm btn-info resetBtn'>   $iconReset</button>
-                             ";
-                    return     $html;
+                    
+                    $editUrl = route('admin.centers.edit', $row->center_no);
+                    $resetUrl = route('admin.centers.resetCenterPassword', $user->id);
+                    
+                    return "
+                        <button type='button' title='edit' class='btn btn-sm btn-primary editBtn-account' data-url='{$editUrl}'>Edit</button>
+                        <button data-url='' class='btn btn-sm btn-info editStatusBtn'>{$icon}</button>
+                        <button data-url='{$resetUrl}' class='btn btn-sm btn-info resetBtn'>{$iconReset}</button>
+                    ";
                 })
-                ->rawColumns(['center_name', 'email', 'center_name',  'centre_account_password', 'role', 'action'])
-                ->make();
+                ->rawColumns(['email', 'role', 'action'])
+                ->make(true);
+                
+        } catch (\Exception $e) {
+            \Log::error('DataTables Center Index Error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return response()->json([
+                'draw' => 0,
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'Server error: ' . $e->getMessage()
+            ]);
         }
-        $levels = Level::get();
-        $catergories = InvigilationCatergories::get();
-        $sessions = Session::groupBy('session')->get()->pluck('session')->toArray();
-        $districts = Center::groupBy('district_code')
-            ->whereNotNull('district_code')->get();
-        return view('admin.centers.centers', compact('levels','catergories','sessions','districts'));
     }
-
+    
+    // Non-AJAX request - return view
+    $levels = Level::all();
+    $catergories = InvigilationCatergories::all();
+    $sessions = Session::groupBy('session')->pluck('session')->toArray();
+    $districts = Center::select('district', 'district_code')
+        ->whereNotNull('district_code')
+        ->groupBy('district_code', 'district')
+        ->get();
+        
+    return view('admin.centers.centers', compact('levels', 'catergories', 'sessions', 'districts'));
+}
     public function allCenters(Request $request)
     {
         ini_set('memory_limit', '-1');
@@ -227,38 +156,38 @@ class CentersController extends Controller
             $centers = Center::query();
             if ($request->get('level')) {
                 $level = Level::where('id', '=', $request->level)->first();
-                $centers =  $centers->where('level', $level->level);
+                $centers = $centers->where('level', $level->level);
             }
             return DataTables::eloquent($centers)
                 ->editColumn('center_no', function ($row) {
-                    return  $row->center_no;
+                    return $row->center_no;
                 })
                 ->editColumn('center_full_name', function ($row) {
-                    return    $row->center_full_name;
+                    return $row->center_full_name;
                 })
                 ->editColumn('center_name', function ($row) {
-                    return  $row->center_name;
+                    return $row->center_name;
                 })
                 ->editColumn('levels', function ($row) {
                     $html = "
                       <a href='" . route('admin.levels.index', ['center_no' => $row->center_no]) . "' class='btn btn-sm btn-primary'>
                         Levels
                        </a>";
-                    return     $html;
+                    return $html;
                 })
                 ->editColumn('subjects', function ($row) {
                     $html = "
                       <a href='" . route('admin.subjects.edit', $row->center_no) . "' class='btn btn-sm btn-primary'>
                         Subjects
                        </a>";
-                    return     $html;
+                    return $html;
                 })
                 ->editColumn('sessions', function ($row) {
                     $html = "
                       <a href='" . route('admin.sessions.index', ['center_no' => $row->center_no]) . "' class='btn btn-primary'>
                          Sessions
                        </a>";
-                    return     $html;
+                    return $html;
                 })
                 ->editColumn('action', function ($row) {
 
@@ -268,7 +197,7 @@ class CentersController extends Controller
                     <a href='" . route('admin.centers.updateStatus', ['center_no' => $row->center_no, 'status' => $status]) . "' class='btn btn-sm btn-info check-status'>  $icon </a>
                     <button type='button' title='edit' class='btn btn-sm btn-danger deleteBtn'  data-url='" . route('admin.centers.destroy', $row->center_no) . "' > Delete</button>
                     ";
-                    return     $html;
+                    return $html;
                 })
                 ->rawColumns(['center_name', 'subjects', 'levels', 'sessions', 'center_full_name', 'center_name', 'district', 'action'])
                 ->toJson();
@@ -363,8 +292,8 @@ class CentersController extends Controller
 
 
         $district = Center::groupBy('district_code')
-        ->where('district_code',$request->district_code)
-        ->first();
+            ->where('district_code', $request->district_code)
+            ->first();
         $password = bin2hex(random_bytes(3));
         $sessions = json_encode($request->sessions);
         Center::create([
@@ -376,7 +305,7 @@ class CentersController extends Controller
             'level' => $request->level,
             'center_full_name' => $request->center_full_name . " " . $district->district,
             'district_address' => $request->address . " " . $district->district,
-            'category_id'=>$request->category_id,
+            'category_id' => $request->category_id,
             'sessions' => $sessions
         ]);
         $user = new User();
@@ -442,7 +371,7 @@ class CentersController extends Controller
         $center_no = $request->center_no;
         $status = $request->status == 0 ? 1 : 0;
         $center = Center::find($center_no);
-        $center->status =  $status;
+        $center->status = $status;
         $center->save();
         return redirect(route('admin.centers.index'))->with('success', 'You have Successfully update');
     }
@@ -458,11 +387,21 @@ class CentersController extends Controller
      */
 
     public function changeRole(Request $request, $id)
-    {
-        $user = User::where('center_no', '=', $id)->where('user_type', '=', 'center')->first();
-        $user->syncRoles([$request->role]);
-        return response()->json(['success' => 'Successfully added the records']);
+{
+    $user = User::where('center_no', '=', $id)
+                ->where('user_type', '=', 'center')
+                ->first();
+    
+    if ($user) {
+        // Update the role_id directly instead of using syncRoles
+        $user->role_id = $request->role;
+        $user->save();
+        
+        return response()->json(['success' => 'Successfully updated the role']);
     }
+    
+    return response()->json(['error' => 'User not found'], 404);
+}
 
 
     public function update(Request $request, $id)
@@ -474,24 +413,24 @@ class CentersController extends Controller
             'level' => 'required|max:255',
             'email' => 'required|max:255|email',
             'category_id' => 'required|max:255',
-            'center_full_name'=>'required|max:255',
+            'center_full_name' => 'required|max:255',
 
         ]);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
         $district = Center::groupBy('district_code')
-        ->where('district_code',$request->district_code)
-        ->first();
+            ->where('district_code', $request->district_code)
+            ->first();
         $center = Center::where('center_no', '=', $id)->first();
         $center->center_name = $request->center_name;
-        $center->district =  $district->district;
+        $center->district = $district->district;
         $center->district_code = $district->district_code;
         $center->address = $request->address;
         $center->level = $request->level;
-        $center->center_full_name = $request->center_full_name. " " .  $district->district;
-        $center->district_address = $request->address . " " .  $district->district;
-        $center->category_id=$request->category_id;
+        $center->center_full_name = $request->center_full_name . " " . $district->district;
+        $center->district_address = $request->address . " " . $district->district;
+        $center->category_id = $request->category_id;
         $center->save();
         $user = User::where('center_no', '=', $id)->where('user_type', '=', 'center')->first();
         $user->occupation = $district->district;
@@ -503,7 +442,7 @@ class CentersController extends Controller
         return response()->json(['success' => 'Successfully added the records']);
     }
 
-    public function  updateSubjects(Request $request, $id)
+    public function updateSubjects(Request $request, $id)
     {
         $this->validate($request, [
             'subjects' => 'required',
@@ -538,10 +477,11 @@ class CentersController extends Controller
             'center_no' => $id
         ])->count();
         if ($candidates > 0) {
-            return response()->json(['error' => 'Center can not be deleted because has candidates']);;
+            return response()->json(['error' => 'Center can not be deleted because has candidates']);
+            ;
         } else {
             $center->delete();
-            return response()->json(['success' =>  'You have successfully deleted  the records']);
+            return response()->json(['success' => 'You have successfully deleted  the records']);
         }
     }
 }

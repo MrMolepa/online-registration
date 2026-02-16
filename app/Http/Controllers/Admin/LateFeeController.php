@@ -120,7 +120,7 @@ class LateFeeController extends Controller
         $latefee->start_date =date("Y-m-d", strtotime($request->start_date));
         $latefee->end_date = date("Y-m-d", strtotime($request->end_date));
         $latefee->amount =$request->amount;
-        $latefee->session =$request->session;
+        $latefee->session =$request->input('session');
         $latefee->financial_year =$request->financial_year;
         $latefee->save();
         return response()->json(['success' => 'Successfully added the records']);
@@ -172,7 +172,7 @@ class LateFeeController extends Controller
         $latefee->start_date =$request->start_date;
         $latefee->end_date =$request->end_date;
         $latefee->amount =$request->amount;
-        $latefee->session =$request->session;
+        $latefee->session =$request->input('session');
         $latefee->financial_year =$request->financial_year;
         $latefee->save();
         return response()->json(['success' => 'Successfully updated the records']);
