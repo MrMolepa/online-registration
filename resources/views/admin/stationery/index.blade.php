@@ -232,6 +232,7 @@
                                         </div>
 
                                         <!-- Allocation Rules Table -->
+                                        
                                         <div class="row" id="rulesTableSection" style="display: none;">
                                             <div class="col-md-12">
                                                 <button type="button" class="btn btn-primary" id="addRuleBtn">

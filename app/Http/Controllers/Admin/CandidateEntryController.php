@@ -24,11 +24,11 @@ class CandidateEntryController extends Controller
 
 
         if ($request->ajax()) {
-            $level = $request->level;
-            $session = $request->session;
-            $center = $request->center;
-            $subject = $request->subject;
-            $year = $request->year;
+            $level = $request->input('level');
+            $session = $request->input('session');
+            $center = $request->input('center');
+            $subject = $request->input('subject');
+            $year = $request->input('year');
             $output = "";
             $candidates_entries = DB::table('centers_entries')
                 ->select(
@@ -211,10 +211,10 @@ class CandidateEntryController extends Controller
                 break;
             case 'entries_kingdom':
                 return response()->streamDownload(function () use ($request) {
-                    $level = $request->level;
-                    $session = $request->session;
-                    $center = $request->center;
-                    $year = $request->year;
+                    $level = $request->input('level');
+                    $session = $request->input('session');
+                    $center = $request->input('center');
+                    $year = $request->input('year');
                     $candidates_entries = DB::table('center_candidate')
                         ->select(
                             'center_candidate.center_no',

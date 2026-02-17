@@ -63,9 +63,9 @@ class HomeController extends Controller
         if ($request->ajax()) {
             $subjects = DB::table('total_subjects_per_year')
                 ->select('total_subjects_per_year.*', DB::raw('SUM(total) AS total'))
-                ->where('session', $request->session)
-                ->where('level','=', $request->level)
-                ->where('financial_year', '=', $request->year)
+                ->where('session', $request->input('session'))
+                ->where('level','=', $request->input('level'))
+                ->where('financial_year', '=', $request->input('year'))
                 ->groupBy('subject_code', 'subject_option', 'session', 'financial_year')
                 ->get();
 
@@ -75,9 +75,9 @@ class HomeController extends Controller
                 DB::raw('SUM(total) AS total'),
                 DB::raw('SUM(private_candidate) AS private_candidate'),
                 DB::raw('SUM(school_candidate) AS school_candidate'))
-                ->where('session', $request->session)
-                ->where('level','=', $request->level)
-                ->where('financial_year', '=', $request->year)
+                ->where('session', $request->input('session'))
+                ->where('level','=', $request->input('level'))
+                ->where('financial_year', '=', $request->input('year'))
                 ->groupBy('session', 'financial_year')
                 ->first();
 
@@ -87,9 +87,9 @@ class HomeController extends Controller
                         DB::raw("count(DISTINCT center_no ) as total")
                     ],
                 )
-                ->where('level','=', $request->level)
-                ->where('financial_year', '=',    $request->year)
-                ->where('session', '=',    $request->session)
+                ->where('level','=', $request->input('level'))
+                ->where('financial_year', '=',    $request->input('year'))
+                ->where('session', '=',    $request->input('session'))
                 ->first();
 
             return response()->json(['subjects'=>$subjects,'candidates'=> $candidates,'schools'=> $schools ]);

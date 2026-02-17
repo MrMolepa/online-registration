@@ -141,9 +141,9 @@ class RegistrationController extends Controller
             $center_name = $request->get('search');
             $centers = Center::where('center_name', 'LIKE', "{$center_name}%")
                 ->whereHas('levels', function ($query) use ($request) {
-                    $query->where('levels.id', '=', $request->level);
+                    $query->where('levels.id', '=', $request->get('level'));
                 })
-                ->where('sessions', 'LIKE', "%$request->session%")
+                ->where('sessions', 'LIKE', "%" . $request->get('session') . "%")
                 ->where('status', '=', 1)
                 ->limit(5)->get();
             return response()->json($centers);

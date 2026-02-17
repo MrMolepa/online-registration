@@ -103,8 +103,8 @@ class PublicationController extends Controller
             'title' => 'required',
             'display_name' => 'required',
             'level' => ['required', Rule::unique('publications')->where(function ($query) use ($request) {
-                return $query->where('session', $request->session)
-                    ->where('level', $request->level);
+                return $query->where('session', $request->input('session'))
+                    ->where('level', $request->input('level'));
             })],
             'session' => 'required',
             'published_at' => 'required',
@@ -118,12 +118,12 @@ class PublicationController extends Controller
         try {
             Publication::create(
                 [
-                    'title' => $request->title,
-                    'display_name' => $request->display_name,
-                    'level' => $request->level,
-                    'session' => $request->session,
+                    'title' => $request->input('title'),
+                    'display_name' => $request->input('display_name'),
+                    'level' => $request->input('level'),
+                    'session' => $request->input('session'),
                     'published_at' => $published_at,
-                    'publish' => $request->publish ?? '0'
+                    'publish' => $request->input('publish') ?? '0'
                 ]
             );
             return response()->json(['success' => 'Successfully added the rocords']);

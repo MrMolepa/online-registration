@@ -36,6 +36,7 @@ class DisciplineController extends Controller
                 <input class='editInput period form-control' type='text' name='display_name' value='$row->display_name'>
                 </div>";
                     return     $html;
+                    
                 })
                 ->editColumn('action', function ($row) {
                     $html = "<button type='button' class='btn btn-sm btn-primary editBtn'> Edit</button>

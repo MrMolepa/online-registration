@@ -25,8 +25,8 @@ class InviglationProprietorController extends Controller
     {
         if ($request->ajax()) {
             if ($request->has('center_filter')) {
-                $session =   $request->session;
-                $level = $request->level;
+                $session =   $request->input('session');
+                $level = $request->input('level');
                 $centers =  DB::table('centers')
                     ->select('centers.center_no', 'centers.center_name', 'center_candidate.level', 'center_candidate.session')
                     ->join('center_candidate', 'center_candidate.center_no', '=', 'centers.center_no');
@@ -44,8 +44,8 @@ class InviglationProprietorController extends Controller
                 return response()->json(['centers' =>  $centers]);
             }
             if ($request->has('center_sessions')) {
-                $session =   $request->session;
-                $center_no = $request->center_no;
+                $session =   $request->input('session');
+                $center_no = $request->input('center_no');
                 $session = Session::find($session);
                 $center = Center::with('subjects')->where('center_no', '=',    $center_no)->first();
                 $subjects = $center->subjects->pluck('subject_code')->toArray();

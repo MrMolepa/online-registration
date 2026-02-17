@@ -85,8 +85,8 @@ class SubjectGroupRuleController extends Controller
                 })
                 ->addColumn('action', function ($row) {
                     $html = "
-                    <button type='button' class='btn btn-sm btn-primary editRuleBtn' data-id='{$row->id}'>Edit</button>
-                    <button type='button' class='btn btn-sm btn-danger deleteRuleBtn' data-url='" . route('admin.subject-group-rules.destroy', $row->id) . "'>Delete</button>";
+                    <button type='button' class='btn btn-sm btn-primary editRuleBtn' data-id='{$row->id}'><i class='fas fa-edit'></i> Edit</button>
+                    <button type='button' class='btn btn-sm btn-danger deleteRuleBtn' data-url='" . route('admin.subject-group-rules.destroy', $row->id) . "'><i class='fas fa-trash'></i> Delete</button>";
                     return $html;
                 })
                 ->rawColumns(['is_active', 'action'])
@@ -115,7 +115,7 @@ class SubjectGroupRuleController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors()
-            ], 422);
+            ]);
         }
 
         try {
@@ -125,7 +125,7 @@ class SubjectGroupRuleController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid JSON format for rules'
-                ], 422);
+                ]);
             }
 
             $rule = SubjectGroupRule::create([
@@ -216,7 +216,7 @@ class SubjectGroupRuleController extends Controller
         return response()->json([
             'success' => false,
             'errors' => $validator->errors()
-        ], 422);
+        ]);
     }
 
     try {
@@ -228,7 +228,7 @@ class SubjectGroupRuleController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid JSON format for rules'
-            ], 422);
+            ]);
         }
         
         $rule->update([

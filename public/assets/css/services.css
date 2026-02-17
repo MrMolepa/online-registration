@@ -3574,7 +3574,7 @@ button:disabled {
 }
 
 
-media screen and (min-width: 320px) and (max-width: 480px){
+@media screen and (min-width: 320px) and (max-width: 480px){
 main {
     width: 100% !important;
    
@@ -3595,3 +3595,4 @@ main {
 .progress-form__tabs-item[data-complete="true"]>.step {
     color: hsl(var(--light-blue-500));
 }
+
