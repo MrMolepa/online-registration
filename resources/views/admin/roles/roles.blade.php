@@ -19,8 +19,8 @@
                             <div class="panel-body">
                                 @if (session()->has('success'))
                                     <div class="alert alert-success alert-dismissible" role="alert">
-                                        <button type="button" class="close" data-dismiss="alert"
-                                            aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                                                aria-hidden="true">&times;</span></button>
                                         <strong>Success! </strong> {{ session('success') }}
                                     </div>
                                 @endif
@@ -74,14 +74,13 @@
                         <div class="form-group">
                             <label for="create-display-name">{{ __('Display Name') }}</label>
                             <input id="create-display-name" type="text" class="form-control" name="display_name"
-                                maxlength="255" required autofocus>
+                                maxlength="255"autofocus>
                             <span class="text-danger" id="create-display-name-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="create-name">{{ __('Name') }}</label>
-                            <input id="create-name" type="text" class="form-control" name="name" maxlength="100"
-                                required>
+                            <input id="create-name" type="text" class="form-control" name="name" maxlength="100">
                             <small class="form-text text-muted">Use lowercase letters, numbers, dashes, and underscores
                                 only.</small>
                             <span class="text-danger" id="create-name-error"></span>
@@ -90,7 +89,7 @@
                         <div class="form-group">
                             <label for="create-description">{{ __('Description') }}</label>
                             <textarea id="create-description" class="form-control" name="description" rows="4"
-                                maxlength="255" required></textarea>
+                                maxlength="255"></textarea>
                             <span class="text-danger" id="create-description-error"></span>
                         </div>
                     </div>
@@ -127,16 +126,15 @@
 
                         <div class="form-group">
                             <label for="edit-name">{{ __('Name') }}</label>
-                            <input id="edit-name" type="text" class="form-control" name="name" maxlength="100"
-                                disabled>
+                            <input id="edit-name" type="text" class="form-control" name="name" maxlength="100" disabled>
                             <small class="form-text text-muted">Name cannot be changed after creation.</small>
                             <span class="text-danger" id="edit-name-error"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="edit-description">{{ __('Description') }}</label>
-                            <textarea id="edit-description" class="form-control" name="description" rows="4"
-                                maxlength="255" required></textarea>
+                            <textarea id="edit-description" class="form-control" name="description" rows="4" maxlength="255"
+                                required></textarea>
                             <span class="text-danger" id="edit-description-error"></span>
                         </div>
                     </div>
@@ -226,7 +224,7 @@
                         data: 'description',
                         name: 'description',
                         width: '25%',
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             return data || '-';
                         }
                     },
@@ -263,7 +261,7 @@
         }
 
         // Prevent multiple event bindings
-        $(document).ready(function() {
+        $(document).ready(function () {
             console.log('Roles page initialized');
             initializeRolesTable();
         });
@@ -280,7 +278,7 @@
          * Display form validation errors
          */
         function displayFormErrors(errors, formPrefix) {
-            $.each(errors, function(field, messages) {
+            $.each(errors, function (field, messages) {
                 var fieldName = field.replace('_', '-');
                 $('#' + formPrefix + '-' + fieldName + '-error').text(messages[0]);
                 $('#' + formPrefix + '-' + fieldName).addClass('is-invalid');
@@ -290,7 +288,7 @@
         /**
          * Handle Create Role Button Click
          */
-        $('#btn-create-role').on('click', function() {
+        $('#btn-create-role').on('click', function () {
             clearFormErrors('create-role-form');
             $('#create-role-form')[0].reset();
             $('#create-role-modal').modal('show');
@@ -299,7 +297,7 @@
         /**
          * Handle Create Role Form Submit
          */
-        $('#create-role-form').on('submit', function(e) {
+        $('#create-role-form').on('submit', function (e) {
             e.preventDefault();
             clearFormErrors('create-role-form');
 
@@ -315,7 +313,7 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                success: function(response) {
+                success: function (response) {
                     $('#create-role-modal').modal('hide');
                     submitButton.prop('disabled', false).html('Add');
 
@@ -328,7 +326,7 @@
                     // Reload DataTable
                     rolesTable.ajax.reload(null, false);
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     submitButton.prop('disabled', false).html('Add');
 
                     if (xhr.status === 422) {
@@ -346,49 +344,41 @@
         });
 
         /**
-         * Handle Edit Role Button Click
-         */
-        $(document).on('click', '.btn-edit-role', function(e) {
+    * Handle Edit Role Button Click
+    */
+        $(document).on('click', '.btn-edit-role', function (e) {
             e.preventDefault();
             clearFormErrors('edit-role-form');
 
-            var href = $(this).attr('href');
-            var urlParts = href.split('/');
-            var roleId = urlParts[urlParts.length - 2]; // Get the ID before 'edit'
-
-            console.log('Editing role ID:', roleId);
-            console.log('Full URL:', href);
+            var url = $(this).data('url');
+            var roleId = $(this).data('id');
 
             $('#edit-role-id').val(roleId);
 
-            // Load data first before showing modal
             var editButton = $('#btn-submit-edit');
             editButton.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Loading...');
 
             $.ajax({
-                url: "{{ url('admin/roles') }}/" + roleId + "/edit",
+                url: url,
                 method: 'GET',
                 dataType: 'json',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                success: function(response) {
+                success: function (response) {
                     if (response.success && response.role) {
                         $('#edit-display-name').val(response.role.display_name);
                         $('#edit-name').val(response.role.name);
                         $('#edit-description').val(response.role.description || '');
                         editButton.prop('disabled', false).html('Update');
-
-                        // Show modal after data is loaded
                         $('#edit-role-modal').modal('show');
                     } else {
                         toastr.error('Failed to load role data');
                         editButton.prop('disabled', false).html('Update');
                     }
                 },
-                error: function(xhr) {
-                    console.error('Error loading role:', xhr);
+                error: function (xhr) {
                     toastr.error('Failed to load role data');
                     editButton.prop('disabled', false).html('Update');
                 }
@@ -398,7 +388,7 @@
         /**
          * Handle Edit Role Form Submit
          */
-        $('#edit-role-form').on('submit', function(e) {
+        $('#edit-role-form').on('submit', function (e) {
             e.preventDefault();
             clearFormErrors('edit-role-form');
 
@@ -415,31 +405,18 @@
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                success: function(response) {
+                success: function (response) {
                     $('#edit-role-modal').modal('hide');
                     submitButton.prop('disabled', false).html('Update');
-
-                    if (response.success) {
-                        toastr.success(response.message || 'Successfully updated the role');
-                    } else {
-                        toastr.success('Successfully updated the role');
-                    }
-
-                    // Reload DataTable
+                    toastr.success(response.message || 'Successfully updated the role');
                     rolesTable.ajax.reload(null, false);
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     submitButton.prop('disabled', false).html('Update');
-
                     if (xhr.status === 422) {
-                        var errors = xhr.responseJSON.errors;
-                        displayFormErrors(errors, 'edit');
+                        displayFormErrors(xhr.responseJSON.errors, 'edit');
                     } else {
-                        var errorMessage = 'Failed to update role';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        }
-                        toastr.error(errorMessage);
+                        toastr.error(xhr.responseJSON?.message || 'Failed to update role');
                     }
                 }
             });
@@ -448,15 +425,13 @@
         /**
          * Handle Delete Role Button Click
          */
-        $(document).on('click', '.btn-delete-role', function(e) {
+        $(document).on('click', '.btn-delete-role', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             deleteRoleId = $(this).data('id');
+            deleteRoleUrl = $(this).data('url');
             var roleName = $(this).data('name');
-            
-            console.log('Delete role ID:', deleteRoleId);
-            console.log('Delete role name:', roleName);
 
             if (!deleteRoleId) {
                 toastr.error('Invalid role ID');
@@ -470,69 +445,51 @@
         /**
          * Handle Confirm Delete
          */
-        $(document).on('click', '#confirm-delete-role', function(e) {
+        $(document).on('click', '#confirm-delete-role', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            
-            console.log('Confirm delete clicked, role ID:', deleteRoleId);
-            
-            if (!deleteRoleId) {
+
+            if (!deleteRoleId || !deleteRoleUrl) {
                 toastr.error('No role selected for deletion');
                 $('#delete-role-modal').modal('hide');
                 return;
             }
 
             var deleteButton = $(this);
-            
-            // Prevent multiple clicks
-            if (deleteButton.prop('disabled')) {
-                return;
-            }
-            
+            if (deleteButton.prop('disabled')) return;
+
             deleteButton.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Deleting...');
 
             $.ajax({
-                url: "{{ url('admin/roles') }}/" + deleteRoleId,
+                url: deleteRoleUrl,
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 },
-                success: function(response) {
-                    console.log('Delete response:', response);
-                    
+                success: function (response) {
                     $('#delete-role-modal').modal('hide');
                     deleteButton.prop('disabled', false).html('Delete');
 
                     if (response.success) {
                         toastr.success(response.message || 'Successfully deleted the role');
-                        
                         deleteRoleId = null;
-
-                        // Reload DataTable
+                        deleteRoleUrl = null;
                         rolesTable.ajax.reload(null, false);
                     } else {
                         toastr.error(response.message || 'Failed to delete role');
                         deleteRoleId = null;
+                        deleteRoleUrl = null;
                     }
                 },
-                error: function(xhr) {
-                    console.error('Delete error:', xhr);
-                    
+                error: function (xhr) {
                     deleteButton.prop('disabled', false).html('Delete');
-
-                    var errorMessage = 'Failed to delete role';
-
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-
-                    toastr.error(errorMessage);
-
-                    setTimeout(function() {
+                    toastr.error(xhr.responseJSON?.message || 'Failed to delete role');
+                    setTimeout(function () {
                         $('#delete-role-modal').modal('hide');
                         deleteRoleId = null;
+                        deleteRoleUrl = null;
                     }, 1000);
                 }
             });
@@ -541,14 +498,15 @@
         /**
          * Reset modals when closed
          */
-        $('#delete-role-modal').on('hidden.bs.modal', function() {
+        $('#delete-role-modal').on('hidden.bs.modal', function () {
             console.log('Delete modal closed');
             deleteRoleId = null;
+            deleteRoleUrl = null;
             $('#confirm-delete-role').prop('disabled', false).html('Delete');
             $(this).removeAttr('aria-hidden');
         });
 
-        $('#delete-role-modal').on('show.bs.modal', function() {
+        $('#delete-role-modal').on('show.bs.modal', function () {
             console.log('Delete modal showing, role ID:', deleteRoleId);
             if (!deleteRoleId) {
                 console.error('No role ID set when opening delete modal');
@@ -558,13 +516,13 @@
             }
         });
 
-        $('#create-role-modal').on('hidden.bs.modal', function() {
+        $('#create-role-modal').on('hidden.bs.modal', function () {
             clearFormErrors('create-role-form');
             $('#btn-submit-create').prop('disabled', false).html('Add');
             $(this).removeAttr('aria-hidden');
         });
 
-        $('#edit-role-modal').on('hidden.bs.modal', function() {
+        $('#edit-role-modal').on('hidden.bs.modal', function () {
             clearFormErrors('edit-role-form');
             $('#btn-submit-edit').prop('disabled', false).html('Update');
             $(this).removeAttr('aria-hidden');
@@ -573,7 +531,7 @@
         /**
          * Handle modal shown events to fix aria-hidden
          */
-        $('.modal').on('shown.bs.modal', function() {
+        $('.modal').on('shown.bs.modal', function () {
             $(this).removeAttr('aria-hidden');
         });
     </script>

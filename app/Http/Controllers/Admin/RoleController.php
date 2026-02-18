@@ -25,20 +25,21 @@ class RoleController extends Controller
                 ->addColumn('permissions', function ($row) {
                     $permissionsUrl = route('admin.roles.show', $row->id);
                     return '<a href="' . $permissionsUrl . '" class="btn btn-sm btn-info">' .
-                           '<i class="fas fa-key"></i> Permissions</a>';
+                        '<i class="fas fa-key"></i> Permissions</a>';
                 })
                 ->addColumn('action', function ($row) {
                     $editUrl = route('admin.roles.edit', $row->id);
-                    
+                    $deleteUrl = route('admin.roles.destroy', $row->id);
+
                     $html = '<div class="btn-group" role="group">';
-                    $html .= '<a href="' . $editUrl . '" class="btn btn-sm btn-primary btn-edit-role" ';
-                    $html .= 'data-id="' . $row->id . '">';
-                    $html .= '<i class="fas fa-edit"></i> Edit</a> ';
+                    $html .= '<button type="button" class="btn btn-sm btn-primary btn-edit-role" ';
+                    $html .= 'data-url="' . $editUrl . '" data-id="' . $row->id . '">';
+                    $html .= '<i class="fas fa-edit"></i> Edit</button> ';
                     $html .= '<button type="button" class="btn btn-sm btn-danger btn-delete-role" ';
-                    $html .= 'data-id="' . $row->id . '" data-name="' . htmlspecialchars($row->display_name) . '">';
+                    $html .= 'data-url="' . $deleteUrl . '" data-id="' . $row->id . '" data-name="' . htmlspecialchars($row->display_name) . '">';
                     $html .= '<i class="fas fa-trash"></i> Delete</button>';
                     $html .= '</div>';
-                    
+
                     return $html;
                 })
                 ->rawColumns(['permissions', 'action'])
@@ -237,7 +238,7 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
 
         $validated = $request->validate([
-            'permissions' => 'required|array', 
+            'permissions' => 'required|array',
             'permissions.*' => 'exists:permissions,id',
         ]);
 
