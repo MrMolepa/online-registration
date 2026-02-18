@@ -172,10 +172,7 @@
                 error: function(xhr) {
                     if (xhr.status === 422) {
                         let errors = xhr.responseJSON.errors;
-                        $.each(errors, function(key, value) {
-                            $('#' + key).addClass('is-invalid');
-                            $('#' + key).siblings('.invalid-feedback').text(value[0]);
-                        });
+                            printErrorMsg('#enquiryForm', errors)
                     } else {
                         toastr.error(xhr.responseJSON?.message || 'Error saving enquiry');
                     }
@@ -207,6 +204,41 @@
                 }
             });
         });
+    
+    function printErrorMsg(parent, msg) {
+                // Clear old errors
+                $(`${parent} .help-block`).remove();
+                $(`${parent} .has-error`).removeClass('has-error');
+                $.each(msg, function (key, errors) {
+                    errors.forEach(function (value) {
+                        // ARRAY FIELDS  (name="something[]")
+                        let arrayFields = $(`${parent} [name='${key}[]']`);
+                        if (arrayFields.length) {
+
+                            arrayFields.each(function () {
+                                $(this).closest('.form-group').addClass('has-error');
+
+                                $(`<span class='help-block text-danger'>${value}</span>`)
+                                    .insertAfter($(this));
+                            });
+
+                        }
+                        // NORMAL FIELDS (name="something")
+                        else {
+
+                            let field = $(`${parent} [name='${key}']`);
+
+                            field.each(function () {
+                                $(this).closest('.form-group').addClass('has-error');
+
+                                $(`<span class='help-block text-danger'>${value}</span>`)
+                                    .insertAfter($(this));
+                            });
+                        }
+
+                    });
+                });
+            }
     });
 </script>
 @endpush

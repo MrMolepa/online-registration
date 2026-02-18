@@ -74,7 +74,7 @@
                         <div class="form-group">
                             <label for="create-display-name">{{ __('Display Name') }}</label>
                             <input id="create-display-name" type="text" class="form-control" name="display_name"
-                                maxlength="255"autofocus>
+                                maxlength="255" autofocus>
                             <span class="text-danger" id="create-display-name-error"></span>
                         </div>
 
@@ -120,7 +120,7 @@
                         <div class="form-group">
                             <label for="edit-display-name">{{ __('Display Name') }}</label>
                             <input id="edit-display-name" type="text" class="form-control" name="display_name"
-                                maxlength="255" required>
+                                maxlength="255">
                             <span class="text-danger" id="edit-display-name-error"></span>
                         </div>
 
