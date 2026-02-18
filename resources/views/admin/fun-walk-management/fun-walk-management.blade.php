@@ -562,7 +562,7 @@ $(document).ready(function() {
                 if (willDelete) {
                     $.ajax({
                         url: `/admin/fun-walk-registration/${registrationId}`,
-                        type: 'DELETE',
+                        type: 'DELETE',// 
                         success: function (response) {
                             if (response.success) {
                                 registrationTable.ajax.reload();

@@ -58,6 +58,9 @@ class SubjectValidator
         // Validate group constraints
         $this->validateGroupConstraints($selectedGroups, $rule, $groups);
 
+        // Validate incompatible subject pairs
+        $this->validateIncompatiblePairs($subjectCodes);
+
         // Center-specific validation
         if ($centerNo) {
             $this->validateCenterSubjects($subjectCodes, $centerNo);
@@ -67,7 +70,7 @@ class SubjectValidator
             'valid' => empty($this->errors),
             'errors' => $this->errors,
             'warnings' => $this->warnings,
-            'selected_groups' => $selectedGroups, 
+            'selected_groups' => $selectedGroups,
         ];
     }
 
@@ -78,12 +81,15 @@ class SubjectValidator
     {
         $selectedGroups = [];
 
+        $normalizedCodes = array_map(fn($code) => str_pad((string) $code, 4, '0', STR_PAD_LEFT), $subjectCodes);
+
         foreach ($groups as $group) {
             $groupSubjects = $group->subjects->pluck('subject_code')->toArray();
-            $intersection = array_intersect($subjectCodes, $groupSubjects);
+
+            $intersection = array_intersect($normalizedCodes, $groupSubjects);
 
             if (!empty($intersection)) {
-                $selectedGroups[$group->group_code] = [
+                $selectedGroups[(string) $group->group_code] = [
                     'group_id' => $group->id,
                     'group_name' => $group->group_name,
                     'subject_count' => count($intersection),
@@ -121,13 +127,17 @@ class SubjectValidator
         $requiredGroups = $rule->required_groups;
 
         foreach ($requiredGroups as $requiredGroupConfig) {
-            $groupCode = is_array($requiredGroupConfig) ? $requiredGroupConfig['group_code'] : $requiredGroupConfig;
+            $groupCode = (string) (is_array($requiredGroupConfig)
+                ? $requiredGroupConfig['group_code']
+                : $requiredGroupConfig);
+
             $minCount = is_array($requiredGroupConfig) ? ($requiredGroupConfig['min_count'] ?? 1) : 1;
             $maxCount = is_array($requiredGroupConfig) ? ($requiredGroupConfig['max_count'] ?? null) : null;
 
             $group = $groups->firstWhere('group_code', $groupCode);
 
             if (!$group) {
+                \Log::warning("SubjectGroupRule references group_code '{$groupCode}' which does not exist in SubjectGroups for level.");
                 continue;
             }
 
@@ -147,7 +157,6 @@ class SubjectValidator
             }
         }
     }
-
     /**
      * Validate forbidden groups
      */
@@ -156,6 +165,7 @@ class SubjectValidator
         $forbiddenGroups = $rule->forbidden_groups;
 
         foreach ($forbiddenGroups as $forbiddenGroupCode) {
+            $forbiddenGroupCode = (string) $forbiddenGroupCode;
             if (isset($selectedGroups[$forbiddenGroupCode])) {
                 $group = $groups->firstWhere('group_code', $forbiddenGroupCode);
                 $groupName = $group ? $group->group_name : $forbiddenGroupCode;
@@ -203,6 +213,7 @@ class SubjectValidator
         $hasSelection = false;
 
         foreach ($groupCodes as $groupCode) {
+            $groupCode = (string) $groupCode;
             if (isset($selectedGroups[$groupCode]) && $selectedGroups[$groupCode]['subject_count'] > 0) {
                 $hasSelection = true;
                 break;
@@ -225,6 +236,7 @@ class SubjectValidator
         $selectedCount = 0;
 
         foreach ($groupCodes as $groupCode) {
+            $groupCode = (string) $groupCode;
             if (isset($selectedGroups[$groupCode])) {
                 $selectedCount++;
             }
@@ -242,8 +254,8 @@ class SubjectValidator
      */
     protected function validateConditionalRequired(array $selectedGroups, array $constraint, $groups)
     {
-        $ifGroup = $constraint['if_group'] ?? null;
-        $thenGroup = $constraint['then_group'] ?? null;
+        $ifGroup = (string) ($constraint['if_group'] ?? null);
+        $thenGroup = (string) ($constraint['then_group'] ?? null);
         $minCount = $constraint['min_count'] ?? 1;
 
         if (!$ifGroup || !$thenGroup) {
@@ -270,6 +282,7 @@ class SubjectValidator
         $totalCount = 0;
 
         foreach ($groupCodes as $groupCode) {
+            $groupCode = (string) $groupCode;
             if (isset($selectedGroups[$groupCode])) {
                 $totalCount += $selectedGroups[$groupCode]['subject_count'];
             }
@@ -285,6 +298,7 @@ class SubjectValidator
     /**
      * Validate center-specific subjects
      */
+
     protected function validateCenterSubjects(array $subjectCodes, string $centerNo)
     {
         $center = Center::with('subjects')->where('center_no', $centerNo)->first();
@@ -295,38 +309,37 @@ class SubjectValidator
         }
 
         $centerSubjects = $center->subjects->pluck('subject_code')->toArray();
-        $invalidSubjects = array_diff($subjectCodes, $centerSubjects);
+
+        $normalizedCenterSubjects = array_map(fn($code) => str_pad((string) $code, 4, '0', STR_PAD_LEFT), $centerSubjects);
+        $normalizedSelected = array_map(fn($code) => str_pad((string) $code, 4, '0', STR_PAD_LEFT), $subjectCodes);
+
+        $invalidSubjects = array_diff($normalizedSelected, $normalizedCenterSubjects);
 
         if (!empty($invalidSubjects)) {
             $this->errors[] = "Some selected subjects are not available at your center: " . implode(', ', $invalidSubjects);
         }
     }
-
     /**
-     * Legacy validation for backward compatibility
+     * Validate incompatible subject pair combinations
+     * 
      */
-    protected function legacyValidation(array $subjectCodes, int $levelId, int $type, ?string $centerNo)
+    protected function validateIncompatiblePairs(array $subjectCodes)
     {
-        // Use old validation logic if no rules exist
-        $level = Level::find($levelId);
+        $normalizedCodes = array_map(
+            fn($code) => str_pad((string) $code, 4, '0', STR_PAD_LEFT),
+            $subjectCodes
+        );
 
-        if (!$level) {
-            return [
-                'valid' => false,
-                'errors' => ['Invalid level'],
-                'warnings' => [],
-            ];
-        }
-
-        // Call old SubjectsGrouping validation logic here if needed
-        // For now, we'll allow it to pass
-        $this->warnings[] = "Using legacy validation. Please configure subject group rules for {$level->level}.";
-
-        return [
-            'valid' => true,
-            'errors' => $this->errors,
-            'warnings' => $this->warnings,
+        $incompatiblePairs = [
+            ['0181', '0197'],
+            ['0181', '0198'],
         ];
+
+        foreach ($incompatiblePairs as [$subjectA, $subjectB]) {
+            if (in_array($subjectA, $normalizedCodes) && in_array($subjectB, $normalizedCodes)) {
+                $this->errors[] = "Subject {$subjectA} and subject {$subjectB} cannot be selected together.";
+            }
+        }
     }
 
     /**

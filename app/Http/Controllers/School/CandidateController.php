@@ -50,25 +50,25 @@ class CandidateController extends Controller
             ->get();
         $date = date('Y-m-d');
         $sessions = Session::where('is_active', '=', 1)
-            ->where('financial_closing_date', '>=',  $date)
+            ->where('financial_closing_date', '>=', $date)
             ->whereIn('session', $centerSessions)->get();
-        $subjects =  $center->subjects;
+        $subjects = $center->subjects;
         $specialNeeds = SpecialNeed::get();
-        $guardian_types =  GuardianType::get();
+        $guardian_types = GuardianType::get();
         $districts = Center::groupBy('district_code')
             ->whereNotNull('district_code')->get();
 
 
-       $sponsors = DB::table('funders')
-                    ->select(
-                        'sponsor',
-                        'name',
-                        'description'
-                    )->where('status','=',1)->get();
+        $sponsors = DB::table('funders')
+            ->select(
+                'sponsor',
+                'name',
+                'description'
+            )->where('status', '=', 1)->get();
 
 
 
-        return view('school.amendments', compact('center', 'levels', 'subjects', 'sessions', 'districts', 'specialNeeds','sponsors', 'guardian_types'));
+        return view('school.amendments', compact('center', 'levels', 'subjects', 'sessions', 'districts', 'specialNeeds', 'sponsors', 'guardian_types'));
     }
 
 
@@ -108,9 +108,9 @@ class CandidateController extends Controller
             ->where("center_candidate.candidate_no", '=', $request->candidate_no)
             ->where("center_candidate.financial_year", "=", date('Y') . '-' . (date('Y') + 1))
             ->get();
-        $candidate =  Candidate::findOrFail($request->candidate_no);
+        $candidate = Candidate::findOrFail($request->candidate_no);
         if (count($candidate_registration) < 1) {
-            $output =  "<div class='row'>
+            $output = "<div class='row'>
                                 <div class='form-group col-md-4'>
                                     <label for=' '>Candidate Number  </label>
                                     <input type='text' class='form-control' name='candidate_number' id='inputEmail4' disabled value='" . str_pad($candidate->candidate_no, 9, '0', STR_PAD_LEFT) . "'>
@@ -272,7 +272,7 @@ class CandidateController extends Controller
         } elseif (count($candidate_registration) < 2) {
             $candidate_registration = $candidate_registration->first();
             if ($candidate_registration->session != "November") {
-                $output =  "<div class='row'>
+                $output = "<div class='row'>
                                         <div class='form-group col-md-4'>
                                             <label for=' '>Candidate Number</label>
                                             <input type='text' class='form-control' name='candidate_number' id='inputEmail4' disabled value='" . str_pad($candidate->candidate_no, 9, '0', STR_PAD_LEFT) . "'>
@@ -438,18 +438,18 @@ class CandidateController extends Controller
         } elseif (count($candidate_registration) == 2) {
             return response()->json(['errors' => ['candidate_no' => ['candidate already registerd']]]);
         }
-        return response()->json(['status' =>  $status, 'html' =>  $output]);
+        return response()->json(['status' => $status, 'html' => $output]);
     }
 
     public function store(Request $request)
     {
 
         $sponsors = DB::table('funders')
-                    ->select(
-                        'sponsor',
-                        'name',
-                        'description'
-                    )->where('status','=',1)->pluck('sponsor')->toArray();
+            ->select(
+                'sponsor',
+                'name',
+                'description'
+            )->where('status', '=', 1)->pluck('sponsor')->toArray();
         $validation_rules = [
             'candidate_no' => ['required'],
             'national_id' => ['required', 'numeric', 'regex:/^(\d{11}|\d{12}|\d{13})$/'],
@@ -457,7 +457,7 @@ class CandidateController extends Controller
             'candidate_other_name' => ['required'],
             'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-8 years'],
             'gender' => ['required', 'in:M,F'],
-            'sponsor' => ['required',  Rule::in($sponsors )],
+            'sponsor' => ['required', Rule::in($sponsors)],
             'type' => ['required', 'in:1,2,3'],
             'level' => ['required'],
             'type' => ['required'],
@@ -472,8 +472,8 @@ class CandidateController extends Controller
 
         $date = date('Y-m-d');
         $session = Session::where('is_active', '=', 1)
-            ->where('financial_closing_date', '>=',  $date)
-            ->where('session', '=',$request->session)->first();
+            ->where('financial_closing_date', '>=', $date)
+            ->where('session', '=', $request->get('session'))->first();
 
         switch ($request->level) {
             case 'G7ELT':
@@ -498,7 +498,7 @@ class CandidateController extends Controller
                     $subject_option = $subjectoptioncode[1];
                     $subjects[] = array(
                         'candidate_no' => $request->candidate_no,
-                        'subject_code' => (int)$subject_code,
+                        'subject_code' => (int) $subject_code,
                         'subject_option' => $subject_option,
                         'type' => $request->type
                     );
@@ -537,7 +537,7 @@ class CandidateController extends Controller
                             });
                     }
 
-                    $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
+                    $validation_rules['national_id'][] = Rule::unique('candidates', 'national_id')->ignore($candidate_no, 'candidate_no');
 
                     $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
                     if ($validator->fails()) {
@@ -548,7 +548,7 @@ class CandidateController extends Controller
                             Candidate::create([
                                 'candidate_no' => $request->candidate_no,
                                 'national_id' => $request->national_id,
-                                'candidate_surname' =>  strtoupper($request->candidate_surname),
+                                'candidate_surname' => strtoupper($request->candidate_surname),
                                 'candidate_other_name' => strtoupper($request->candidate_other_name),
                                 'date_of_birth' => date("Y-m-d", strtotime($request->date_of_birth)),
                                 'gender' => $request->gender,
@@ -577,11 +577,11 @@ class CandidateController extends Controller
                 }
 
                 $guardian_national_id = $request->guardian_national_id;
-                $guardian_surname  = strtoupper($request->guardian_surname);
-                $guardian_name  = strtoupper($request->guardian_name);
-                $guardian_phone_number   = $request->guardian_phone_number;
-                $guardian_email   = "$center_no@ecol.org.ls";
-                $guardian_village   = strtoupper($request->guardian_village);
+                $guardian_surname = strtoupper($request->guardian_surname);
+                $guardian_name = strtoupper($request->guardian_name);
+                $guardian_phone_number = $request->guardian_phone_number;
+                $guardian_email = "$center_no@ecol.org.ls";
+                $guardian_village = strtoupper($request->guardian_village);
 
                 //Candidate Profile
                 DB::table('candidates')
@@ -631,7 +631,7 @@ class CandidateController extends Controller
                         "postal_address" => $guardian_village,
                         "physical_address" => $guardian_village,
                         "village" => $guardian_village,
-                        "user_id" =>  isset($guardian) ? $guardian->national_id : $guardian_national_id,
+                        "user_id" => isset($guardian) ? $guardian->national_id : $guardian_national_id,
                         "user_type" => Guardian::class,
                         "district_code" => $center->district_code,
                         "district" => $center->district,
@@ -672,7 +672,7 @@ class CandidateController extends Controller
                     $subject_option = $subjectoptioncode[1];
                     $subjects[] = array(
                         'candidate_no' => $request->candidate_no,
-                        'subject_code' => (int)$subject_code,
+                        'subject_code' => (int) $subject_code,
                         'subject_option' => $subject_option,
                         'type' => $request->type
                     );
@@ -715,7 +715,7 @@ class CandidateController extends Controller
                                     ->where('financial_year', '=', date('Y') . '-' . (date('Y') + 1));
                             });
                     }
-                    $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
+                    $validation_rules['national_id'][] = Rule::unique('candidates', 'national_id')->ignore($candidate_no, 'candidate_no');
                     $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
                     if ($validator->fails()) {
                         return response()->json(['errors' => $validator->errors()]);
@@ -762,13 +762,13 @@ class CandidateController extends Controller
                 // Create User Profile
                 $candidateUserArray[] = [
                     'national_id' => $request->national_id,
-                    'candidate_no' =>  $request->candidate_no,
-                    'center_no' =>  $center,
+                    'candidate_no' => $request->candidate_no,
+                    'center_no' => $center,
                     'username' => $request->candidate_surname . " " . $request->candidate_other_name,
-                    'password' =>  Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
+                    'password' => Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
                     'candidate_password' => str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth))),
                     'session' => $session->session,
-                    'financial_year' =>   $session->financial_year,
+                    'financial_year' => $session->financial_year,
                     'created_at' => date("Y-m-d H:i:s"),
                     'updated_at' => date("Y-m-d H:i:s")
                 ];
@@ -787,31 +787,31 @@ class CandidateController extends Controller
 
         $date = date('Y-m-d');
         $session = Session::where('is_active', '=', 1)
-        ->where('financial_closing_date', '>=',  $date)
-        ->where('session', '=',$request->session)->first();
+            ->where('financial_closing_date', '>=', $date)
+            ->where('session', '=', $request->get('session'))->first();
 
         $subject_number = count($request->subjects);
         $center = auth()->user()->center_no;
         $candidate = new CenterCandidate();
         $candidate->candidate_no = $request->candidate_no;
         $candidate->national_id = $request->national_id;
-        $candidate->center_no =  $center;
+        $candidate->center_no = $center;
         $candidate->subject_number = $subject_number;
         $candidate->type = $request->type;
         $candidate->session = $request->session;
         $candidate->sponser = $request->sponsor;
-        $candidate->financial_year  =   $session->financial_year;
+        $candidate->financial_year = $session->financial_year;
         $candidate->level = $request->level;
         $candidate->save();
-        foreach ($request->subjects as  $value) {
+        foreach ($request->subjects as $value) {
             SubjectCandidate::updateOrCreate(
                 [
-                    'candidate_no' =>  $request->candidate_no,
-                    'national_id' =>   $request->national_id,
+                    'candidate_no' => $request->candidate_no,
+                    'national_id' => $request->national_id,
                     'subject_code' => $value['subject_code'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>   $session->financial_year,
+                    'financial_year' => $session->financial_year,
                 ],
                 [
                     'candidate_no' => $request->candidate_no,
@@ -820,7 +820,7 @@ class CandidateController extends Controller
                     'subject_option' => $value['subject_option'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  $session->financial_year,
+                    'financial_year' => $session->financial_year,
                 ]
             );
         }
@@ -845,7 +845,7 @@ class CandidateController extends Controller
         $request->merge(["level" => $level]);
         $request->merge(["appending_subjects" => $id]);
         $request->merge(["candidate_id" => $id]);
-        $request->merge(["centre_no" =>   $center_no]);
+        $request->merge(["centre_no" => $center_no]);
         $editable_fields = ['national_id', 'candidate_surname', 'candidate_other_name', 'date_of_birth', 'gender'];
         $subjectsHTML = $this->centersubjects($request)?->original;
         return response()->json(['candidate' => $candidate, 'action' => $url, $subjectsHTML, 'editable' => $editable, 'editable_fields' => $editable_fields]);
@@ -884,13 +884,13 @@ class CandidateController extends Controller
 
 
         $checkAmendCandidate = Amendment::where('candidate_no', '=', $candidate->candidate_no)->first();
-        $url = route('center.candidates.updateCandidateDOB',  $candidate->candidate_no);
+        $url = route('center.candidates.updateCandidateDOB', $candidate->candidate_no);
         if ($checkAmendCandidate) {
-            return response()->json(['candidate' =>  $checkAmendCandidate, 'action' => $url]);
+            return response()->json(['candidate' => $checkAmendCandidate, 'action' => $url]);
         }
         return response()->json(['candidate' => $candidate, 'action' => $url]);
     }
-    public  function deleteCandidate($id)
+    public function deleteCandidate($id)
     {
         $candidate = DB::table('candidate_subject')
             ->select(
@@ -934,9 +934,9 @@ class CandidateController extends Controller
         ]);
     }
 
-    public  function deleteCandidates(Request $request)
+    public function deleteCandidates(Request $request)
     {
-        foreach ($request->candidateNumbers as  $id) {
+        foreach ($request->candidateNumbers as $id) {
             $candidate = DB::table('candidate_subject')
                 ->select(
                     [
@@ -985,11 +985,11 @@ class CandidateController extends Controller
         // 'numeric',
         //'regex:/^(\d{8}|\d{13})$/',
         $sponsors = DB::table('funders')
-        ->select(
-            'sponsor',
-            'name',
-            'description'
-        )->where('status','=',1)->pluck('sponsor')->toArray();
+            ->select(
+                'sponsor',
+                'name',
+                'description'
+            )->where('status', '=', 1)->pluck('sponsor')->toArray();
         $validation_rules = [
             'candidate_no' => ['required'],
             'national_id' => ['required', 'numeric', 'regex:/^(\d{11}|\d{12}|\d{13})$/'],
@@ -997,7 +997,7 @@ class CandidateController extends Controller
             'candidate_other_name' => ['required'],
             'date_of_birth' => ['required', 'date_format:Y-m-d', 'before:-10 years'],
             'gender' => ['required', 'in:M,F'],
-            'sponser' => ['required',  Rule::in($sponsors )],
+            'sponser' => ['required', Rule::in($sponsors)],
             'type' => ['required', 'in:1,2,3'],
             'level' => ['required'],
             'type' => ['required'],
@@ -1005,7 +1005,7 @@ class CandidateController extends Controller
             'subject' => ['required'],
         ];
         $validation_messages = [];
-        $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($request->candidate_no,'candidate_no');
+        $validation_rules['national_id'][] = Rule::unique('candidates', 'national_id')->ignore($request->candidate_no, 'candidate_no');
         $validator = Validator::make($request->all(), $validation_rules, $validation_messages);
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
@@ -1019,7 +1019,7 @@ class CandidateController extends Controller
             $subject_option = $subjectoptioncode[1];
             $subjects[] = array(
                 'candidate_no' => $request->candidate_no,
-                'subject_code' => (int)$subject_code,
+                'subject_code' => (int) $subject_code,
                 'subject_option' => $subject_option,
                 'type' => $request->type
             );
@@ -1075,7 +1075,7 @@ class CandidateController extends Controller
             ->update([
                 'national_id' => $request->national_id,
                 'username' => $request->candidate_surname . " " . $request->candidate_other_name,
-                'password' =>  Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
+                'password' => Hash::make(str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth)))),
                 'candidate_password' => str_replace('-', '', date("Y-m-d", strtotime($request->date_of_birth))),
             ]);
         //Center Candidate
@@ -1091,7 +1091,7 @@ class CandidateController extends Controller
         }, explode(',', $registered_subjects));
 
         $subject_registered_codes = array_reduce($subject, function ($array, $element) {
-            $array[] = (int)$element[0];
+            $array[] = (int) $element[0];
             return $array;
         });
         $subject_codes = array_reduce($request->subjects, function ($array, $element) {
@@ -1105,10 +1105,10 @@ class CandidateController extends Controller
             ->where('level', '=', $candidate->level)
             ->where('financial_year', '=', $candidate->financial_year)
             ->delete();
-        foreach ($request->subjects as  $value) {
+        foreach ($request->subjects as $value) {
             SubjectCandidate::updateOrCreate(
                 [
-                    'candidate_no' =>  $request->candidate_no,
+                    'candidate_no' => $request->candidate_no,
                     'subject_code' => $value['subject_code'],
                     'level' => $request->level,
                     'session' => $request->session,
@@ -1121,7 +1121,7 @@ class CandidateController extends Controller
                     'subject_option' => $value['subject_option'],
                     'level' => $request->level,
                     'session' => $request->session,
-                    'financial_year' =>  $candidate->financial_year,
+                    'financial_year' => $candidate->financial_year,
                 ]
             );
         }
@@ -1130,9 +1130,9 @@ class CandidateController extends Controller
     public function updateCandidateDOB(Request $request, $id)
     {
         Amendment::updateOrCreate([
-            'candidate_no'   => $id,
+            'candidate_no' => $id,
         ], [
-            'candidate_no'   => $id,
+            'candidate_no' => $id,
             'candidate_surname' => $request->candidate_surname,
             'candidate_other_name' => $request->candidate_other_name,
             'date_of_birth' => date("Y-m-d", strtotime($request->date_of_birth)),
@@ -1212,13 +1212,13 @@ class CandidateController extends Controller
                 $join->on('guardians.national_id', '=', 'addresses.user_id');
                 $join->where('addresses.user_type', '=', Guardian::class);
             })
-            ->where("guardians.candidate", '=',  $candidate_inforamtion->candidate_no)
+            ->where("guardians.candidate", '=', $candidate_inforamtion->candidate_no)
             ->first();
 
-        $paid_fee =  isset($candidate_inforamtion->amount) ?  number_format((float)$candidate_inforamtion->amount, 2, '.', '') : "00.00";
+        $paid_fee = isset($candidate_inforamtion->amount) ? number_format((float) $candidate_inforamtion->amount, 2, '.', '') : "00.00";
 
         return response()->json([
-            'candidate' =>  $candidate_inforamtion,
+            'candidate' => $candidate_inforamtion,
             'subjects' => $subjects,
             'guardian' => $guardian,
             'paid_fee' => $paid_fee
@@ -1227,22 +1227,42 @@ class CandidateController extends Controller
 
     public function fatchAmendments(Request $request)
     {
-        $center_no = auth()->user()->center_no;
-        $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
-        $centerSessions = json_decode($center->sessions, true);
-        $date = date('Y-m-d');
-        $session = Session::where('financial_closing_date', '>=',  $date)
-            ->whereIn('session', $centerSessions)->first();
+        try {
+            $center_no = auth()->user()->center_no;
+            $center = Center::with('subjects')->where('center_no', '=', $center_no)->first();
+
+            if (!$center) {
+                return response()->json(['error' => 'Center not found'], 404);
+            }
+
+            $centerSessions = json_decode($center->sessions, true);
+
+            if (empty($centerSessions)) {
+                return response()->json(['error' => 'No sessions configured for center'], 400);
+            }
+
+            $date = date('Y-m-d');
+
+            $session = Session::where('is_active', '=', 1)
+                ->where('financial_closing_date', '>=', $date)
+                ->whereIn('session', $centerSessions)
+                ->first();
+
+            if (!$session) {
+                return response()->json(['error' => 'No active session found'], 400);
+            }
 
             $sponsors = DB::table('funders')
-        ->select(
-            'sponsor',
-            'name',
-            'description'
-        )->pluck('sponsor')->toArray();
-        $candidates = DB::table('candidate_subject')
-            ->select(
-                [
+                ->where('status', '=', 1)
+                ->pluck('sponsor')
+                ->toArray();
+
+            if (empty($sponsors)) {
+                return response()->json(['error' => 'No active sponsors found'], 400);
+            }
+
+            $candidates = DB::table('candidate_subject')
+                ->select([
                     'center_candidate.id',
                     'center_candidate.center_no',
                     'center_candidate.candidate_no',
@@ -1258,68 +1278,87 @@ class CandidateController extends Controller
                     'candidates.gender',
                     'center_candidate.sponser',
                     DB::raw("group_concat(DISTINCT concat(candidate_subject.subject_code,' ',candidate_subject.subject_option)
-           order by candidate_subject.subject_code separator ',') as subjects")
-                ],
-            )->join('candidates', 'candidates.candidate_no', '=', 'candidate_subject.candidate_no')
-            ->join('center_candidate', function ($join) {
-                $join->on('candidate_subject.candidate_no', '=', 'center_candidate.candidate_no');
-                $join->on('candidate_subject.level', '=', 'center_candidate.level');
-                $join->on('candidate_subject.session', '=', 'center_candidate.session');
-                $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
-            })->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->where('center_candidate.financial_year', '=',   $session->financial_year)
-            ->where('center_candidate.session', '=',  $session->session)
-            ->whereIn('center_candidate.sponser',  $sponsors);
-        if (!empty($request->level_filter)) {
-            $candidates = $candidates->where('center_candidate.level', '=', $request->level_filter);
+                   order by candidate_subject.subject_code separator ',') as subjects")
+                ])
+                ->join('candidates', 'candidates.candidate_no', '=', 'candidate_subject.candidate_no')
+                ->join('center_candidate', function ($join) {
+                    $join->on('candidate_subject.candidate_no', '=', 'center_candidate.candidate_no');
+                    $join->on('candidate_subject.level', '=', 'center_candidate.level');
+                    $join->on('candidate_subject.session', '=', 'center_candidate.session');
+                    $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
+                })
+                ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
+                ->where('center_candidate.financial_year', '=', $session->financial_year)
+                ->where('center_candidate.session', '=', $session->session)
+                ->whereIn('center_candidate.sponser', $sponsors)
+                ->where('center_candidate.center_no', '=', $center_no);
+
+            // Fixed level filter check
+            if (!empty($request->level_filter) && trim($request->level_filter) !== '') {
+                $candidates = $candidates->where('center_candidate.level', '=', trim($request->level_filter));
+            }
+
+            return Datatables::of($candidates)
+                ->editColumn('candidate_no', function ($model) {
+                    return str_pad($model->candidate_no, 9, '0', STR_PAD_LEFT);
+                })
+                ->editColumn('national_id', function ($model) {
+                    return str_pad($model->national_id, 12, '0', STR_PAD_LEFT);
+                })
+                ->editColumn('candidate_other_name', function ($model) {
+                    return Str::limit($model->candidate_other_name, 8);
+                })
+                ->editColumn('subjects', function ($model) {
+                    $output = "";
+                    $subjects = explode(",", $model->subjects);
+                    foreach ($subjects as $subject) {
+                        $output .= ' <span class="subject-data">' . htmlspecialchars($subject) . '</span>';
+                    }
+                    return $output;
+                })
+                ->addColumn('actions', function ($model) {
+                    $user = auth()->user();
+                    $actions = '<div class="btn-group">';
+
+                    if ($user->isAbleTo('amendments-update') && is_activate($model->level)) {
+                        $isPaid = is_paid($model->candidate_no, $model->national_id, $model->level, $model->session, $model->financial_year);
+                        if (!$isPaid) {
+                            $actions .= '<a class="edit-candidate updateCandidate" data-action="' . route('center.candidates.edit', $model->id) . '" type="button" rel="tooltip" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>';
+                        }
+                    }
+
+                    $actions .= '<a class="show-candidate" data-action="' . route('center.candidates.showCandidate', $model->id) . '" type="button" rel="tooltip" title="View">
+                    <i class="fas fa-eye"></i>
+                </a>';
+
+                    if ($user->isAbleTo('amendments-delete')) {
+                        $isPaid = is_paid($model->candidate_no, $model->national_id, $model->level, $model->session, $model->financial_year);
+                        if (!$isPaid) {
+                            $actions .= '<a class="delete-candidate" data-id="' . $model->id . '" type="button" rel="tooltip" title="Delete">
+                            <i class="far fa-trash-alt"></i>
+                        </a>';
+                        }
+                    }
+
+                    $actions .= '</div>';
+                    return $actions;
+                })
+                ->addColumn('checkbox', function ($model) {
+                    return "<input type='checkbox' class='candidates' name='candidates[]' value='" . $model->id . "'>";
+                })
+                ->rawColumns(['actions', 'checkbox', 'subjects'])
+                ->make(true);
+
+        } catch (\Exception $e) {
+            \Log::error('DataTables Error in fatchAmendments: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
-        $candidates = $candidates->where('center_candidate.center_no', '=',  $center_no);
-        return Datatables::of($candidates)
-            ->editColumn('candidate_no', function ($model) {
-                return str_pad($model->candidate_no, 9, '0', STR_PAD_LEFT);
-            })
-            ->editColumn('national_id', function ($model) {
-                return str_pad($model->national_id, 12, '0', STR_PAD_LEFT);
-            })
-            ->editColumn('candidate_other_name', function ($model) {
-                return Str::limit($model->candidate_other_name, 8);
-            })
-            ->editColumn('subjects', function ($model) {
-                $output = "";
-                $subjects = explode(",", $model->subjects);
-                foreach ($subjects as $subject) {
-                    $output .= ' <span class="subject-data">' . $subject . '</span>';
-                }
-                return $output;
-            })
-            ->addColumn('actions', function ($model) {
-                $user = auth()->user();
-                $actions = '<div class="btn-group">';
-                if ($user->isAbleTo('amendments-update') &&   is_activate($model->level)) {
-                    $actions .= is_paid($model->candidate_no, $model->national_id, $model->level, $model->session, $model->financial_year) ? "" :
-                        '<a  class="edit-candidate updateCandidate"   data-action="' . route('center.candidates.edit', $model->id) . '"  type="button" rel="tooltip" title="Edit">
-                                <i class="fas fa-edit"></i>
-                                    </a>';
-                }
-                $actions .= '<a  class="show-candidate" data-action="' . route('center.candidates.showCandidate', $model->id) . '"  type="button"   rel="tooltip" title="Edit">
-                                  <i class="fas fa-eye"></i>
-                            </a>';
-
-                if ($user->isAbleTo('amendments-delete')) {
-                    $actions .= is_paid($model->candidate_no, $model->national_id, $model->level, $model->session, $model->financial_year) ? "" : '<a class="delete-candidate" data-id="' . $model->id . '" type="button" rel="tooltip" title="Delete">
-                                    <i class="far fa-trash-alt"></i>
-                            </a>';
-                }
-                $actions .= '</div>';
-                return    $actions;
-            })
-            ->addColumn('checkbox', function ($model) {
-                return "<input type='checkbox' class='candidates' name='candidates[]' value='$model->id'>";
-            })
-            ->rawColumns(['actions', 'checkbox', 'subjects', 'candidate_other_name'])
-            ->make(true);
     }
-
     /**
      * Update the specified resource in storage.
      *
@@ -1327,17 +1366,17 @@ class CandidateController extends Controller
 
      * @return \Illuminate\Http\Response
      */
-    public function registered(Request  $request)
+    public function registered(Request $request)
     {
 
         /******  Some Default Values Start   ******/
 
         $sponsors = DB::table('funders')
-        ->select(
-            'sponsor',
-            'name',
-            'description'
-        )->pluck('sponsor')->toArray();
+            ->select(
+                'sponsor',
+                'name',
+                'description'
+            )->pluck('sponsor')->toArray();
         $candidates_filter = $request->candidates_filter;
         $search = "";
         $candidates_sort = $request->candidates_sort;
@@ -1360,7 +1399,7 @@ class CandidateController extends Controller
         $centerSessions = json_decode($center->sessions, true);
 
         $date = date('Y-m-d');
-        $session = Session::where('financial_closing_date', '>=',  $date)
+        $session = Session::where('financial_closing_date', '>=', $date)
             ->whereIn('session', $centerSessions)->first();
         $level = $center->level;
         $candidates = DB::table('candidate_subject')
@@ -1388,9 +1427,9 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->whereIn('center_candidate.sponser',   $sponsors)
+            ->whereIn('center_candidate.sponser', $sponsors)
             ->where('center_candidate.center_no', '=', $center_no)
-            ->where('center_candidate.financial_year', '=',  $session->financial_year)
+            ->where('center_candidate.financial_year', '=', $session->financial_year)
             ->where('center_candidate.session', '=', $session->session)
             ->where('center_candidate.level', '=', $level);
 
@@ -1419,8 +1458,8 @@ class CandidateController extends Controller
                 $join->on('candidate_subject.financial_year', '=', 'center_candidate.financial_year');
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
-            ->whereIn('center_candidate.sponser',  $sponsors)
-            ->where('center_candidate.center_no', '=',   $center_no)
+            ->whereIn('center_candidate.sponser', $sponsors)
+            ->where('center_candidate.center_no', '=', $center_no)
             ->where('center_candidate.level', '=', $level)
             ->where('center_candidate.session', '=', $session->session)
             ->where('center_candidate.financial_year', '=', $session->financial_year);
@@ -1447,10 +1486,10 @@ class CandidateController extends Controller
             })
             ->groupBy('center_candidate.candidate_no', 'center_candidate.level', 'center_candidate.session')
             ->whereNotIn('center_candidate.sponser', $sponsors)
-            ->where('center_candidate.center_no', '=',   $center_no)
+            ->where('center_candidate.center_no', '=', $center_no)
             ->where('center_candidate.level', '=', $level)
             ->where('center_candidate.session', '=', $session->session)
-            ->where('center_candidate.financial_year', '=',  $session->financial_year);
+            ->where('center_candidate.financial_year', '=', $session->financial_year);
         if (!is_null($search)) {
             if ($candidates_sort == 1) {
 
@@ -1571,7 +1610,7 @@ class CandidateController extends Controller
 
         $candidates = $candidates->get();
         $candidate_user = $candidate_user->get();
-        $privateCandidates =  $privateCandidates->get();
+        $privateCandidates = $privateCandidates->get();
 
 
         if ($candidates->count()) {
@@ -1602,7 +1641,7 @@ class CandidateController extends Controller
                 $indicator_color = is_paid_sponsored($result->id)->color;
 
                 $indicator = "<span class='fee-indicator' style='border-left: 6px solid $indicator_color'></span>";
-                $output .= "<tr id='delete" . (int)$result->candidate_no . "'>
+                $output .= "<tr id='delete" . (int) $result->candidate_no . "'>
                            <td> $indicator" . str_pad($result->candidate_no, 9, '0', STR_PAD_LEFT) . "</td>
                            <td>  $result->candidate_surname </td>
                            <td> $result->candidate_other_name </td>
@@ -1617,10 +1656,10 @@ class CandidateController extends Controller
                 }
                 $output .= "<td>$action</td></tr>";
             }
-            $output .=  '</tbody>
+            $output .= '</tbody>
                         </table>';
         } else {
-            $output =  '<div>
+            $output = '<div>
                         No Candidates
                         </div>';
         }
@@ -1646,9 +1685,9 @@ class CandidateController extends Controller
                 $indicator_color = is_paid_sponsored($result->id)->color;
                 $indicator = "<span class='fee-indicator' style='border-left: 6px solid $indicator_color'></span>";
 
-                $outputCandidateUser  .= "<tr>
-                           <td> $indicator" . str_pad($result->national_id, 12, '0', STR_PAD_LEFT)  . "</td>
-                           <td>" . str_pad($result->candidate_no, 9, '0', STR_PAD_LEFT)  . "</td>
+                $outputCandidateUser .= "<tr>
+                           <td> $indicator" . str_pad($result->national_id, 12, '0', STR_PAD_LEFT) . "</td>
+                           <td>" . str_pad($result->candidate_no, 9, '0', STR_PAD_LEFT) . "</td>
                            <td> $result->candidate_surname </td>
                            <td> $result->candidate_other_name </td>
                            <td> $result->date_of_birth </td>
@@ -1658,10 +1697,10 @@ class CandidateController extends Controller
                            </tr>
                           ";
             }
-            $outputCandidateUser  .=  '</tbody>
+            $outputCandidateUser .= '</tbody>
                         </table>';
         } else {
-            $outputCandidateUser =  '<div>
+            $outputCandidateUser = '<div>
                         No Candidates
                         </div>';
         }
@@ -1681,7 +1720,7 @@ class CandidateController extends Controller
                             </thead>
                             <tbody>';
 
-            foreach ($privateCandidates  as $result) {
+            foreach ($privateCandidates as $result) {
 
                 $outputPrivate .=
                     "<tr>
@@ -1697,11 +1736,11 @@ class CandidateController extends Controller
                     $outputPrivate .= ' <td>' . $subject . '</td>';
                 }
             }
-            $outputPrivate .=  '</tr>
+            $outputPrivate .= '</tr>
                              </tbody>
                         </table>';
         } else {
-            $outputPrivate =  '<div>
+            $outputPrivate = '<div>
                         No Candidates
                         </div>';
         }
@@ -1727,8 +1766,8 @@ class CandidateController extends Controller
 
         $date = date('Y-m-d');
         $session = Session::where('is_active', '=', 1)
-            ->where('financial_closing_date', '>=',  $date)
-            ->where('session','=' , $request->session)->first();
+            ->where('financial_closing_date', '>=', $date)
+            ->where('session', '=', $request->session)->first();
         // Subject Center
         $center = Center::with('subjects')->where('center_no', '=', $auth_center_no)->first();
         $subjects = $center->subjects()->get();
@@ -1741,7 +1780,7 @@ class CandidateController extends Controller
         $candidates = $this->csvToArray($file, $delimiter);
         if (count($candidates) == 0) {
             $error = [
-                'messages' =>  ['center_no' => ['invalid centre number']],
+                'messages' => ['center_no' => ['invalid centre number']],
                 'row' => 1,
             ];
             array_push($errors, $error);
@@ -1768,26 +1807,26 @@ class CandidateController extends Controller
                         $keys = array_keys($candidates[$j]);
                         $last = end($keys);
                         $orginal_col_sponser = ($subject_number * 2) + 11 + 1;
-                        $sponsor_col = $this->checkKeyExists($candidates[$j], $orginal_col_sponser) ?   $orginal_col_sponser :  $last; //($candidates[$j][10] * 2) + 10 + 1;
+                        $sponsor_col = $this->checkKeyExists($candidates[$j], $orginal_col_sponser) ? $orginal_col_sponser : $last; //($candidates[$j][10] * 2) + 10 + 1;
                         // Canidate is not find in Candidates Table Create New
                         $dateOfBirth = str_pad($candidates[$j][9], 8, '0', STR_PAD_LEFT);
-                        $year   = substr($dateOfBirth, 4, 8);
-                        $month  = substr($dateOfBirth, 2, 2);
+                        $year = substr($dateOfBirth, 4, 8);
+                        $month = substr($dateOfBirth, 2, 2);
                         $day = substr($dateOfBirth, 0, 2);
                         $center_no = $candidates[$j][0];
-                        $national_id  = $candidates[$j][1];
-                        $candidate_no  = $candidates[$j][2];
-                        $candidate_surname  = strtoupper($candidates[$j][3]);
-                        $candidate_other_name  = strtoupper($candidates[$j][4]);
-                        $gender  = strtoupper($candidates[$j][7]);
-                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth)? date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year)) :"";
+                        $national_id = $candidates[$j][1];
+                        $candidate_no = $candidates[$j][2];
+                        $candidate_surname = strtoupper($candidates[$j][3]);
+                        $candidate_other_name = strtoupper($candidates[$j][4]);
+                        $gender = strtoupper($candidates[$j][7]);
+                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth) ? date("Y-m-d", mktime(0, 0, 0, $month, $day, $year)) : "";
                         $sponser = $candidates[$j][$sponsor_col];
                         $type = $candidates[$j][6];
                         $data = [
                             'center_no' => $center_no,
                             'candidate_no' => $candidate_no,
                             'national_id' => $national_id,
-                            'candidate_surname' =>  $candidate_surname,
+                            'candidate_surname' => $candidate_surname,
                             'candidate_other_name' => $candidate_other_name,
                             'date_of_birth' => $dateOfBirth,
                             'gender' => $gender,
@@ -1817,7 +1856,7 @@ class CandidateController extends Controller
                         if ($validator->fails()) {
                             $failed = true;
                             $error = [
-                                'messages' =>  $validator->errors()->all(),
+                                'messages' => $validator->errors()->all(),
                                 'row' => $j + 1,
                             ];
                             array_push($errors, $error);
@@ -1836,7 +1875,7 @@ class CandidateController extends Controller
                                             ->where('session', '=', $session->session)
                                             ->where('financial_year', '=', $session->financial_year);
                                     });
-                                $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
+                                $validation_rules['national_id'][] = Rule::unique('candidates', 'national_id')->ignore($candidate_no, 'candidate_no');
 
 
                                 if ($new_candidate) {
@@ -1852,7 +1891,7 @@ class CandidateController extends Controller
                                 if ($validator->fails()) {
                                     $failed = true;
                                     $error = [
-                                        'messages' =>  $validator->errors()->all(),
+                                        'messages' => $validator->errors()->all(),
                                         'row' => $j + 1,
                                     ];
                                     array_push($errors, $error);
@@ -1875,20 +1914,20 @@ class CandidateController extends Controller
                                         while ($i <= $subject_number) {
                                             $subjects['subjects'][] = array(
                                                 'candidate_no' => $candidate_no,
-                                                'subject_code' => (int)$candidates[$j][$subject_code],
+                                                'subject_code' => (int) $candidates[$j][$subject_code],
                                                 'subject_option' => $candidates[$j][$subject_option],
                                                 'type' => $type
                                             );
                                             // $sponsor_col
-                                            $subject_code  += 2;
-                                            $subject_option +=  2;
+                                            $subject_code += 2;
+                                            $subject_option += 2;
                                             $i++;
                                         }
                                         $validation_rules = [
                                             'subjects' => ['required', new SubjectsGrouping($auth_center_no), new CheckDupsSubject(), 'max:' . $subject_number],
                                             'subjects.*' => ['required', new Extended()],
-                                            'subjects.*.subject_code' =>  ['required', 'in:' . $subject_codes],
-                                            'subjects.*.subject_option' =>   ['required', 'in:A,B']
+                                            'subjects.*.subject_code' => ['required', 'in:' . $subject_codes],
+                                            'subjects.*.subject_option' => ['required', 'in:A,B']
                                         ];
                                         // The selected 2.subject_option is invalid.
                                         // The 3.subject_code field has a duplicate value.
@@ -1958,7 +1997,7 @@ class CandidateController extends Controller
                                         if ($validator->fails()) {
                                             $failed = true;
                                             $error = [
-                                                'messages' =>  $validator->errors()->all(),
+                                                'messages' => $validator->errors()->all(),
                                                 'row' => $j + 1,
                                             ];
 
@@ -1988,7 +2027,7 @@ class CandidateController extends Controller
                                 if ($validator->fails()) {
                                     $failed = true;
                                     $error = [
-                                        'messages' =>  $validator->errors()->all(),
+                                        'messages' => $validator->errors()->all(),
                                         'row' => $j + 1,
                                     ];
                                     array_push($errors, $error);
@@ -1999,21 +2038,21 @@ class CandidateController extends Controller
                                         while ($i <= $subject_number) {
                                             $subjects['subjects'][] = array(
                                                 'candidate_no' => $candidate_no,
-                                                'subject_code' => (int)$candidates[$j][$subject_code],
+                                                'subject_code' => (int) $candidates[$j][$subject_code],
                                                 'subject_option' => $candidates[$j][$subject_option],
                                                 'type' => $type
                                             );
                                             // $sponsor_col
-                                            $subject_code  += 2;
-                                            $subject_option +=  2;
+                                            $subject_code += 2;
+                                            $subject_option += 2;
                                             $i++;
                                         }
 
                                         $validation_rules = [
                                             'subjects' => ['required', new SubjectsGrouping($auth_center_no), new CheckDupsSubject(), 'max:' . $subject_number],
                                             'subjects.*' => ['required', new Extended()],
-                                            'subjects.*.subject_code' =>  ['required', 'in:' . $subject_codes],
-                                            'subjects.*.subject_option' =>   ['required', 'in:A,B']
+                                            'subjects.*.subject_code' => ['required', 'in:' . $subject_codes],
+                                            'subjects.*.subject_option' => ['required', 'in:A,B']
                                         ];
                                         // The selected 2.subject_option is invalid.
                                         // The 3.subject_code field has a duplicate value.
@@ -2084,7 +2123,7 @@ class CandidateController extends Controller
                                         if ($validator->fails()) {
                                             $failed = true;
                                             $error = [
-                                                'messages' =>  $validator->errors()->all(),
+                                                'messages' => $validator->errors()->all(),
                                                 'row' => $j + 1,
                                             ];
 
@@ -2123,17 +2162,17 @@ class CandidateController extends Controller
                             ];
                             $candidateUserArray[] = [
                                 'national_id' => $national_id,
-                                'candidate_no' =>  $candidate_no,
+                                'candidate_no' => $candidate_no,
                                 'center_no' => $center_no,
                                 'username' => $candidate_surname . " " . $candidate_other_name,
-                                'password' =>  Hash::make(str_replace('-', '', $dateOfBirth)),
+                                'password' => Hash::make(str_replace('-', '', $dateOfBirth)),
                                 'candidate_password' => str_replace('-', '', $dateOfBirth),
                                 'session' => $session->session,
                                 'financial_year' => $session->financial_year,
                                 'created_at' => date("Y-m-d H:i:s"),
                                 'updated_at' => date("Y-m-d H:i:s")
                             ];
-                            foreach ($subjects['subjects'] as  $value) {
+                            foreach ($subjects['subjects'] as $value) {
                                 $subjectCandidateArray[] = [
                                     'national_id' => $national_id,
                                     'candidate_no' => $candidate_no,
@@ -2147,7 +2186,7 @@ class CandidateController extends Controller
                                 ];
                             }
 
-                            insertOrUpdate('candidates',   $candidateProfileArray);
+                            insertOrUpdate('candidates', $candidateProfileArray);
                             insertOrUpdate('center_candidate', $centerCandidateArray);
                             insertOrUpdate('candidate_users', $candidateUserArray);
                             insertOrUpdate('candidate_subject', $subjectCandidateArray);
@@ -2172,27 +2211,27 @@ class CandidateController extends Controller
                         $candidate_subjects = ['subjects' => array()];
                         // Candidate is not find in Candidates Table Create New
                         $dateOfBirth = str_pad($candidates[$j][5], 8, '0', STR_PAD_LEFT);
-                        $year   = substr($dateOfBirth, 4, 8);
-                        $month  = substr($dateOfBirth, 2, 2);
+                        $year = substr($dateOfBirth, 4, 8);
+                        $month = substr($dateOfBirth, 2, 2);
                         $day = substr($dateOfBirth, 0, 2);
 
                         // Candidate
                         $center_no = $candidates[$j][0];
-                        $national_id  = $candidates[$j][1];
-                        $candidate_no  = $candidates[$j][2];
-                        $candidate_surname  = strtoupper($candidates[$j][3]);
-                        $candidate_other_name  = strtoupper($candidates[$j][4]);
-                        $gender  = strtoupper($candidates[$j][6]);
-                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth)? date("Y-m-d", mktime(0, 0, 0, $month,  $day, $year)) :"";
+                        $national_id = $candidates[$j][1];
+                        $candidate_no = $candidates[$j][2];
+                        $candidate_surname = strtoupper($candidates[$j][3]);
+                        $candidate_other_name = strtoupper($candidates[$j][4]);
+                        $gender = strtoupper($candidates[$j][6]);
+                        $dateOfBirth = preg_match("/^\-?[0-9]*\.?[0-9]+\z/", $dateOfBirth) ? date("Y-m-d", mktime(0, 0, 0, $month, $day, $year)) : "";
 
                         // Guardian
                         $guardian_national_id = time();
-                        $guardian_surname  = strtoupper($candidates[$j][7]);
-                        $guardian_name  = strtoupper($candidates[$j][8]);
-                        $guardian_phone_number   = $candidates[$j][9];
-                        $guardian_email   = "$auth_center_no@ecol.org.ls";
-                        $guardian_village   = $candidates[$j][10];
-                        $guardian_type   = 1;
+                        $guardian_surname = strtoupper($candidates[$j][7]);
+                        $guardian_name = strtoupper($candidates[$j][8]);
+                        $guardian_phone_number = $candidates[$j][9];
+                        $guardian_email = "$auth_center_no@ecol.org.ls";
+                        $guardian_village = $candidates[$j][10];
+                        $guardian_type = 1;
 
                         $sponser = $candidates[$j][11];
                         $type = 1;
@@ -2200,7 +2239,7 @@ class CandidateController extends Controller
                             'center_no' => $center_no,
                             'candidate_no' => $candidate_no,
                             'national_id' => $national_id,
-                            'candidate_surname' =>  $candidate_surname,
+                            'candidate_surname' => $candidate_surname,
                             'candidate_other_name' => $candidate_other_name,
                             'date_of_birth' => $dateOfBirth,
                             'gender' => $gender,
@@ -2209,10 +2248,10 @@ class CandidateController extends Controller
                             'subject_number' => $subject_number,
                             // Guardian
                             'guardian_national_id' => $guardian_national_id,
-                            'guardian_surname'  => $guardian_surname,
-                            'guardian_name'  => $guardian_name,
-                            'guardian_phone_number'  => $guardian_phone_number,
-                            'guardian_email'   => $guardian_email,
+                            'guardian_surname' => $guardian_surname,
+                            'guardian_name' => $guardian_name,
+                            'guardian_phone_number' => $guardian_phone_number,
+                            'guardian_email' => $guardian_email,
                             'guardian_type' => $guardian_type,
                             'guardian_village' => $guardian_village
                             //$center
@@ -2230,10 +2269,10 @@ class CandidateController extends Controller
                             'subject_number' => ['required', 'numeric'],
                             // Guardian
                             'guardian_national_id' => ['required', 'numeric'],
-                            'guardian_surname'  => ['required'],
-                            'guardian_name'  => ['required'],
-                            'guardian_phone_number'  => ['required', 'numeric'],
-                            'guardian_email'   => ['required', 'email'],
+                            'guardian_surname' => ['required'],
+                            'guardian_name' => ['required'],
+                            'guardian_phone_number' => ['required', 'numeric'],
+                            'guardian_email' => ['required', 'email'],
                             'guardian_type' => ['required'],
                             'guardian_village' => ['required']
 
@@ -2250,7 +2289,7 @@ class CandidateController extends Controller
                         if ($validator->fails()) {
                             $failed = true;
                             $error = [
-                                'messages' =>  $validator->errors()->all(),
+                                'messages' => $validator->errors()->all(),
                                 'row' => $j + 1,
                             ];
                             array_push($errors, $error);
@@ -2278,12 +2317,12 @@ class CandidateController extends Controller
                                                 ->where('financial_year', '=', $session->financial_year);
                                         });
                                 }
-                                $validation_rules['national_id'][]= Rule::unique('candidates','national_id')->ignore($candidate_no,'candidate_no');
+                                $validation_rules['national_id'][] = Rule::unique('candidates', 'national_id')->ignore($candidate_no, 'candidate_no');
                                 $validator = Validator::make($data, $validation_rules, $validation_messages);
                                 if ($validator->fails()) {
                                     $failed = true;
                                     $error = [
-                                        'messages' =>  $validator->errors()->all(),
+                                        'messages' => $validator->errors()->all(),
                                         'row' => $j + 1,
                                     ];
                                     array_push($errors, $error);
@@ -2323,7 +2362,7 @@ class CandidateController extends Controller
                                 if ($validator->fails()) {
                                     $failed = true;
                                     $error = [
-                                        'messages' =>  $validator->errors()->all(),
+                                        'messages' => $validator->errors()->all(),
                                         'row' => $j + 1,
                                     ];
                                     array_push($errors, $error);
@@ -2358,7 +2397,7 @@ class CandidateController extends Controller
                                 'created_at' => date("Y-m-d H:i:s"),
                                 'updated_at' => date("Y-m-d H:i:s")
                             ];
-                            foreach ($candidate_subjects['subjects'] as  $value) {
+                            foreach ($candidate_subjects['subjects'] as $value) {
                                 $subjectCandidateArray[] = [
                                     'national_id' => $national_id,
                                     'candidate_no' => $candidate_no,
@@ -2445,9 +2484,9 @@ class CandidateController extends Controller
 
 
 
-           $error = [
+            $error = [
                 'messages' => ['format' => ['invalid format']],
-                'row' =>  $rownumber + 1,
+                'row' => $rownumber + 1,
             ];
 
 
@@ -2461,12 +2500,12 @@ class CandidateController extends Controller
             return response()->json(['errors' => $errors, 'candidatesNumbers' => $candidatesNumbers]);
         }
     }
-    private   function csvToArray($file, $delimiter = ',')
+    private function csvToArray($file, $delimiter = ',')
     {
         $center_no = auth()->user()->center_no;
         $data = array_map(function ($l) use ($delimiter) {
-            return  str_getcsv($l, $delimiter);
-        },  $file);
+            return str_getcsv($l, $delimiter);
+        }, $file);
 
         foreach ($data as $key => $value) {
             if (!Str::startsWith($value[0], $center_no)) {
@@ -2475,7 +2514,7 @@ class CandidateController extends Controller
         }
         $data = array_values($data);
 
-        return  $data;
+        return $data;
     }
 
     private function getFileDelimiter($file, $checkLines = 2)
@@ -2552,7 +2591,7 @@ class CandidateController extends Controller
                 ->join('subject_option', 'subject_option.subject_code', '=', 'subjects.subject_code')
                 ->join('option_heads', 'option_heads.option_code', '=', 'subject_option.option_code');
             $optionsSubjects = $allSessionSubjects
-                ->where('sessions.id', '=',  $session_id)
+                ->where('sessions.id', '=', $session_id)
                 ->where('subjects.level', '=', $level_id)
                 ->whereIn('sessions.session', $arraySessions)
                 ->get();
@@ -2560,7 +2599,7 @@ class CandidateController extends Controller
             $allSubjectArray = $optionsSubjects->pluck('subject_code')->toArray();
             $doubleOptionsSubjects = array_values(array_unique(array_diff_assoc($allSubjectArray, array_unique($allSubjectArray))));
             $allSessionSubjects = $allSessionSubjects
-                ->where('sessions.id', '=',  $session_id)
+                ->where('sessions.id', '=', $session_id)
                 ->groupBy('subjects.subject_code')
                 ->where('subjects.level', '=', $level_id)
                 ->whereIn('sessions.session', $arraySessions)
@@ -2593,7 +2632,7 @@ class CandidateController extends Controller
                     if ($key % 2 == 0) {
                         if (in_array($subject->subject_code, $doubleOptionsSubjects)) {
                             foreach ($optionHeaders as $optionHeader) {
-                                $checkedSubject = isset($candidateRegistedSubjects[$subject->subject_code]) && $candidateRegistedSubjects[$subject->subject_code] == $optionHeader->option_code  ? "checked" : "";
+                                $checkedSubject = isset($candidateRegistedSubjects[$subject->subject_code]) && $candidateRegistedSubjects[$subject->subject_code] == $optionHeader->option_code ? "checked" : "";
                                 if ($checkedSubject) {
                                     $subjectsHTML .= "<li class='list-group-item d-flex justify-content-between align-items-center'>
                                                 <input type='checkbox' name='subject[]' $checkedSubject  class='custom-control-input subject subj_$subject->subject_code' value='$subject->subject_code,$optionHeader->option_code,$subject->subject_name' id='$optionHeader->option_code-$subject->subject_code'>
@@ -2616,7 +2655,7 @@ class CandidateController extends Controller
                     } else {
                         if (in_array($subject->subject_code, $doubleOptionsSubjects)) {
                             foreach ($optionHeaders as $optionHeader) {
-                                $checkedSubject = isset($candidateRegistedSubjects[$subject->subject_code]) && $candidateRegistedSubjects[$subject->subject_code] == $optionHeader->option_code  ? "checked" : "";
+                                $checkedSubject = isset($candidateRegistedSubjects[$subject->subject_code]) && $candidateRegistedSubjects[$subject->subject_code] == $optionHeader->option_code ? "checked" : "";
                                 if ($checkedSubject) {
                                     $subjectsHTML .= "<li class='list-group-item d-flex justify-content-between align-items-center'>
                                     <input type='checkbox' name='subject[]'  $checkedSubject  class='custom-control-input subject subj_$subject->subject_code' value='$subject->subject_code,$optionHeader->option_code,$subject->subject_name' id='$optionHeader->option_code-$subject->subject_code'>
@@ -2643,12 +2682,12 @@ class CandidateController extends Controller
             }
             if ($is_subjects) {
                 $html = "";
-                $leftSubject .=   $closingTag;
-                $rightSubject .=   $closingTag;
+                $leftSubject .= $closingTag;
+                $rightSubject .= $closingTag;
 
                 $html .= $leftSubject . $rightSubject;
 
-                return response()->json(['subjectsHTML' =>  $html, 'doubleOptionsSubjects' => $candidateRegistedSubjects, 'disableSubject' => $request->all()]);
+                return response()->json(['subjectsHTML' => $html, 'doubleOptionsSubjects' => $candidateRegistedSubjects, 'disableSubject' => $request->all()]);
             } else {
                 $session = $center->session;
                 $subjectsHTML = "<div class='alert alert-danger' role='alert'>
@@ -2704,7 +2743,7 @@ class CandidateController extends Controller
             ->first();
 
         if ($candidate) {
-            return  $candidate;
+            return $candidate;
         } else {
             return false;
         }

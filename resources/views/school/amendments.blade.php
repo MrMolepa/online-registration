@@ -38,14 +38,13 @@
                             <div>
 
                                 @if (is_activate($center->level))
-                                    @permission('amendments-create')
+                                  
                                         <button type="button" data-toggle="modal" data-target="#add-candidate"
                                             class="btn  btn-primary">+
                                             Candidate</button>
                                         <button type="button" data-toggle="modal" data-target=".import-csv-registration-modal"
                                             class=" btn btn-primary mx-4">+
-                                            Candidates by CSV</button>
-                                    @endpermission
+                                  
                                     @permission('amendments-delete')
                                         <button class="btn btn-danger pull-right btn-delete-Selected">Delete bulk</button>
                                     @endpermission
