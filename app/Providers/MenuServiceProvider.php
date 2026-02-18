@@ -63,8 +63,8 @@ class MenuServiceProvider extends ServiceProvider
                  | 1. Resolve authenticated user & guard
                  ------------------------------------------------- */
                 $guard = Auth::getDefaultDriver();
-                $user  = Auth::guard($guard)->user();
-                $this->getUserGuard($guard,  $user);
+                $user = Auth::guard($guard)->user();
+                $this->getUserGuard($guard, $user);
 
 
                 if (!$user) {
@@ -73,28 +73,25 @@ class MenuServiceProvider extends ServiceProvider
 
 
                 /* -------------------------------------------------
-                 | 2. Collect ALL user permission IDs
-                 |    (direct + via roles)
-                 ------------------------------------------------- */
+  | 2. Collect ALL user permission IDs
+  |    (direct + via roles)
+  ------------------------------------------------- */
                 $directPermissionIds = $user->permissions
                     ->pluck('id')
                     ->toArray();
 
-
-                $rolePermissionIds = $user->roles
-                    ->load('permissions')
-                    ->pluck('permissions')
-                    ->flatten()
-                    ->pluck('id')
-                    ->unique()
-                    ->toArray();
-
+                // Get role permissions (single role, not multiple)
+                $rolePermissionIds = [];
+                if ($user->role) {
+                    $rolePermissionIds = $user->role->permissions
+                        ->pluck('id')
+                        ->toArray();
+                }
 
                 $permissionIds = array_unique(
                     array_merge($directPermissionIds, $rolePermissionIds)
                 );
-
-
+                
                 if (empty($permissionIds)) {
                     $view->with('dynamicMenus', collect());
                     return;

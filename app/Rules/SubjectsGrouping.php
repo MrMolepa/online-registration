@@ -76,13 +76,13 @@ class SubjectsGrouping implements Rule
         $newArray = array();
         foreach ($subjects as $key => $subject) {
             if (isset($subject['subject_code'])) {
-                array_push($newArray, $subject['subject_code']);
+                $newArray[] = str_pad((string) $subject['subject_code'], 4, '0', STR_PAD_LEFT);
             }
         }
         return $newArray;
     }
 
-    
+
     /**
      * Get the validation error message.
      *
@@ -96,7 +96,7 @@ class SubjectsGrouping implements Rule
 
         $center = Center::where('center_no', '=', $this->centerNo)->first();
         $level = $center ? $center->level : 'Unknown';
-        
+
         return "Invalid {$level} Examinations Subjects Grouping";
     }
 }

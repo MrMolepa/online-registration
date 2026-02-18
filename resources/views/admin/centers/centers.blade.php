@@ -157,7 +157,7 @@
                                             @push('scripts')
                                                 <script>
                                                     $(function() {
-                                                        var centers = $('#centers').DataTable({
+                                                        var allCenters = $('#all-centers').DataTable({
                                                             processing: true,
                                                             serverSide: true,
                                                             deferRender: true,
@@ -171,7 +171,8 @@
                                                             ajax: {
                                                                 url: "{{ route('admin.centers.index') }}",
                                                                 data: function(d) {
-                                                                    d.level = $("#filters #level").val()
+                                                                    d.level = $("#filters #level").val();
+                                                                    d.all_centers = true; // Flag to trigger allCenters method
                                                                 },
                                                                 error: function(xhr, error, code) {
                                                                     console.error('DataTables Ajax Error');
@@ -187,42 +188,41 @@
                                                                     searchable: true
                                                                 },
                                                                 {
-                                                                    data: 'center_name',
+                                                                    data: 'center_name', // Changed from center_full_name
                                                                     name: 'center_name',
                                                                     searchable: true
                                                                 },
                                                                 {
-                                                                    data: 'email',
-                                                                    name: 'email',
+                                                                    data: 'levels', // This comes from editColumn in controller
+                                                                    name: 'levels',
                                                                     searchable: false,
-                                                                    sortable: false
+                                                                    orderable: false // Changed from sortable
                                                                 },
                                                                 {
-                                                                    data: 'centre_account_password',
-                                                                    name: 'centre_account_password',
+                                                                    data: 'sessions', // This comes from editColumn in controller
+                                                                    name: 'sessions',
                                                                     searchable: false,
-                                                                    sortable: false
+                                                                    orderable: false
                                                                 },
                                                                 {
-                                                                    data: 'role',
-                                                                    name: 'role',
+                                                                    data: 'subjects', // This comes from editColumn in controller
+                                                                    name: 'subjects',
                                                                     searchable: false,
-                                                                    sortable: false
+                                                                    orderable: false
                                                                 },
                                                                 {
                                                                     data: 'action',
                                                                     name: 'action',
                                                                     searchable: false,
-                                                                    sortable: false
+                                                                    orderable: false
                                                                 }
                                                             ]
                                                         });
 
-                                                        $("#centers").css("width", "98.5%");
+                                                        $("#all-centers").css("width", "98.5%");
                                                     });
                                                 </script>
                                             @endpush
-
                                         </div>
 
 

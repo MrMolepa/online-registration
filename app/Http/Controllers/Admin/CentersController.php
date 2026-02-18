@@ -33,10 +33,16 @@ class CentersController extends Controller
     set_time_limit(-1);
 
     if ($request->ajax()) {
+        // Check if this is for the "All Centers" tab
+        if ($request->has('all_centers') && $request->all_centers == true) {
+            return $this->allCenters($request);
+        }
+        
+        // Original "Center Accounts" tab code
         try {
             // Build the query - load users with their role
             $query = Center::with(['users' => function($q) {
-                $q->where('user_type', 'center')->with('role'); // Changed 'roles' to 'role'
+                $q->where('user_type', 'center')->with('role');
             }]);
             
             // Apply level filter if provided
@@ -79,16 +85,13 @@ class CentersController extends Controller
                     }
                     
                     $user = $row->users->first();
-                    
-                    // Get the single role for this user (changed from roles to role)
-                    $userRole = $user->role; // This is now a single Role object, not a collection
+                    $userRole = $user->role;
                     
                     $roles = Role::whereIn('name', ['center-admin', 'ldtc-centers', 'center-editor'])->get();
                     $actionUrl = route('admin.centers.changerole', $row->center_no);
                     
                     $html = "<select class='edit-role form-control' data-url='{$actionUrl}' name='role'>";
                     
-                    // Changed to check the role_id directly
                     $currentRoleId = $userRole ? $userRole->id : null;
                     
                     foreach ($roles as $role) {
