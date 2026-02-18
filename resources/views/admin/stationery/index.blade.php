@@ -129,7 +129,7 @@
                                                                             Year</label>
                                                                         <select name="comp_financial_year"
                                                                             id="comp_financial_year"
-                                                                            class="form-control select2-comp"disabled>
+                                                                            class="form-control select2-comp" disabled>
                                                                             <option value="">-- Select Financial Year
                                                                             </option>
                                                                         </select>
@@ -140,7 +140,7 @@
                                                                     <div class="form-group">
                                                                         <label for="comp_session_id">Session</label>
                                                                         <select name="comp_session_id" id="comp_session_id"
-                                                                            class="form-control select2-comp"disabled>
+                                                                            class="form-control select2-comp" disabled>
                                                                             <option value="">-- Select Session --
                                                                             </option>
                                                                         </select>
@@ -232,7 +232,6 @@
                                         </div>
 
                                         <!-- Allocation Rules Table -->
-                                        
                                         <div class="row" id="rulesTableSection" style="display: none;">
                                             <div class="col-md-12">
                                                 <button type="button" class="btn btn-primary" id="addRuleBtn">
@@ -488,12 +487,17 @@
         let componentStockTable = null;
         let currentComponentKey = null;
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
+
+            // ========== SHARED HELPER: clear red validation text ==========
+            function clearErrors(formId) {
+                $(formId + ' .help-block.text-danger').text('');
+            }
 
             // Initialize select2
             $('.select2').select2({
@@ -521,7 +525,7 @@
             };
 
             // Tab change event - initialize tables on first view
-            $('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                 let target = $(e.target).attr("href");
 
                 if (target === '#stock-types-tab' && !stockTypeTable) {
@@ -541,7 +545,7 @@
             // Helper function to fill form fields
             function fillForm(data, formId) {
                 const form = $(formId);
-                $.each(data, function(key, value) {
+                $.each(data, function (key, value) {
                     let field = $('[name="' + key + '"]');
 
                     if (field.is(':checkbox')) {
@@ -554,113 +558,94 @@
                 });
             }
 
-            // ========== STOCK TYPES TAB =============
+            // ========== STOCK TYPES TAB ==========
 
             function initStockTypesTable() {
                 stockTypeTable = $('#stockTypeTable').DataTable({
                     processing: true,
                     serverSide: true,
                     ajax: "{{ route('admin.stationery.stock-types.index') }}",
-                    columns: [{
-                            data: 'id',
-                            name: 'id'
-                        },
-                        {
-                            data: 'name',
-                            name: 'name'
-                        },
-                        {
-                            data: 'description',
-                            name: 'description'
-                        },
-                        {
-                            data: 'status_badge',
-                            name: 'is_active'
-                        },
-                        {
-                            data: 'actions',
-                            name: 'actions',
-                            orderable: false,
-                            searchable: false
-                        }
+                    columns: [
+                        { data: 'id',           name: 'id' },
+                        { data: 'name',         name: 'name' },
+                        { data: 'description',  name: 'description' },
+                        { data: 'status_badge', name: 'is_active' },
+                        { data: 'actions',      name: 'actions', orderable: false, searchable: false }
                     ]
                 });
                 $("#stockTypeTable").css("width", "98.5%");
             }
 
-            $('#addStockTypeBtn').click(function() {
+            $('#addStockTypeBtn').click(function () {
                 $('#stockTypeForm')[0].reset();
                 $('#stock_type_id').val('');
                 $('#stockTypeModalTitle').text('Add Stock Type');
-                $('.form-control').removeClass('is-invalid');
-                $('.invalid-feedback').text('');
+                clearErrors('#stockTypeForm');
                 $('#stockTypeForm').attr('action', '{{ route('admin.stationery.stock-types.store') }}');
                 $('#is_active').prop('checked', true);
                 $('#stockTypeModal').modal('show');
             });
 
-            $(document).on('click', '#stockTypeTable .edit-btn', function(e) {
+            $(document).on('click', '#stockTypeTable .edit-btn', function (e) {
                 e.preventDefault();
                 let url = $(this).data('url');
 
                 $.ajax({
                     url: url,
                     type: 'GET',
-                    success: function(response) {
+                    success: function (response) {
                         if (response.data) {
                             const stockType = response.data;
                             fillForm(stockType, '#stockTypeForm');
                             $('#stock_type_id').val(stockType.id);
                             $('#stockTypeModalTitle').text('Edit Stock Type');
-                            $('.form-control').removeClass('is-invalid is-valid');
-                            $('.invalid-feedback').text('');
+                            clearErrors('#stockTypeForm');
                             $('#stockTypeForm').attr('action', response.url);
                             $('#stockTypeModal').modal('show');
                         } else {
                             toastr.error('Stock type not found');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         toastr.error('Error loading stock type data');
                     }
                 });
             });
 
-            $('#stockTypeForm').submit(function(e) {
+            $('#stockTypeForm').submit(function (e) {
                 e.preventDefault();
                 let id = $('#stock_type_id').val();
                 let method = id ? 'PUT' : 'POST';
                 let url = $('#stockTypeForm').attr('action');
 
-                $('.form-control').removeClass('is-invalid');
-                $('.invalid-feedback').text('');
+                clearErrors('#stockTypeForm');
 
                 $.ajax({
                     url: url,
                     type: method,
                     data: $(this).serialize(),
-                    success: function(response) {
+                    success: function (response) {
                         $('#stockTypeModal').modal('hide');
                         stockTypeTable.ajax.reload();
                         toastr.success(response.message);
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         if (xhr.status === 422) {
                             let errors = xhr.responseJSON.errors;
-                            $.each(errors, function(key, value) {
-                                $('#' + key).addClass('is-invalid');
-                                $('#' + key).siblings('.invalid-feedback').text(value[
-                                    0]);
+                            $.each(errors, function (field, messages) {
+                                $('#stockTypeForm [name="' + field + '"]')
+                                    .closest('.form-group')
+                                    .find('.help-block.text-danger')
+                                    .text(messages[0]);
                             });
                         } else {
-                            toastr.error(xhr.responseJSON?.message ||
-                                'Error saving stock type');
+                            toastr.error(xhr.responseJSON?.message || 'Error saving stock type');
                         }
                     }
                 });
             });
 
-            $(document).on('click', '#stockTypeTable .delete-btn', function(e) {
+            $(document).on('click', '#stockTypeTable .delete-btn', function (e) {
                 e.preventDefault();
 
                 if (!confirm('Are you sure you want to delete this stock type?')) {
@@ -671,62 +656,52 @@
                 $.ajax({
                     url: url,
                     type: 'DELETE',
-                    success: function(response) {
+                    success: function (response) {
                         stockTypeTable.ajax.reload();
                         toastr.success(response.message);
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         toastr.error(xhr.responseJSON?.message || 'Error deleting stock type');
                     }
                 });
             });
 
-            // ========== STOCK ITEMS TAB - COMPLETE CODE ==========
+            // ========== STOCK ITEMS TAB ==========
             let stockItemTable;
 
-            // Load stock types function 
             function loadStockTypes(callback) {
                 $.ajax({
                     url: "{{ route('admin.stationery.stock-types.options') }}",
                     type: 'GET',
-                    success: function(response) {
+                    success: function (response) {
                         console.log('Stock Types loaded:', response.data.length);
 
-                        // Force find dropdown within the modal
                         let $dropdown = $('#stockItemModal').find('#stock_type_id');
-
                         if ($dropdown.length === 0) {
                             $dropdown = $('#stock_type_id');
                         }
-
-                        console.log('Dropdown exists:', $dropdown.length > 0);
-                        console.log('Dropdown is visible:', $dropdown.is(':visible'));
-                        console.log('Dropdown HTML before:', $dropdown.html());
 
                         $dropdown.empty();
                         $dropdown.append('<option value="">Select Stock Type</option>');
 
                         if (response.data && response.data.length > 0) {
-                            response.data.forEach(function(stockType) {
-                                $dropdown.append('<option value="' + stockType.id + '">' +
-                                    stockType.name + '</option>');
+                            response.data.forEach(function (stockType) {
+                                $dropdown.append('<option value="' + stockType.id + '">' + stockType.name + '</option>');
                             });
-                            console.log('Dropdown populated with', response.data.length, 'options');
-                            console.log('Dropdown HTML after:', $dropdown.html().substring(0, 200));
                         }
 
                         if (callback) callback();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading stock types:', xhr);
                         toastr.error('Error loading stock types');
                     }
                 });
             }
-            // Helper function to fill form fields
+
             function fillStockItemForm(data, formId) {
                 const form = $(formId);
-                $.each(data, function(key, value) {
+                $.each(data, function (key, value) {
                     let field = form.find('[name="' + key + '"]');
 
                     if (field.is(':checkbox')) {
@@ -739,7 +714,6 @@
                 });
             }
 
-            // Initialize DataTable
             function initStockItemsTable() {
                 if (stockItemTable) {
                     stockItemTable.destroy();
@@ -751,54 +725,21 @@
                     ajax: {
                         url: "{{ route('admin.stationery.stock-items.index') }}",
                         type: 'GET',
-                        error: function(xhr, error, code) {
+                        error: function (xhr, error, code) {
                             console.log('DataTables Error:', xhr, error, code);
                             toastr.error('Error loading data. Please refresh the page.');
                         }
                     },
-                    columns: [{
-                            data: 'id',
-                            name: 'id',
-                            width: '5%'
-                        },
-                        {
-                            data: 'stock_type_name',
-                            name: 'stockType.name',
-                            width: '18%'
-                        },
-                        {
-                            data: 'name',
-                            name: 'name',
-                            width: '25%'
-                        },
-                        {
-                            data: 'stock_display',
-                            name: 'stock_qty',
-                            width: '15%',
-                            orderable: true,
-                            searchable: false
-                        },
-                        {
-                            data: 'status_badge',
-                            name: 'is_active',
-                            width: '10%'
-                        },
-                        {
-                            data: 'created_at',
-                            name: 'created_at',
-                            width: '12%'
-                        },
-                        {
-                            data: 'actions',
-                            name: 'actions',
-                            orderable: false,
-                            searchable: false,
-                            width: '15%'
-                        }
+                    columns: [
+                        { data: 'id',             name: 'id',             width: '5%' },
+                        { data: 'stock_type_name', name: 'stockType.name', width: '18%' },
+                        { data: 'name',            name: 'name',           width: '25%' },
+                        { data: 'stock_display',   name: 'stock_qty',      width: '15%', orderable: true, searchable: false },
+                        { data: 'status_badge',    name: 'is_active',      width: '10%' },
+                        { data: 'created_at',      name: 'created_at',     width: '12%' },
+                        { data: 'actions',         name: 'actions',        orderable: false, searchable: false, width: '15%' }
                     ],
-                    order: [
-                        [0, 'desc']
-                    ],
+                    order: [[0, 'desc']],
                     pageLength: 10,
                     responsive: true
                 });
@@ -806,26 +747,22 @@
                 console.log('Stock Items DataTable initialized');
             }
 
-            $(document).ready(function() {
+            $(document).ready(function () {
 
-                // ========== ADD STOCK ITEM BUTTON ==========
-                $('#addStockItemBtn').on('click', function() {
+                // Add Stock Item
+                $('#addStockItemBtn').on('click', function () {
                     console.log('Add Stock Item clicked');
 
-            
                     $('#stock_item_id').val('');
                     $('#stockItemModalTitle').text('Add Stock Item');
-                    $('.form-control').removeClass('is-invalid');
-                    $('.invalid-feedback').text('');
-                    $('#stockItemForm').attr('action',
-                        '{{ route('admin.stationery.stock-items.store') }}');
+                    clearErrors('#stockItemForm');
+                    $('#stockItemForm').attr('action', '{{ route('admin.stationery.stock-items.store') }}');
 
-                    // Show modal FIRST
                     $('#stockItemModal').modal('show');
                 });
 
-                // ========== EDIT STOCK ITEM BUTTON ==========
-                $(document).on('click', '#stockItemTable .edit-btn', function(e) {
+                // Edit Stock Item
+                $(document).on('click', '#stockItemTable .edit-btn', function (e) {
                     e.preventDefault();
                     console.log('Edit button clicked');
 
@@ -834,43 +771,37 @@
                     $.ajax({
                         url: url,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             console.log('Stock item data received:', response);
 
                             if (response.data) {
                                 const stockItem = response.data;
 
-                                // Set form metadata
                                 $('#stock_item_id').val(stockItem.id);
                                 $('#stockItemModalTitle').text('Edit Stock Item');
-                                $('.form-control').removeClass('is-invalid is-valid');
-                                $('.invalid-feedback').text('');
+                                clearErrors('#stockItemForm');
                                 $('#stockItemForm').attr('action', response.url);
                                 $('#stockItemModal').modal('show');
 
-                                // Wait for modal to be shown, then populate
-                                $('#stockItemModal').one('shown.bs.modal', function() {
-                                    setTimeout(function() {
-                                        fillStockItemForm(stockItem,
-                                            '#stockItemForm');
-                                        console.log(
-                                            'Form populated with stock item data'
-                                        );
+                                $('#stockItemModal').one('shown.bs.modal', function () {
+                                    setTimeout(function () {
+                                        fillStockItemForm(stockItem, '#stockItemForm');
+                                        console.log('Form populated with stock item data');
                                     }, 500);
                                 });
                             } else {
                                 toastr.error('Stock item not found');
                             }
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             console.error('Error loading stock item:', xhr);
                             toastr.error('Error loading stock item data');
                         }
                     });
                 });
 
-                // ========== VIEW STOCK ITEM BUTTON ==========
-                $(document).on('click', '#stockItemTable .view-btn', function(e) {
+                // View Stock Item
+                $(document).on('click', '#stockItemTable .view-btn', function (e) {
                     e.preventDefault();
                     console.log('View button clicked');
 
@@ -879,45 +810,33 @@
                     $.ajax({
                         url: url,
                         type: 'GET',
-                        success: function(response) {
+                        success: function (response) {
                             if (response.data) {
                                 const stockItem = response.data;
 
-                                // Populate view modal
                                 $('#view_name').text(stockItem.name || 'N/A');
-                                $('#view_stock_type').text(stockItem.stock_type ?
-                                    stockItem.stock_type.name : 'N/A');
+                                $('#view_stock_type').text(stockItem.stock_type ? stockItem.stock_type.name : 'N/A');
                                 $('#view_unit').text(stockItem.unit || 'N/A');
-                                $('#view_stock_qty').text(Number(stockItem.stock_qty)
-                                    .toFixed(2) + ' ' + stockItem.unit);
-                                $('#view_supplier_info').text(stockItem.supplier_info ||
-                                    'N/A');
+                                $('#view_stock_qty').text(Number(stockItem.stock_qty).toFixed(2) + ' ' + stockItem.unit);
+                                $('#view_supplier_info').text(stockItem.supplier_info || 'N/A');
                                 $('#view_status').html(stockItem.is_active ?
                                     '<span class="label label-success">Active</span>' :
                                     '<span class="label label-danger">Inactive</span>'
                                 );
-                                $('#view_created_at').text(new Date(stockItem
-                                    .created_at).toLocaleString());
-                                $('#view_updated_at').text(new Date(stockItem
-                                    .updated_at).toLocaleString());
+                                $('#view_created_at').text(new Date(stockItem.created_at).toLocaleString());
+                                $('#view_updated_at').text(new Date(stockItem.updated_at).toLocaleString());
 
-                                // Populate linked components
                                 let componentsList = $('#view_components');
                                 componentsList.empty();
 
-                                if (stockItem.component_stocks && stockItem
-                                    .component_stocks.length > 0) {
-                                    stockItem.component_stocks.forEach(function(cs) {
+                                if (stockItem.component_stocks && stockItem.component_stocks.length > 0) {
+                                    stockItem.component_stocks.forEach(function (cs) {
                                         if (cs.component) {
-                                            componentsList.append('<li>' + cs
-                                                .component.name + ' (' + cs
-                                                .component.code + ')</li>');
+                                            componentsList.append('<li>' + cs.component.name + ' (' + cs.component.code + ')</li>');
                                         }
                                     });
                                 } else {
-                                    componentsList.append(
-                                        '<li class="text-muted">Not linked to any components</li>'
-                                    );
+                                    componentsList.append('<li class="text-muted">Not linked to any components</li>');
                                 }
 
                                 $('#viewStockItemModal').modal('show');
@@ -925,15 +844,15 @@
                                 toastr.error('Stock item not found');
                             }
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             console.error('Error loading stock item:', xhr);
                             toastr.error('Error loading stock item data');
                         }
                     });
                 });
 
-                // ========== SUBMIT STOCK ITEM FORM ==========
-                $(document).on('submit', '#stockItemForm', function(e) {
+                // Submit Stock Item Form
+                $(document).on('submit', '#stockItemForm', function (e) {
                     e.preventDefault();
                     console.log('Form submitted');
 
@@ -941,15 +860,13 @@
                     let method = id ? 'PUT' : 'POST';
                     let url = $(this).attr('action');
 
-                    // Clear previous validation errors
-                    $('.form-control').removeClass('is-invalid');
-                    $('.invalid-feedback').text('');
+                    clearErrors('#stockItemForm');
 
                     $.ajax({
                         url: url,
                         type: method,
                         data: $(this).serialize(),
-                        success: function(response) {
+                        success: function (response) {
                             console.log('Save successful:', response);
                             $('#stockItemModal').modal('hide');
 
@@ -957,32 +874,29 @@
                                 stockItemTable.ajax.reload();
                             }
 
-                            toastr.success(response.message ||
-                                'Stock item saved successfully');
+                            toastr.success(response.message || 'Stock item saved successfully');
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             console.error('Save error:', xhr);
 
                             if (xhr.status === 422) {
-                                // Validation errors
                                 let errors = xhr.responseJSON.errors;
-                                $.each(errors, function(key, value) {
-                                    let field = $('#' + key);
-                                    field.addClass('is-invalid');
-                                    field.siblings('.invalid-feedback').text(
-                                        value[0]);
+                                $.each(errors, function (field, messages) {
+                                    $('#stockItemForm [name="' + field + '"]')
+                                        .closest('.form-group')
+                                        .find('.help-block.text-danger')
+                                        .text(messages[0]);
                                 });
                                 toastr.error('Please fix the validation errors');
                             } else {
-                                toastr.error(xhr.responseJSON?.message ||
-                                    'Error saving stock item');
+                                toastr.error(xhr.responseJSON?.message || 'Error saving stock item');
                             }
                         }
                     });
                 });
 
-                // ========== DELETE STOCK ITEM BUTTON ==========
-                $(document).on('click', '#stockItemTable .delete-btn', function(e) {
+                // Delete Stock Item
+                $(document).on('click', '#stockItemTable .delete-btn', function (e) {
                     e.preventDefault();
                     console.log('Delete button clicked');
 
@@ -995,55 +909,44 @@
                     $.ajax({
                         url: url,
                         type: 'DELETE',
-                        data: {
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(response) {
+                        data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                        success: function (response) {
                             console.log('Delete successful:', response);
 
                             if (stockItemTable) {
                                 stockItemTable.ajax.reload();
                             }
 
-                            toastr.success(response.message ||
-                                'Stock item deleted successfully');
+                            toastr.success(response.message || 'Stock item deleted successfully');
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             console.error('Delete error:', xhr);
-                            toastr.error(xhr.responseJSON?.message ||
-                                'Error deleting stock item');
+                            toastr.error(xhr.responseJSON?.message || 'Error deleting stock item');
                         }
                     });
                 });
 
-                // ========== MODAL SHOWN EVENT =============
-                $('#stockItemModal').on('shown.bs.modal', function(e) {
+                // Modal shown — reset/load stock types
+                $('#stockItemModal').on('shown.bs.modal', function (e) {
                     console.log('Modal shown event triggered');
 
-                    // NOW reset and populate after modal is fully shown
                     let isEditMode = $('#stock_item_id').val() !== '';
 
                     if (!isEditMode) {
-                        // Add mode - reset form
                         $('#stockItemForm')[0].reset();
                         $('#is_active').prop('checked', true);
                     }
 
-                    // Load stock types
                     loadStockTypes();
                 });
 
-                // ========== CLEAR VALIDATION ON MODAL HIDE ==========
-                $('#stockItemModal').on('hidden.bs.modal', function() {
+                // Clear errors on modal hide
+                $('#stockItemModal').on('hidden.bs.modal', function () {
                     console.log('Modal hidden, clearing form');
-                    // Don't reset here - it will be reset when modal opens again
-                    $('.form-control').removeClass('is-invalid is-valid');
-                    $('.invalid-feedback').text('');
+                    clearErrors('#stockItemForm');
                 });
 
             });
-
-
 
             // ========== COMPONENT STOCK TAB ==========
             $('#component_selector').select2({
@@ -1051,37 +954,25 @@
                 allowClear: true
             });
 
-
-            // ========== COMPLETE COMPONENT STOCK TAB IMPLEMENTATION ==========
-
-            // Initialize select2 for component filters
             $('.select2-comp').select2({
                 placeholder: 'Select an option',
                 allowClear: true,
                 width: '100%'
             });
 
-            // Component filter: Level change event
-            $('#comp_level').on('change', function() {
+            $('#comp_level').on('change', function () {
                 const selectedLevel = $(this).val();
 
-                // Reset dependent dropdowns
-                $('#comp_financial_year').prop('disabled', true).html(
-                    '<option value="">-- Select Financial Year --</option>');
-                $('#comp_session_id').prop('disabled', true).html(
-                    '<option value="">-- Select Session --</option>');
+                $('#comp_financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
+                $('#comp_session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
                 $('#component_selector').html('<option value="">-- Select a Component --</option>');
 
-                // Hide component info and rules sections
                 $('#componentInfoSection').hide();
                 $('#rulesTableSection').hide();
                 currentComponentKey = null;
 
-                if (!selectedLevel) {
-                    return;
-                }
+                if (!selectedLevel) return;
 
-                // Enable financial year dropdown and populate it
                 $('#comp_financial_year').prop('disabled', false);
                 let fyOptions = '<option value="">-- Select Financial Year --</option>';
                 allFinancialYears.forEach(fy => {
@@ -1090,132 +981,101 @@
                 $('#comp_financial_year').html(fyOptions);
             });
 
-            // Component filter: Financial Year change event
-            $('#comp_financial_year').on('change', function() {
+            $('#comp_financial_year').on('change', function () {
                 const selectedLevel = $('#comp_level').val();
                 const selectedFinancialYear = $(this).val();
 
-                // Reset dependent dropdowns
-                $('#comp_session_id').prop('disabled', true).html(
-                    '<option value="">-- Select Session --</option>');
+                $('#comp_session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
                 $('#component_selector').html('<option value="">-- Select a Component --</option>');
 
-                // Hide component info and rules sections
                 $('#componentInfoSection').hide();
                 $('#rulesTableSection').hide();
                 currentComponentKey = null;
 
-                if (!selectedFinancialYear) {
-                    return;
-                }
+                if (!selectedFinancialYear) return;
 
-                // Enable session dropdown
                 $('#comp_session_id').prop('disabled', false);
                 loadComponentSessionsByFilters(selectedLevel, selectedFinancialYear);
             });
 
-            // Component filter: Session change event
-            $('#comp_session_id').on('change', function() {
+            $('#comp_session_id').on('change', function () {
                 const selectedLevel = $('#comp_level').val();
                 const selectedFinancialYear = $('#comp_financial_year').val();
                 const selectedSession = $(this).val();
 
-                // Reset component selector
                 $('#component_selector').html('<option value="">-- Select a Component --</option>');
 
-                // Hide component info and rules sections
                 $('#componentInfoSection').hide();
                 $('#rulesTableSection').hide();
                 currentComponentKey = null;
 
-                if (!selectedSession) {
-                    return;
-                }
+                if (!selectedSession) return;
 
-                // Load filtered components
                 loadFilteredComponents(selectedLevel, selectedFinancialYear, selectedSession);
             });
 
-            // Function to load sessions based on level and financial year
             function loadComponentSessionsByFilters(level, financialYear) {
                 $.ajax({
                     url: "{{ route('admin.stationery.component-stock.sessions-by-filters') }}",
                     method: 'GET',
-                    data: {
-                        level: level,
-                        financial_year: financialYear
-                    },
-                    success: function(response) {
-                        console.log('Sessions response:', response);
+                    data: { level: level, financial_year: financialYear },
+                    success: function (response) {
                         if (response.success) {
                             let sessionOptions = '<option value="">-- Select Session --</option>';
                             response.sessions.forEach(session => {
-                                sessionOptions +=
-                                    `<option value="${session.id}">${session.session}</option>`;
+                                sessionOptions += `<option value="${session.id}">${session.session}</option>`;
                             });
                             $('#comp_session_id').html(sessionOptions);
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading sessions:', xhr);
                         toastr.error('Error loading sessions');
                     }
                 });
             }
 
-            // Function to load components based on filters
             function loadFilteredComponents(level, financialYear, sessionId) {
                 $.ajax({
                     url: "{{ route('admin.stationery.component-stock.components-by-filters') }}",
                     method: 'GET',
-                    data: {
-                        level: level,
-                        financial_year: financialYear,
-                        session_id: sessionId
-                    },
-                    success: function(response) {
-                        console.log('Components response:', response);
-
+                    data: { level: level, financial_year: financialYear, session_id: sessionId },
+                    success: function (response) {
                         if (response.success) {
                             let componentOptions = '<option value="">-- Select a Component --</option>';
 
                             if (response.components && response.components.length > 0) {
                                 response.components.forEach(comp => {
-                                    const paddedSubject = String(comp.subject_code).padStart(4,
-                                        '0');
-                                    const paddedComponent = String(comp.component_code)
-                                        .padStart(2, '0');
+                                    const paddedSubject = String(comp.subject_code).padStart(4, '0');
+                                    const paddedComponent = String(comp.component_code).padStart(2, '0');
                                     const componentKey = paddedSubject + '-' + paddedComponent;
                                     const subjectName = comp.subject_name || 'N/A';
 
                                     componentOptions += `<option value="${componentKey}" 
-                            data-key="${componentKey}"
-                            data-code="${componentKey}"
-                            data-name="${comp.component_name}"
-                            data-subject="${subjectName}">
-                            (${componentKey}) - ${comp.component_name} - ${subjectName} 
-                        </option>`;
+                                        data-key="${componentKey}"
+                                        data-code="${componentKey}"
+                                        data-name="${comp.component_name}"
+                                        data-subject="${subjectName}">
+                                        (${componentKey}) - ${comp.component_name} - ${subjectName} 
+                                    </option>`;
                                 });
 
                                 toastr.success(`${response.components.length} component(s) found`);
                             } else {
-                                toastr.info(
-                                    'No components found with candidate registrations for the selected filters'
-                                );
+                                toastr.info('No components found with candidate registrations for the selected filters');
                             }
 
                             $('#component_selector').html(componentOptions);
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading components:', xhr);
                         toastr.error('Error loading components');
                     }
                 });
             }
 
-            // Component selector change event 
-            $('#component_selector').on('change', function() {
+            $('#component_selector').on('change', function () {
                 currentComponentKey = $(this).val();
 
                 if (currentComponentKey) {
@@ -1238,7 +1098,6 @@
                 }
             });
 
-            // Load allocation rules with proper dynamic parameter handling
             function loadAllocationRules(componentKey) {
                 if (componentStockTable) {
                     componentStockTable.destroy();
@@ -1249,44 +1108,19 @@
                     serverSide: true,
                     ajax: {
                         url: "{{ route('admin.stationery.component-stock.index') }}",
-                        data: function(d) {
-                            // Use a function to dynamically get the current component key
+                        data: function (d) {
                             d.component_key = currentComponentKey;
                             return d;
                         }
                     },
-                    columns: [{
-                            data: 'id',
-                            name: 'id'
-                        },
-                        {
-                            data: 'stock_type_name',
-                            name: 'stockItem.stockType.name'
-                        },
-                        {
-                            data: 'stock_item_name',
-                            name: 'stockItem.name'
-                        },
-                        {
-                            data: 'rule_display',
-                            name: 'rule_type'
-                        },
-                        {
-                            data: 'formula_summary',
-                            name: 'base_qty'
-                        },
-                        {
-                            data: 'test_calculation',
-                            name: 'test_calculation',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'actions',
-                            name: 'actions',
-                            orderable: false,
-                            searchable: false
-                        }
+                    columns: [
+                        { data: 'id',               name: 'id' },
+                        { data: 'stock_type_name',   name: 'stockItem.stockType.name' },
+                        { data: 'stock_item_name',   name: 'stockItem.name' },
+                        { data: 'rule_display',      name: 'rule_type' },
+                        { data: 'formula_summary',   name: 'base_qty' },
+                        { data: 'test_calculation',  name: 'test_calculation', orderable: false, searchable: false },
+                        { data: 'actions',           name: 'actions', orderable: false, searchable: false }
                     ]
                 });
             }
@@ -1295,48 +1129,30 @@
                 $.ajax({
                     url: "{{ route('admin.stationery.stock-items.options') }}",
                     type: 'GET',
-                    success: function(response) {
+                    success: function (response) {
                         console.log('Stock Items loaded:', response.data.length);
 
                         let $dropdown1 = $('#ruleModal').find('#stock_item_id');
                         let $dropdown2 = $('#calculatorModal').find('#calc_stock_item_id');
 
-                        // Fallback to global search if not found in modals
-                        if ($dropdown1.length === 0) {
-                            $dropdown1 = $('#stock_item_id');
-                        }
-                        if ($dropdown2.length === 0) {
-                            $dropdown2 = $('#calc_stock_item_id');
-                        }
-
-                        console.log('Dropdown #stock_item_id exists:', $dropdown1.length > 0);
-                        console.log('Dropdown #calc_stock_item_id exists:', $dropdown2.length > 0);
-                        console.log('Dropdown #stock_item_id visible:', $dropdown1.is(':visible'));
-                        console.log('Dropdown #calc_stock_item_id visible:', $dropdown2.is(':visible'));
+                        if ($dropdown1.length === 0) $dropdown1 = $('#stock_item_id');
+                        if ($dropdown2.length === 0) $dropdown2 = $('#calc_stock_item_id');
 
                         let options = '<option value="">Select Stock Item</option>';
 
                         if (response.data && response.data.length > 0) {
-                            response.data.forEach(function(item) {
-                                let stockType = item.stock_type ? ' (' + item.stock_type.name +
-                                    ')' : '';
-                                options += '<option value="' + item.id + '">' + item.name +
-                                    stockType + '</option>';
+                            response.data.forEach(function (item) {
+                                let stockType = item.stock_type ? ' (' + item.stock_type.name + ')' : '';
+                                options += '<option value="' + item.id + '">' + item.name + stockType + '</option>';
                             });
                         }
 
                         $dropdown1.html(options);
                         $dropdown2.html(options);
 
-                        console.log('Dropdowns populated with', response.data.length, 'options');
-                        console.log('Dropdown #stock_item_id HTML after:', $dropdown1.html().substring(
-                            0, 100));
-                        console.log('Dropdown #calc_stock_item_id HTML after:', $dropdown2.html()
-                            .substring(0, 100));
-
                         if (callback) callback();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading stock items:', xhr);
                         toastr.error('Error loading stock items');
                     }
@@ -1353,7 +1169,7 @@
 
             $('#rule_type').change(toggleConditionalField);
 
-            $('#addRuleBtn').click(function() {
+            $('#addRuleBtn').click(function () {
                 if (!currentComponentKey) {
                     toastr.warning('Please select a component first');
                     return;
@@ -1363,22 +1179,19 @@
                 $('#rule_id').val('');
                 $('#form_component_key').val(currentComponentKey);
                 $('#ruleModalTitle').text('Add Allocation Rule');
-                $('.form-control').removeClass('is-invalid');
-                $('.invalid-feedback').text('');
+                clearErrors('#ruleForm');
 
                 toggleConditionalField();
 
                 $('#ruleModal').modal('show');
             });
 
-            // Rule Modal shown event 
-            $('#ruleModal').on('shown.bs.modal', function() {
+            $('#ruleModal').on('shown.bs.modal', function () {
                 console.log('Rule modal shown, loading stock items');
                 loadStockItems();
             });
 
-            // Edit Rule Button 
-            $(document).on('click', '.edit-rule-btn', function(e) {
+            $(document).on('click', '.edit-rule-btn', function (e) {
                 e.preventDefault();
                 let id = $(this).data('id');
 
@@ -1388,50 +1201,41 @@
                 $.ajax({
                     url: editUrl,
                     type: 'GET',
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             let rule = response.data;
 
-                            // Set form metadata
                             $('#rule_id').val(rule.id);
                             $('#form_component_key').val(rule.component_id);
                             $('#ruleModalTitle').text('Edit Allocation Rule');
-                            $('.form-control').removeClass('is-invalid');
-                            $('.invalid-feedback').text('');
+                            clearErrors('#ruleForm');
 
-                            // Show modal first
                             $('#ruleModal').modal('show');
 
-                            // Wait for modal to be shown, then load stock items and populate
-                            $('#ruleModal').one('shown.bs.modal', function() {
-                                loadStockItems(function() {
-                                    // After stock items are loaded, populate the form
+                            $('#ruleModal').one('shown.bs.modal', function () {
+                                loadStockItems(function () {
                                     $('#stock_item_id').val(rule.stock_item_id);
                                     $('#rule_type').val(rule.rule_type);
                                     $('#base_quantity').val(rule.base_qty);
                                     $('#multiplier').val(rule.multiplier);
-                                    $('#extras_fixed').val(rule.extras_fixed ||
-                                        0);
-                                    $('#extras_percent').val(rule
-                                        .extras_percentage || 0);
-                                    $('#extras_per_candidate').val(rule
-                                        .extras_per_candidate || 0);
+                                    $('#extras_fixed').val(rule.extras_fixed || 0);
+                                    $('#extras_percent').val(rule.extras_percentage || 0);
+                                    $('#extras_per_candidate').val(rule.extras_per_candidate || 0);
                                     $('#condition_value').val(0);
 
                                     toggleConditionalField();
-                                    console.log(
-                                    'Form populated with rule data');
+                                    console.log('Form populated with rule data');
                                 });
                             });
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         toastr.error(xhr.responseJSON?.message || 'Error loading rule data');
                     }
                 });
             });
 
-            $('#testCalculatorBtn').click(function() {
+            $('#testCalculatorBtn').click(function () {
                 if (!currentComponentKey) {
                     toastr.warning('Please select a component first');
                     return;
@@ -1441,14 +1245,12 @@
                 $('#calculatorModal').modal('show');
             });
 
-            // Calculator Modal shown event 
-            $('#calculatorModal').on('shown.bs.modal', function() {
+            $('#calculatorModal').on('shown.bs.modal', function () {
                 console.log('Calculator modal shown, loading stock items');
                 loadStockItems();
             });
 
-            // Calculate Test Button 
-            $('#calculateTestBtn').click(function() {
+            $('#calculateTestBtn').click(function () {
                 if (!currentComponentKey) {
                     toastr.warning('Please select a component first');
                     return;
@@ -1465,20 +1267,18 @@
                 $.ajax({
                     url: "{{ route('admin.stationery.component-stock.test') }}",
                     type: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     data: {
                         component_key: currentComponentKey,
                         stock_item_id: stockItemId,
                         candidates: candidates,
                         centers: 1
                     },
-                    success: function(response) {
+                    success: function (response) {
                         $('#calc_result_qty').text(response.quantity);
 
                         let breakdownHtml = '<ul>';
-                        response.breakdown.forEach(function(step) {
+                        response.breakdown.forEach(function (step) {
                             breakdownHtml += '<li>' + step + '</li>';
                         });
                         breakdownHtml += '</ul>';
@@ -1486,30 +1286,23 @@
                         $('#calc_breakdown').html(breakdownHtml);
                         $('#calc_result').show();
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Calculation error:', xhr);
-                        console.error('Response:', xhr.responseText);
                         toastr.error(xhr.responseJSON?.message || 'Error calculating quantity');
                     }
                 });
             });
 
- // ========================================================ALLOCATION TAB ============================================
-            $('#level').on('change', function() {
+            // ========== ALLOCATION TAB ==========
+            $('#level').on('change', function () {
                 const selectedLevel = $(this).val();
 
-                $('#financial_year').prop('disabled', true).html(
-                    '<option value="">-- Select Financial Year --</option>');
-                $('#session_id').prop('disabled', true).html(
-                    '<option value="">-- Select Session --</option>');
-                $('#center_no').prop('disabled', true).html(
-                    '<option value="">-- Select Center --</option>');
-                $('#component_id').prop('disabled', true).html(
-                    '<option value="">-- All Components --</option>');
+                $('#financial_year').prop('disabled', true).html('<option value="">-- Select Financial Year --</option>');
+                $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+                $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+                $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
 
-                if (!selectedLevel) {
-                    return;
-                }
+                if (!selectedLevel) return;
 
                 $('#financial_year').prop('disabled', false);
                 let fyOptions = '<option value="">-- Select Financial Year --</option>';
@@ -1519,80 +1312,63 @@
                 $('#financial_year').html(fyOptions);
             });
 
-            $('#financial_year').on('change', function() {
+            $('#financial_year').on('change', function () {
                 const selectedLevel = $('#level').val();
                 const selectedFinancialYear = $(this).val();
 
-                $('#session_id').prop('disabled', true).html(
-                    '<option value="">-- Select Session --</option>');
-                $('#center_no').prop('disabled', true).html(
-                    '<option value="">-- Select Center --</option>');
-                $('#component_id').prop('disabled', true).html(
-                    '<option value="">-- All Components --</option>');
+                $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+                $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+                $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
 
-                if (!selectedFinancialYear) {
-                    return;
-                }
+                if (!selectedFinancialYear) return;
 
                 $('#session_id').prop('disabled', false);
                 loadSessionsByFilters(selectedLevel, selectedFinancialYear);
             });
 
-            $('#session_id').on('change', function() {
+            $('#session_id').on('change', function () {
                 const selectedLevel = $('#level').val();
                 const selectedFinancialYear = $('#financial_year').val();
                 const selectedSession = $(this).val();
 
-                $('#center_no').prop('disabled', true).html(
-                    '<option value="">-- Select Center --</option>');
-                $('#component_id').prop('disabled', true).html(
-                    '<option value="">-- All Components --</option>');
+                $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+                $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
 
-                if (!selectedSession) {
-                    return;
-                }
+                if (!selectedSession) return;
 
                 $('#center_no').prop('disabled', false);
                 loadCentersByFilters(selectedLevel, selectedFinancialYear, selectedSession);
             });
 
-            $('#center_no').on('change', function() {
+            $('#center_no').on('change', function () {
                 const selectedLevel = $('#level').val();
                 const selectedFinancialYear = $('#financial_year').val();
                 const selectedSession = $('#session_id').val();
                 const selectedCenter = $(this).val();
 
-                $('#component_id').prop('disabled', true).html(
-                    '<option value="">-- All Components --</option>');
+                $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
 
-                if (!selectedCenter) {
-                    return;
-                }
+                if (!selectedCenter) return;
 
                 $('#component_id').prop('disabled', false);
-                loadComponentsByFilters(selectedLevel, selectedFinancialYear, selectedSession,
-                    selectedCenter);
+                loadComponentsByFilters(selectedLevel, selectedFinancialYear, selectedSession, selectedCenter);
             });
 
             function loadSessionsByFilters(level, financialYear) {
                 $.ajax({
                     url: "{{ route('admin.stationery.allocation.sessions-by-filters') }}",
                     method: 'GET',
-                    data: {
-                        level: level,
-                        financial_year: financialYear
-                    },
-                    success: function(response) {
+                    data: { level: level, financial_year: financialYear },
+                    success: function (response) {
                         if (response.success) {
                             let sessionOptions = '<option value="">-- Select Session --</option>';
                             response.sessions.forEach(session => {
-                                sessionOptions +=
-                                    `<option value="${session.id}">${session.session}</option>`;
+                                sessionOptions += `<option value="${session.id}">${session.session}</option>`;
                             });
                             $('#session_id').html(sessionOptions);
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading sessions:', xhr);
                         toastr.error('Error loading sessions');
                     }
@@ -1603,28 +1379,21 @@
                 $.ajax({
                     url: "{{ route('admin.stationery.allocation.centers-by-filters') }}",
                     method: 'GET',
-                    data: {
-                        level: level,
-                        financial_year: financialYear,
-                        session_id: sessionId
-                    },
-                    success: function(response) {
+                    data: { level: level, financial_year: financialYear, session_id: sessionId },
+                    success: function (response) {
                         if (response.success) {
                             let centerOptions = '<option value="">-- Select Center --</option>';
                             response.centers.forEach(center => {
-                                centerOptions +=
-                                    `<option value="${center.center_no}">${center.center_no} - ${center.center_name}</option>`;
+                                centerOptions += `<option value="${center.center_no}">${center.center_no} - ${center.center_name}</option>`;
                             });
                             $('#center_no').html(centerOptions);
 
                             if (response.centers.length === 0) {
-                                toastr.warning(
-                                    'No centers found with candidates for this level, session, and financial year'
-                                );
+                                toastr.warning('No centers found with candidates for this level, session, and financial year');
                             }
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading centers:', xhr);
                         toastr.error('Error loading centers');
                     }
@@ -1635,22 +1404,14 @@
                 $.ajax({
                     url: "{{ route('admin.stationery.allocation.components-by-filters') }}",
                     method: 'GET',
-                    data: {
-                        level: level,
-                        financial_year: financialYear,
-                        session_id: sessionId,
-                        center_no: centerNo
-                    },
-                    success: function(response) {
+                    data: { level: level, financial_year: financialYear, session_id: sessionId, center_no: centerNo },
+                    success: function (response) {
                         if (response.success) {
                             let componentOptions = '<option value="">-- All Components --</option>';
                             response.components.forEach(comp => {
-                                const paddedSubjectCode = String(comp.subject_code).padStart(4,
-                                    '0');
-                                const paddedComponentCode = String(comp.component_code)
-                                    .padStart(2, '0');
-                                componentOptions +=
-                                    `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${paddedComponentCode}) - ${comp.subject_name} - ${comp.candidate_count} candidates</option>`;
+                                const paddedSubjectCode = String(comp.subject_code).padStart(4, '0');
+                                const paddedComponentCode = String(comp.component_code).padStart(2, '0');
+                                componentOptions += `<option value="${comp.id}">${comp.component_name} (${paddedSubjectCode}-${paddedComponentCode}) - ${comp.subject_name} - ${comp.candidate_count} candidates</option>`;
                             });
                             $('#component_id').html(componentOptions);
 
@@ -1659,14 +1420,14 @@
                             }
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error('Error loading components:', xhr);
                         toastr.error('Error loading components');
                     }
                 });
             }
 
-            $('#generateReportBtn').on('click', function() {
+            $('#generateReportBtn').on('click', function () {
                 const level = $('#level').val();
                 const financialYear = $('#financial_year').val();
                 const sessionId = $('#session_id').val();
@@ -1691,7 +1452,7 @@
                         center_no: centerNo,
                         component_id: componentId || null
                     },
-                    success: function(response) {
+                    success: function (response) {
                         $('#loadingIndicator').hide();
 
                         if (response.success) {
@@ -1703,7 +1464,7 @@
                             toastr.error(response.message || 'Error generating report');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         $('#loadingIndicator').hide();
                         const errorMsg = xhr.responseJSON?.message || 'An error occurred';
                         toastr.error(errorMsg);
@@ -1724,8 +1485,7 @@
                 $('#reportInvigilators').text(data.num_invigilators);
 
                 if (data.component) {
-                    const fullCode = String(data.component.subject_code).padStart(4, '0') + '-' + data.component
-                        .component_code;
+                    const fullCode = String(data.component.subject_code).padStart(4, '0') + '-' + data.component.component_code;
                     $('#reportComponent').text(data.component.component_name + ' (' + fullCode + ')');
                     $('#componentLabel').show();
                     $('#reportComponent').show();
@@ -1735,38 +1495,38 @@
                 }
 
                 if (data.allocations && data.allocations.length > 0) {
-                    data.allocations.forEach(function(allocation, index) {
+                    data.allocations.forEach(function (allocation, index) {
                         const statusClass = allocation.can_allocate ? '' : 'danger';
                         const row = `
-                    <tr class="${statusClass}">
-                        <td>${index + 1}</td>
-                        <td>
-                            ${allocation.component.component_name}<br>
-                            <small class="text-muted">${allocation.component.full_code}</small>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge badge-info">${allocation.component.candidates_registered}</span>
-                        </td>
-                        <td>${allocation.stock_item.name}</td>
-                        <td>${allocation.stock_item.stock_type || '-'}</td>
-                        <td class="text-center"><strong>${allocation.required_qty}</strong></td>
-                        <td class="text-center">${allocation.available_stock}</td>
-                        <td class="text-center">
-                            <span class="label label-${allocation.can_allocate ? 'success' : 'danger'}">
-                                ${allocation.can_allocate ? 'Yes' : 'No'}
-                            </span>
-                        </td>
-                        <td class="text-center ${allocation.remaining_stock < 0 ? 'text-danger' : ''}">
-                            ${allocation.remaining_stock}
-                        </td>
-                        <td>
-                            <button class="btn btn-xs btn-info view-breakdown" 
-                                data-breakdown='${JSON.stringify(allocation.breakdown)}'>
-                                <i class="fa fa-eye"></i> View
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                            <tr class="${statusClass}">
+                                <td>${index + 1}</td>
+                                <td>
+                                    ${allocation.component.component_name}<br>
+                                    <small class="text-muted">${allocation.component.full_code}</small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-info">${allocation.component.candidates_registered}</span>
+                                </td>
+                                <td>${allocation.stock_item.name}</td>
+                                <td>${allocation.stock_item.stock_type || '-'}</td>
+                                <td class="text-center"><strong>${allocation.required_qty}</strong></td>
+                                <td class="text-center">${allocation.available_stock}</td>
+                                <td class="text-center">
+                                    <span class="label label-${allocation.can_allocate ? 'success' : 'danger'}">
+                                        ${allocation.can_allocate ? 'Yes' : 'No'}
+                                    </span>
+                                </td>
+                                <td class="text-center ${allocation.remaining_stock < 0 ? 'text-danger' : ''}">
+                                    ${allocation.remaining_stock}
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-info view-breakdown" 
+                                        data-breakdown='${JSON.stringify(allocation.breakdown)}'>
+                                        <i class="fa fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
                         $('#allocationTableBody').append(row);
                     });
 
@@ -1776,27 +1536,27 @@
                     }
                 } else {
                     $('#allocationTableBody').append(`
-                <tr>
-                    <td colspan="10" class="text-center">
-                        <div class="alert alert-warning">
-                            <i class="fa fa-exclamation-triangle"></i>
-                            No allocation rules configured for the selected component(s)
-                        </div>
-                    </td>
-                </tr>
-            `);
+                        <tr>
+                            <td colspan="10" class="text-center">
+                                <div class="alert alert-warning">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    No allocation rules configured for the selected component(s)
+                                </div>
+                            </td>
+                        </tr>
+                    `);
                 }
             }
 
-            $(document).on('click', '.view-breakdown', function() {
+            $(document).on('click', '.view-breakdown', function () {
                 const breakdown = $(this).data('breakdown');
 
                 let html = '<div class="list-group">';
                 for (const [key, value] of Object.entries(breakdown)) {
                     const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     html += `<div class="list-group-item">
-                <strong>${label}:</strong> <span class="pull-right">${value}</span>
-            </div>`;
+                        <strong>${label}:</strong> <span class="pull-right">${value}</span>
+                    </div>`;
                 }
                 html += '</div>';
 
@@ -1804,7 +1564,7 @@
                 $('#breakdownModal').modal('show');
             });
 
-            $('#saveAllocationBtn').on('click', function() {
+            $('#saveAllocationBtn').on('click', function () {
                 if (!allocationData) {
                     toastr.error('No allocation data to save');
                     return;
@@ -1833,7 +1593,7 @@
                         session_id: allocationData.session.id,
                         allocations: allocations
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success) {
                             toastr.success('Allocation saved successfully');
                             $('#clearReportBtn').click();
@@ -1841,24 +1601,21 @@
                             toastr.error(response.message || 'Error saving allocation');
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         toastr.error(xhr.responseJSON?.message || 'Error saving allocation');
                     }
                 });
             });
 
-            $('#clearReportBtn').on('click', function() {
+            $('#clearReportBtn').on('click', function () {
                 $('#reportResults').hide();
                 allocationData = null;
                 $('#allocationForm')[0].reset();
                 $('.select2').val(null).trigger('change');
 
-                $('#session_id').prop('disabled', true).html(
-                    '<option value="">-- Select Session --</option>');
-                $('#center_no').prop('disabled', true).html(
-                    '<option value="">-- Select Center --</option>');
-                $('#component_id').prop('disabled', true).html(
-                    '<option value="">-- All Components --</option>');
+                $('#session_id').prop('disabled', true).html('<option value="">-- Select Session --</option>');
+                $('#center_no').prop('disabled', true).html('<option value="">-- Select Center --</option>');
+                $('#component_id').prop('disabled', true).html('<option value="">-- All Components --</option>');
             });
         });
     </script>
