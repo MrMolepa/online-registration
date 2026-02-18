@@ -6,41 +6,41 @@
                 <button type="button" class="close resetform" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h3 class="modal-title" id="postalDispatchModalTitle">Phone Call Log</h3>
+                <h3 class="modal-title" id="postalDispatchModalTitle">Postal Dispatch</h3>
             </div>
             <form id="postalDispatchForm" method="POST">
                 @csrf
                 <input type="hidden" id="postalDispatch_id" name="postalDispatch_id" value="">
-                
+
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="name">To</label>
+                        <label for="to">To</label>
                         <input type="text" class="form-control" id="to" name="to" placeholder="Enter recipient name">
-                        <div class="invalid-feedback"></div>
+                        <span class="help-block text-danger"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="reference_no">Reference No<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="reference_no" name="reference_no" placeholder="Enter reference number">
-                        <div class="invalid-feedback"></div>
+                        <span class="help-block text-danger"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="address">Address<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="address" name="address" placeholder="Enter address">
-                        <div class="invalid-feedback"></div>
+                        <span class="help-block text-danger"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="date">Date<span class="text-danger">*</span></label>
                         <input type="text" class="form-control datepicker" id="date" name="date" placeholder="Select date">
-                        <div class="invalid-feedback"></div>
+                        <span class="help-block text-danger"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="from">From</label>
                         <input type="text" class="form-control" id="from" name="from" placeholder="Enter sender name">
-                        <div class="invalid-feedback"></div>
+                        <span class="help-block text-danger"></span>
                     </div>
                 </div>
 

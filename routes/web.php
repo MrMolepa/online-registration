@@ -343,7 +343,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'update' => 'subject-group-rules.update',
             'destroy' => 'subject-group-rules.destroy',
         ]);
-//FUN WALKS
+        //FUN WALKS
         Route::get('/fun-walk-payments/unpaid-registrations', [FunWalkPaymentController::class, 'getUnpaidRegistrations'])
             ->name('fun-walk-payments.unpaid-registrations');
         Route::post('/fun-walk-payments/process', [FunWalkPaymentController::class, 'processPayment'])
@@ -485,29 +485,42 @@ Route::prefix('admin')->name('admin.')->group(function () {
             });
         });
 
-        Route::prefix('front-desk/phone-call-log')->name('front-desk.phone-call-log.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'index'])->name('index');
-            Route::post('/', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'store'])->name('store');
-            Route::get('{phoneCallLog}/edit', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'edit'])->name('edit');
-            Route::put('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'update'])->name('update');
-            Route::delete('{phoneCallLog}', [App\Http\Controllers\Admin\PhoneCallLogController::class, 'destroy'])->name('destroy');
+        //*************************************************Front-Desk *************************************//
+
+         Route::prefix('front-desk')->name('front-desk.')->group(function () {
+            Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([
+                'postal-receive' => 'postalReceive'
+            ])->except(['create']);
+
+            // Override edit and show routes to return JSON
+            Route::get('postal-receive/{postalReceive}/edit', [App\Http\Controllers\Admin\PostalReceiveController::class, 'edit'])->name('postal-receive.edit');
+            Route::get('postal-receive/{postalReceive}', [App\Http\Controllers\Admin\PostalReceiveController::class, 'show'])->name('postal-receive.show');
+
+            Route::resource('enquiry', App\Http\Controllers\Admin\EnquiryController::class)->parameters([
+                'enquiry' => 'enquiry'
+            ])->except(['create']);
+
+            // Override edit and show routes to return JSON
+            Route::get('enquiry/{enquiry}/edit', [App\Http\Controllers\Admin\EnquiryController::class, 'edit'])->name('enquiry.edit');
+            Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
+
         });
 
-        Route::prefix('front-desk/postal-dispatch')->name('front-desk.postal-dispatch.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'index'])->name('index');
-            Route::post('/', [App\Http\Controllers\Admin\PostalDispatchController::class, 'store'])->name('store');
-            Route::get('{postalDispatch}/edit', [App\Http\Controllers\Admin\PostalDispatchController::class, 'edit'])->name('edit');
-            Route::put('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'update'])->name('update');
-            Route::delete('{postalDispatch}', [App\Http\Controllers\Admin\PostalDispatchController::class, 'destroy'])->name('destroy');
-        });
+        Route::resource('front-desk/phone-call-log', App\Http\Controllers\Admin\PhoneCallLogController::class)
+            ->parameters(['phone-call-log' => 'phoneCallLog'])
+            ->except(['create', 'show'])
+            ->names('front-desk.phone-call-log');
 
-        Route::prefix('front-desk/visitors-book')->name('front-desk.visitors-book.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'index'])->name('index');
-            Route::post('/', [App\Http\Controllers\Admin\VisitorBookController::class, 'store'])->name('store');
-            Route::get('{visitor}/edit', [App\Http\Controllers\Admin\VisitorBookController::class, 'edit'])->name('edit');
-            Route::put('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'update'])->name('update');
-            Route::delete('{visitor}', [App\Http\Controllers\Admin\VisitorBookController::class, 'destroy'])->name('destroy');
-        });
+        Route::resource('front-desk/postal-dispatch', App\Http\Controllers\Admin\PostalDispatchController::class)
+            ->parameters(['postal-dispatch' => 'postalDispatch'])
+            ->except(['create', 'show'])
+            ->names('front-desk.postal-dispatch');
+
+        Route::resource('front-desk/visitors-book', App\Http\Controllers\Admin\VisitorBookController::class)
+            ->parameters(['visitors-book' => 'visitor'])
+            ->except(['create', 'show'])
+            ->names('front-desk.visitors-book');
+
 
         // Fun Walk Management (Tabbed Interface)
         Route::get('/fun-walk-management', [FunWalkController::class, 'management'])
@@ -520,8 +533,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('{funWalk}', [FunWalkController::class, 'update'])->name('update');
             Route::delete('{funWalk}', [FunWalkController::class, 'destroy'])->name('destroy');
         });
-
-
 
         Route::prefix('fun-walk-registration')->name('fun-walk-registration.')->group(function () {
             Route::get('/', [FunWalkRegistrationController::class, 'index'])->name('index');
@@ -543,25 +554,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('fun-walk-registration.update');
         Route::delete('fun-walk-registration/{id}', [FunWalkRegistrationController::class, 'destroy'])
             ->name('fun-walk-registration.destroy');
-
-        Route::prefix('front-desk')->name('front-desk.')->group(function () {
-            Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([
-                'postal-receive' => 'postalReceive'
-            ])->except(['create']);
-
-            // Override edit and show routes to return JSON
-            Route::get('postal-receive/{postalReceive}/edit', [App\Http\Controllers\Admin\PostalReceiveController::class, 'edit'])->name('postal-receive.edit');
-            Route::get('postal-receive/{postalReceive}', [App\Http\Controllers\Admin\PostalReceiveController::class, 'show'])->name('postal-receive.show');
-
-            Route::resource('enquiry', App\Http\Controllers\Admin\EnquiryController::class)->parameters([
-                'enquiry' => 'enquiry'
-            ])->except(['create']);
-
-            // Override edit and show routes to return JSON
-            Route::get('enquiry/{enquiry}/edit', [App\Http\Controllers\Admin\EnquiryController::class, 'edit'])->name('enquiry.edit');
-            Route::get('enquiry/{enquiry}', [App\Http\Controllers\Admin\EnquiryController::class, 'show'])->name('enquiry.show');
-
-        });
 
         //'middleware' => 'admin'
 

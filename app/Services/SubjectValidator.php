@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\SubjectGroup;
 use App\Models\SubjectGroupRule;
 use App\Models\Center;
-use App\Models\Level;
+
 
 class SubjectValidator
 {
