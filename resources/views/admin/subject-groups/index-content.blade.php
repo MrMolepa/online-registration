@@ -170,6 +170,12 @@
             $('#editGroupForm').on('submit', function (e) {
                 e.preventDefault();
 
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+
                 // Clear previous errors
                 clearErrorMessages('#editGroupForm');
 
@@ -309,5 +315,5 @@
             $(formSelector + ' .help-block').text('').removeClass('text-danger');
             $(formSelector + ' .form-group').removeClass('has-error');
         }
-</script>
+    </script>
 @endpush
