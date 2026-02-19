@@ -206,8 +206,7 @@
         var incompatiblePairsCounter = 0;
         
         $(document).ready(function () {
-            console.log('Modal script loaded');
-
+            
             // Reset form when modal is closed
             $('#createRuleModal').on('hidden.bs.modal', function () {
                 resetCreateForm();
@@ -216,7 +215,6 @@
             // Load groups when level changes - Direct binding
             $('#level_id').on('change', function () {
                 var selectedLevel = $(this).val();
-                console.log('Level changed to:', selectedLevel);
                 if (selectedLevel) {
                     loadAvailableGroups(selectedLevel);
                 } else {
@@ -290,10 +288,7 @@
         }
 
         function loadAvailableGroups(levelId) {
-            console.log('loadAvailableGroups called with levelId:', levelId);
-
             if (!levelId) {
-                console.warn('No levelId provided');
                 return;
             }
 
@@ -302,9 +297,6 @@
                 '<p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading groups...</p>');
 
             var url = "{{ route('admin.subject-group-rules.getGroups') }}";
-            console.log('AJAX URL:', url);
-            console.log('Sending level_id:', levelId);
-
             $.ajax({
                 url: url,
                 method: "GET",
@@ -313,26 +305,15 @@
                 },
                 dataType: 'json',
                 success: function (response) {
-                    console.log('AJAX Success:', response);
-
                     if (response.success && response.groups) {
                         availableGroups = response.groups;
-                        console.log('Groups loaded:', availableGroups.length);
                         displayAvailableGroups();
                     } else {
-                        console.warn('No groups in response');
                         availableGroups = [];
                         displayAvailableGroups();
                     }
                 },
                 error: function (xhr, status, error) {
-                    console.error('AJAX Error:', {
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        responseText: xhr.responseText,
-                        error: error
-                    });
-
                     toastr.error('Error loading subject groups: ' + (xhr.responseJSON?.message || error));
                     $('#available-groups-container').html(
                         '<div class="alert alert-danger">Error loading subject groups. Please try again. Status: ' + xhr.status + '</div>');
@@ -342,8 +323,6 @@
         }
 
         function displayAvailableGroups() {
-            console.log('displayAvailableGroups called with', availableGroups.length, 'groups');
-
             if (!availableGroups || availableGroups.length === 0) {
                 $('#available-groups-container').html(
                     '<div class="alert alert-warning">No subject groups found for this level. ' +
@@ -373,11 +352,9 @@
 
             html += '</tbody></table>';
             $('#available-groups-container').html(html);
-            console.log('Groups displayed successfully');
         }
-        function saveRule() {
-            console.log('Saving rule...');
 
+        function saveRule() {
             // Clear previous errors
             $('.help-block').text('');
 
@@ -387,9 +364,6 @@
 
             // Build and set JSON
             var rulesJson = buildRulesJson();
-
-            console.log('=== RULES JSON TO SAVE ===');
-            console.log(JSON.stringify(rulesJson, null, 2));
 
             var formData = {
                 _token: $('#csrf_token').val(),
@@ -401,12 +375,7 @@
                 rules: JSON.stringify(rulesJson)
             };
 
-            console.log('Form data:', formData);
-
-
-
             var url = "{{ route('admin.subject-group-rules.store') }}";
-            console.log('Posting to:', url);
 
             $.ajax({
                 url: url,
@@ -414,7 +383,6 @@
                 data: formData,
                 dataType: 'json',
                 success: function (response) {
-                    console.log('Success response:', response);
                     if (response.success) {
                         toastr.success(response.message || 'Rule created successfully');
                         $('#createRuleModal').modal('hide');
@@ -425,7 +393,6 @@
                     $saveBtn.prop('disabled', false).html('<i class="fa fa-save"></i> Save');
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error response:', xhr.responseText);
                     if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                         displayErrors(xhr.responseJSON.errors);
                     } else {
@@ -511,6 +478,7 @@
             $('#forbidden-groups-container').append(html);
             updateJsonPreview();
         }
+
         function addConstraint() {
             if (availableGroups.length === 0) {
                 toastr.warning('Please select a level first');
@@ -541,9 +509,9 @@
                 '<label>Constraint Type</label>' +
                 '<select class="form-control rule-input constraint-type" onchange="updateConstraintFields(this)">' +
                 '<option value="">Select Type</option>' +
-                '<option value="at_least_one_from_multiple">At Least One From Multiple</option>' +//"At least one from multiple" - Pick from either Group A OR Group B
-                '<option value="mutually_exclusive">Mutually Exclusive</option>' + //"Mutually exclusive" - Can't pick from both Group A AND Group B
-                '<option value="conditional_required">Conditional Required</option>' + // "Conditional required" - IF you pick from Group A, THEN you must pick from Group B
+                '<option value="at_least_one_from_multiple">At Least One From Multiple</option>' +
+                '<option value="mutually_exclusive">Mutually Exclusive</option>' +
+                '<option value="conditional_required">Conditional Required</option>' +
                 '<option value="min_total_from_groups">Min Total From Groups</option>' +
                 '</select>' +
                 '</div>' +
