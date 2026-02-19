@@ -3,16 +3,12 @@
 namespace App\Http\Controllers\Admin\FunWalk;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\FunWalkRequest;
 use App\Models\FunWalk;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
 class FunWalkController extends Controller
 {
-    /**
-     * Display a listing of fun walks with DataTable server-side processing
-     */
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -41,61 +37,60 @@ class FunWalkController extends Controller
         return view('admin.fun-walk.index');
     }
 
-    /**
-     * Store a newly created fun walk in storage
-     */
-    public function store(FunWalkRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'date'        => 'required|date',
+            'location'    => 'required|string|max:255',
+            'price'       => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'status'      => 'required|in:active,inactive',
+        ]);
 
         $funWalk = FunWalk::create($validated);
 
         return response()->json([
             'success' => true,
             'message' => 'Fun Walk created successfully',
-            'data' => $funWalk
+            'data'    => $funWalk
         ]);
     }
 
-    /**
-     * Show the form for editing the specified fun walk
-     */
     public function edit(FunWalk $funWalk)
     {
         return response()->json([
             'success' => true,
-            'url' => route('admin.fun-walk.update', $funWalk->id),
-            'data' => $funWalk
+            'url'     => route('admin.fun-walk.update', $funWalk->id),
+            'data'    => $funWalk
         ]);
     }
 
-    /**
-     * Update the specified fun walk in storage
-     */
-    public function update(FunWalkRequest $request, FunWalk $funWalk)
+    public function update(Request $request, FunWalk $funWalk)
     {
-        $validated = $request->validated();
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'date'        => 'required|date',
+            'location'    => 'required|string|max:255',
+            'price'       => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'status'      => 'required|in:active,inactive',
+        ]);
 
         $funWalk->update($validated);
 
         return response()->json([
             'success' => true,
             'message' => 'Fun Walk updated successfully',
-            'data' => $funWalk->fresh()
+            'data'    => $funWalk->fresh()
         ]);
     }
 
-    /**
-     * Display the unified management page with tabs
-     */
     public function management()
     {
         return view('admin.fun-walk-management.fun-walk-management');
     }
 
-    /**
-     * Remove the specified fun walk from storage
-     */
     public function destroy(FunWalk $funWalk)
     {
         $funWalk->delete();
