@@ -151,6 +151,21 @@
                         </div>
                     </div>
 
+                    <!-- Incompatible Subject Pairs -->
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">Incompatible Subject Pairs</h4>
+                        </div>
+                        <div class="panel-body">
+                            <p class="text-muted small">Pairs of subjects that <strong>cannot</strong> be selected
+                                together. Select a level first to load subjects.</p>
+                            <button type="button" class="btn btn-sm btn-warning" id="add-incompatible-pair">
+                                <i class="fa fa-plus"></i> Add Incompatible Pair
+                            </button>
+                            <div id="incompatible-pairs-container" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+
                     <!-- JSON Preview -->
                     <div class="panel panel-info">
                         <div class="panel-heading">
@@ -188,7 +203,8 @@
         var requiredGroupsCounter = 0;
         var forbiddenGroupsCounter = 0;
         var constraintsCounter = 0;
-
+        var incompatiblePairsCounter = 0;
+        
         $(document).ready(function () {
             console.log('Modal script loaded');
 
@@ -231,6 +247,11 @@
                 addConstraint();
             });
 
+            // Add incompatible pair
+            $('#add-incompatible-pair').on('click', function () {
+                addIncompatiblePair();
+            });
+
             // Update JSON on any change
             $(document).on('change input', '#min_subjects, #max_subjects, .rule-input', function () {
                 updateJsonPreview();
@@ -257,6 +278,7 @@
             $('#required-groups-container').empty();
             $('#forbidden-groups-container').empty();
             $('#constraints-container').empty();
+            $('#incompatible-pairs-container').empty();
             $('#json-preview-container').hide();
             $('#json-preview').text('');
 
@@ -264,6 +286,7 @@
             requiredGroupsCounter = 0;
             forbiddenGroupsCounter = 0;
             constraintsCounter = 0;
+            incompatiblePairsCounter = 0;
         }
 
         function loadAvailableGroups(levelId) {
@@ -591,6 +614,62 @@
             updateJsonPreview();
         }
 
+        function getSubjectOptionsFromGroups(selectedCode) {
+            var seen = {}, subjects = [];
+            availableGroups.forEach(function (group) {
+                (group.subjects || []).forEach(function (s) {
+                    if (!seen[s.subject_code]) {
+                        seen[s.subject_code] = true;
+                        subjects.push(s);
+                    }
+                });
+            });
+            subjects.sort(function (a, b) { return a.subject_code.localeCompare(b.subject_code); });
+            var options = '<option value="">Select Subject</option>';
+            subjects.forEach(function (s) {
+                var sel = (selectedCode === s.subject_code) ? 'selected' : '';
+                options += '<option value="' + s.subject_code + '" ' + sel + '>' + s.subject_code + ' - ' + s.subject_name + '</option>';
+            });
+            return options;
+        }
+
+        function addIncompatiblePair(existingA, existingB, existingMsg) {
+            if (availableGroups.length === 0) {
+                toastr.warning('Please select a level first');
+                return;
+            }
+            existingA = existingA || '';
+            existingB = existingB || '';
+            existingMsg = existingMsg || '';
+
+            var id = 'pair-' + (++incompatiblePairsCounter);
+            var html =
+                '<div class="well well-sm" id="' + id + '" style="margin-bottom:10px;">' +
+                '<div class="row">' +
+                '<div class="col-md-4">' +
+                '<label>Subject A</label>' +
+                '<select class="form-control rule-input incompatible-pair-a">' + getSubjectOptionsFromGroups(existingA) + '</select>' +
+                '</div>' +
+                '<div class="col-md-4">' +
+                '<label>Subject B</label>' +
+                '<select class="form-control rule-input incompatible-pair-b">' + getSubjectOptionsFromGroups(existingB) + '</select>' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                '<label>Custom Message <small class="text-muted">(optional)</small></label>' +
+                '<input type="text" class="form-control rule-input incompatible-pair-msg" placeholder="Cannot combine these subjects" value="' + existingMsg + '">' +
+                '</div>' +
+                '<div class="col-md-1 text-center">' +
+                '<label style="font-size:12px;">Remove</label><br>' +
+                '<button type="button" class="btn btn-xs btn-danger" onclick="$(\'#' + id + '\').remove(); updateJsonPreview();">' +
+                '<i class="fa fa-trash"></i>' +
+                '</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            $('#incompatible-pairs-container').append(html);
+            updateJsonPreview();
+        }
+
         function buildRulesJson() {
             var rules = {};
 
@@ -671,6 +750,19 @@
                             rules.group_constraints.push(constraint);
                         }
                         break;
+                }
+            });
+
+            // Incompatible subject pairs
+            rules.incompatible_pairs = [];
+            $('#incompatible-pairs-container .well').each(function () {
+                var a = $(this).find('.incompatible-pair-a').val();
+                var b = $(this).find('.incompatible-pair-b').val();
+                var msg = $(this).find('.incompatible-pair-msg').val().trim();
+                if (a && b && a !== b) {
+                    var pair = { subject_a: a, subject_b: b };
+                    if (msg) pair.message = msg;
+                    rules.incompatible_pairs.push(pair);
                 }
             });
 

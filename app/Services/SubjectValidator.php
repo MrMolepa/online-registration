@@ -32,11 +32,6 @@ class SubjectValidator
             ->forType($type)
             ->first();
 
-        // If no rule found, check for legacy validation
-        if (!$rule) {
-            return $this->legacyValidation($subjectCodes, $levelId, $type, $centerNo);
-        }
-
         // Get all groups for this level
         $groups = SubjectGroup::active()
             ->forLevel($levelId)
@@ -59,7 +54,7 @@ class SubjectValidator
         $this->validateGroupConstraints($selectedGroups, $rule, $groups);
 
         // Validate incompatible subject pairs
-        $this->validateIncompatiblePairs($subjectCodes);
+        $this->validateIncompatiblePairs($subjectCodes, $rule);
 
         // Center-specific validation
         if ($centerNo) {
@@ -298,7 +293,6 @@ class SubjectValidator
     /**
      * Validate center-specific subjects
      */
-
     protected function validateCenterSubjects(array $subjectCodes, string $centerNo)
     {
         $center = Center::with('subjects')->where('center_no', $centerNo)->first();
@@ -323,21 +317,25 @@ class SubjectValidator
      * Validate incompatible subject pair combinations
      * 
      */
-    protected function validateIncompatiblePairs(array $subjectCodes)
+    protected function validateIncompatiblePairs(array $subjectCodes, SubjectGroupRule $rule)
     {
         $normalizedCodes = array_map(
             fn($code) => str_pad((string) $code, 4, '0', STR_PAD_LEFT),
             $subjectCodes
         );
 
-        $incompatiblePairs = [
-            ['0181', '0197'],
-            ['0181', '0198'],
-        ];
+        $incompatiblePairs = $rule->incompatible_pairs;
 
-        foreach ($incompatiblePairs as [$subjectA, $subjectB]) {
+        foreach ($incompatiblePairs as $pair) {
+            
+            $subjectA = str_pad((string) ($pair['subject_a'] ?? $pair[0] ?? ''), 4, '0', STR_PAD_LEFT);
+            $subjectB = str_pad((string) ($pair['subject_b'] ?? $pair[1] ?? ''), 4, '0', STR_PAD_LEFT);
+
+            if (!$subjectA || !$subjectB)
+                continue;
+
             if (in_array($subjectA, $normalizedCodes) && in_array($subjectB, $normalizedCodes)) {
-                $this->errors[] = "Subject {$subjectA} and subject {$subjectB} cannot be selected together.";
+                $this->errors[] = $pair['message'] ?? "Subject {$subjectA} and subject {$subjectB} cannot be selected together.";
             }
         }
     }

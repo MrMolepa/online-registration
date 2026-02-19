@@ -120,4 +120,10 @@ class SubjectGroupRule extends Model
         ];
         return $types[$this->type] ?? 'Unknown';
     }
+
+    public function getIncompatiblePairsAttribute(): array
+{
+    return $this->rules['incompatible_pairs'] ?? [];
+}
+
 }
