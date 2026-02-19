@@ -343,27 +343,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'update' => 'subject-group-rules.update',
             'destroy' => 'subject-group-rules.destroy',
         ]);
-        //FUN WALKS
-        Route::get('/fun-walk-payments/unpaid-registrations', [FunWalkPaymentController::class, 'getUnpaidRegistrations'])
-            ->name('fun-walk-payments.unpaid-registrations');
-        Route::post('/fun-walk-payments/process', [FunWalkPaymentController::class, 'processPayment'])
-            ->name('fun-walk-payments.process');
-        Route::post('/fun-walk/process-payment', [FunWalkPaymentController::class, 'processPayment'])->name('fun-walk.process-payment');
-        Route::get('/fun-walk/payment-success', [FunWalkPaymentController::class, 'paymentSuccess'])->name('fun-walk.payment-success');
-        Route::resource('fun-walk-payments', FunWalkPaymentController::class)->names([
-            'index' => 'fun-walk-payments.index',
-            'store' => 'fun-walk-payments.store',
-            'show' => 'fun-walk-payments.show',
-            'create' => 'fun-walk-payments.create',
-            'edit' => 'fun-walk-payments.edit',
-            'update' => 'fun-walk-payments.update',
-            'destroy' => 'fun-walk-payments.destroy',
-        ]);
-
-        Route::post('candidates/validate-subjects', [CandidateValidationController::class, 'validateSubjects'])
-            ->name('candidates.validateSubjects');
-
-
 
         // Menu Permission Routes (PIVOT-BASED)
         Route::prefix('menu-permissions')->name('menu-permissions.')->group(function () {
@@ -487,7 +466,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         //*************************************************Front-Desk *************************************//
 
-         Route::prefix('front-desk')->name('front-desk.')->group(function () {
+        Route::prefix('front-desk')->name('front-desk.')->group(function () {
             Route::resource('postal-receive', App\Http\Controllers\Admin\PostalReceiveController::class)->parameters([
                 'postal-receive' => 'postalReceive'
             ])->except(['create']);
@@ -554,6 +533,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('fun-walk-registration.update');
         Route::delete('fun-walk-registration/{id}', [FunWalkRegistrationController::class, 'destroy'])
             ->name('fun-walk-registration.destroy');
+
+        Route::post('/fun-walk-payments/process', [FunWalkPaymentController::class, 'processPayment'])
+            ->name('fun-walk-payments.process');
+        Route::post('/fun-walk/process-payment', [FunWalkPaymentController::class, 'processPayment'])->name('fun-walk.process-payment');
+        Route::get('/fun-walk/payment-success', [FunWalkPaymentController::class, 'paymentSuccess'])->name('fun-walk.payment-success');
+        Route::resource('fun-walk-payments', FunWalkPaymentController::class)->names([
+            'index' => 'fun-walk-payments.index',
+            'store' => 'fun-walk-payments.store',
+            'show' => 'fun-walk-payments.show',
+            'create' => 'fun-walk-payments.create',
+            'edit' => 'fun-walk-payments.edit',
+            'update' => 'fun-walk-payments.update',
+            'destroy' => 'fun-walk-payments.destroy',
+        ]);
 
         //'middleware' => 'admin'
 

@@ -105,25 +105,16 @@ function initializeRulesDataTable() {
 }
 
 function loadRuleForEdit(ruleId) {
-    console.log('=== LOAD RULE FOR EDIT ===');
-    console.log('Rule ID:', ruleId);
-    
     // Build the URL properly
     var baseUrl = "{{ route('admin.subject-group-rules.index') }}";
     var editUrl = baseUrl + '/' + ruleId + '/edit';
-    
-    console.log('Fetching from URL:', editUrl);
-    
+
     $.ajax({
         url: editUrl,
         method: "GET",
         dataType: 'json',
         success: function(response) {
-            console.log('=== AJAX SUCCESS ===');
-            console.log('Full response:', response);
-            
             if (response.success && response.rule) {
-                console.log('Rule data:', response.rule);
                 populateEditModal(response);
                 $('#editRuleModal').modal('show');
             } else {
@@ -131,9 +122,6 @@ function loadRuleForEdit(ruleId) {
             }
         },
         error: function(xhr, status, error) {
-            console.error('=== AJAX ERROR ===');
-            console.error('Status:', xhr.status);
-            console.error('Response Text:', xhr.responseText);
             toastr.error('Error loading rule data: ' + error);
         }
     });

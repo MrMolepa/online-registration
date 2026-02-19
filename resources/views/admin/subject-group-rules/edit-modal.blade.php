@@ -209,10 +209,7 @@
     var csrfToken = "{{ csrf_token() }}";
 
     function submitEditRule() {
-        console.log('=== submitEditRule called ===');
-
         var ruleId = document.getElementById('edit_rule_id').value;
-        console.log('Rule ID:', ruleId);
 
         if (!ruleId) {
             toastr.error('Rule ID is missing');
@@ -227,7 +224,6 @@
 
         // Build rules JSON
         var rulesJson = buildEditRulesJson();
-        console.log('Rules JSON:', rulesJson);
 
         // Prepare form data
         var formData = {
@@ -240,9 +236,6 @@
             rules: JSON.stringify(rulesJson)
         };
 
-        console.log('Form data:', formData);
-        console.log('Submitting to:', updateRuleBaseUrl + '/' + ruleId);
-
         var btnUpdate = event.target;
         var originalHtml = btnUpdate.innerHTML;
         btnUpdate.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating...';
@@ -254,9 +247,6 @@
             data: formData,
             dataType: 'json',
             success: function (response) {
-                console.log('=== SUCCESS ===');
-                console.log('Response:', response);
-
                 btnUpdate.innerHTML = originalHtml;
                 btnUpdate.disabled = false;
 
@@ -285,11 +275,6 @@
                 }
             },
             error: function (xhr, status, error) {
-                console.error('=== ERROR ===');
-                console.error('Status:', xhr.status);
-                console.error('Response:', xhr.responseText);
-                console.error('Error:', error);
-
                 btnUpdate.innerHTML = originalHtml;
                 btnUpdate.disabled = false;
 
@@ -316,8 +301,6 @@
     }
 
     function populateEditModal(data) {
-        console.log('Populating edit modal with data:', data);
-
         editRequiredGroupsCounter = 0;
         editForbiddenGroupsCounter = 0;
         editConstraintsCounter = 0;
@@ -525,7 +508,6 @@
 
         updateEditJsonPreview();
     }
-
 
     /**
      * Renders the type-specific fields inside a constraint panel.

@@ -117,7 +117,6 @@
                             toastr.error('Session expired. Please refresh the page.');
                         } else {
                             toastr.error('An error occurred. Please try again.');
-                            console.error('Error:', xhr);
                         }
                     }
                 });
@@ -128,7 +127,7 @@
                 var groupId = $(this).data('id');
                 var url = $(this).data('url');
 
-                console.log('Edit clicked - ID:', groupId, 'URL:', url); // Debug line
+                
 
                 // Fetch group data
                 $.ajax({
@@ -138,7 +137,6 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function (data) {
-                        console.log('Data received:', data); // Debug line
 
                         // Populate form fields
                         $('#edit_group_id').val(data.id);
@@ -161,7 +159,6 @@
                         $('#edit-group-modal').modal('show');
                     },
                     error: function (xhr) {
-                        console.error('AJAX Error:', xhr); // Debug line
                         toastr.error('Failed to load group data');
                     }
                 });
@@ -217,7 +214,6 @@
                             toastr.error('Please fix the validation errors');
                         } else {
                             toastr.error('An error occurred while updating.');
-                            console.error('Error:', xhr);
                         }
                     }
                 });
@@ -244,7 +240,6 @@
                     },
                     error: function (xhr) {
                         toastr.error('An error occurred while deleting.');
-                        console.error('Error:', xhr);
                     }
                 });
             });

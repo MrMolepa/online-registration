@@ -325,6 +325,7 @@ class SubjectValidator
         );
 
         $incompatiblePairs = $rule->incompatible_pairs;
+        
 
         foreach ($incompatiblePairs as $pair) {
             
