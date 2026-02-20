@@ -781,7 +781,8 @@
         if (container.style.display === 'none') {
             container.style.display = 'block';
             updateEditJsonPreview();
-        } else {
+        } 
+        else {
             container.style.display = 'none';
         }
     }
