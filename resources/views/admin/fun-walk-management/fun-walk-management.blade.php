@@ -437,7 +437,6 @@ $(document).ready(function() {
                     }
                 },
                 error: function (xhr) {
-                    console.error('Error loading registration:', xhr);
                     toastr.error('Error loading registration details');
                 }
             });
