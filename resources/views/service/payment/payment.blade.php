@@ -1,15 +1,26 @@
-<a class="nav-item" id="credit-tab" data-toggle="tab" href="#credit-card" role="tab" aria-controls="credit-card"
-    aria-selected="true">
-    <img src="assets/images/XzOzVHZ.jpg" class="payment-icon" alt="">
-</a>
-<a class="nav-item " id="vcl-mpesa-tab" data-toggle="tab" href="#vcl-mpesa" role="tab" aria-controls="vcl-mpesa"
-    aria-selected="false">
-    <label for="VclMpesa"></label>
-    <img src="{{ asset('assets/images/private_candidate_payment/vcl_mpesa.jpg') }}" class="payment-icon" alt="">
-</a>
-<a class="nav-item " id="eco-cash-tab" data-toggle="tab" href="#eco-cash" role="tab" aria-controls="eco-cash"
-    aria-selected="false">
-    <label for="EcoCash"></label>
-    <img src="{{ asset('assets/images/private_candidate_payment/EcoCash.png') }}" class="payment-icon" alt="">
-</a>
+<div class="payment-option" data-payment="credit-card">
+    <div class="payment-icon">
+        <i class="fas fa-credit-card"></i>
+    </div>
+    <div class="payment-name">Credit/Debit Card</div>
+    <small class="text-muted">Secure online payment</small>
+</div>
+<div class="payment-option" data-payment="eco-cash">
+    <div class="payment-icon">
+        <i class="fas fa-mobile-alt"></i>
+    </div>
+    <div class="payment-name">EcoCash</div>
+    <small class="text-muted">Mobile money</small>
+</div>
+<div class="payment-option" data-payment="mpesa">
+    <div class="payment-icon">
+        <i class="fas fa-money-bill-wave"></i>
+    </div>
+    <div class="payment-name">M-PESA</div>
+    <small class="text-muted">Mobile money</small>
+</div>
+
+
+
+
 
